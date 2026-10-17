@@ -4,9 +4,11 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Check, Search, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { getTenantMembers } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
-const ATTENDEES = [
+const DEFAULT_ATTENDEES = [
   'John Christain',
   'Mary Johnson',
   'Isaiah Christian',
@@ -33,13 +35,22 @@ export function CheckInButton({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [checked, setChecked] = useState<string[]>([]);
+  const [attendees, setAttendees] = useState<string[]>(DEFAULT_ATTENDEES);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantMembers().then((members) => {
+      const names = members.map((m) => m.name).filter(Boolean);
+      if (names.length > 0) setAttendees(names);
+    }).catch(() => {});
+  }, []);
 
   const visible = useMemo(
     () =>
-      ATTENDEES.filter((a) =>
+      attendees.filter((a) =>
         a.toLowerCase().includes(query.trim().toLowerCase())
       ),
-    [query]
+    [query, attendees]
   );
 
   const toggle = (name: string) =>

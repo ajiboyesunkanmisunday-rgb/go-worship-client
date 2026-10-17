@@ -16,6 +16,9 @@ import {
   FormMessage,
 } from '../ui/form';
 import { PasswordInput } from '../ui/password-input';
+import { changePassword } from '@/lib/api/auth';
+import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 export function SecurityLogin() {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -76,12 +79,9 @@ function SecurityInfo() {
 
 const formSchema = z
   .object({
-    password: z.string().min(1, {
-      message: 'Password is required',
-    }),
-    confirmPassword: z.string().min(1, {
-      message: 'Confirm password is required',
-    }),
+    currentPassword: z.string().min(1, { message: 'Current password is required' }),
+    password: z.string().min(1, { message: 'Password is required' }),
+    confirmPassword: z.string().min(1, { message: 'Confirm password is required' }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -98,15 +98,18 @@ type SecurityInfoFormProps = {
 function SecurityInfoForm({ submitRef, onSuccess }: SecurityInfoFormProps) {
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      password: '',
-      confirmPassword: '',
-    },
+    defaultValues: { currentPassword: '', password: '', confirmPassword: '' },
   });
 
-  const submitHandler: SubmitHandler<FormSchema> = (data) => {
-    console.log(data);
-    onSuccess?.();
+  const submitHandler: SubmitHandler<FormSchema> = async (data) => {
+    if (!USE_LIVE_API) { onSuccess?.(); return; }
+    try {
+      await changePassword(data.currentPassword, data.password, data.confirmPassword);
+      toast.success('Password updated successfully.');
+      onSuccess?.();
+    } catch {
+      toast.error('Could not update password. Check your current password.');
+    }
   };
 
   return (
@@ -115,6 +118,20 @@ function SecurityInfoForm({ submitRef, onSuccess }: SecurityInfoFormProps) {
         onSubmit={form.handleSubmit(submitHandler)}
         className="w-full grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6  md:gap-6"
       >
+        <FormField
+          control={form.control}
+          name="currentPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Password</FormLabel>
+              <FormControl>
+                <PasswordInput {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="password"

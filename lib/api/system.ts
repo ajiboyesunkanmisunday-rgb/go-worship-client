@@ -223,6 +223,20 @@ export type ProvisionTenantPayload = {
 export const provisionTenant = (payload: ProvisionTenantPayload) =>
   api.post<unknown>('/system/tenants/provision', payload);
 
+export type UpdateTenantPayload = {
+  name?: string;
+  tenantUrl?: string;
+  email?: string;
+  phone?: string;
+  plan?: string;
+  memberCount?: number;
+  [key: string]: unknown;
+};
+
+/** PUT /system/tenants/:id */
+export const updateSystemTenant = (id: string, payload: UpdateTenantPayload) =>
+  api.put<unknown>(`/system/tenants/${id}`, payload);
+
 /* -------- Platform user provisioning -------- */
 
 export type SystemUserType = 'SYSTEM_ADMIN' | 'SYSTEM_SUPPORT' | 'SYSTEM_AUDITOR';
