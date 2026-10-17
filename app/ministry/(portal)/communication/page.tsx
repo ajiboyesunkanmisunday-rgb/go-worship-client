@@ -1,13 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ReceiptButton } from '@/components/ministry/receipt-button';
-
 import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Bell, Mail, Plus } from 'lucide-react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
-const MESSAGES = [
+type Message = { title: string; recipients: string; status: string; rate: number; date?: string };
+
+const MESSAGES: Message[] = [
   { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
   { title: 'Sunday Service Reminder', recipients: 'Group Leaders', status: 'Sent', rate: 100 },
   { title: 'Midweek Recharge', recipients: 'All Member', status: 'Scheduled', rate: 0 },
@@ -17,15 +21,45 @@ const MESSAGES = [
 ];
 
 export default function MinistryCommunicationPage() {
+  const [messages, setMessages] = useState<Message[]>(MESSAGES);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>('/tenant/admin/communications') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: Message[] = arr.map((m) => ({
+          title: String(m['subject'] ?? m['title'] ?? m['name'] ?? ''),
+          recipients: String(m['recipientGroup'] ?? m['recipients'] ?? m['target'] ?? ''),
+          status: String(m['status'] ?? m['deliveryStatus'] ?? 'Sent'),
+          rate: Number(m['readRate'] ?? m['openRate'] ?? m['deliveryRate'] ?? 0),
+          date: String(m['sentAt'] ?? m['scheduledAt'] ?? m['createdAt'] ?? ''),
+        })).filter((m) => m.title);
+        if (mapped.length > 0) setMessages(mapped);
+      })
+      .catch(() => {});
+  }, []);
+
+  const sentCount = messages.filter((m) => m.status === 'Sent' || m.status === 'SENT').length;
+  const scheduledCount = messages.filter((m) => m.status === 'Scheduled' || m.status === 'SCHEDULED').length;
+
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-[26px] font-bold lg:text-[32px]">Communication</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Messages" value="6" variant="white" subtitle="12% from last week" />
+        <StatCard title="Total Messages" value={String(messages.length || 6)} variant="white" subtitle="12% from last week" />
         <StatCard title="Active Recipients" value="260" variant="green" subtitle="5% from last week" />
-        <StatCard title="Unread Messages" value="460" variant="white" subtitle="Click here to create group" />
-        <StatCard title="Scheduled" value="4" variant="white" subtitle="Click here to create group" />
+        <StatCard title="Sent Messages" value={String(sentCount || 5)} variant="white" subtitle="Click here to create group" />
+        <StatCard title="Scheduled" value={String(scheduledCount || 4)} variant="white" subtitle="Click here to create group" />
         <ActionCard
           variant="blue"
           href="/ministry/communication/new"
@@ -53,7 +87,7 @@ export default function MinistryCommunicationPage() {
               </tr>
             </thead>
             <tbody>
-              {MESSAGES.map((m, i) => (
+              {messages.map((m, i) => (
                 <tr key={i} className="border-t border-[#f2f2f2] text-[12px]">
                   <td className="py-4">{m.title}</td>
                   <td className="py-4">
@@ -78,7 +112,7 @@ export default function MinistryCommunicationPage() {
                       {m.status}
                     </span>
                   </td>
-                  <td className="py-4">Jan 13, 2026</td>
+                  <td className="py-4">{m.date ? new Date(m.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Jan 13, 2026'}</td>
                   <td className="py-4">
                     <span className="flex items-center gap-2">
                       <span className="h-1.5 w-[70px] rounded-full bg-[#eaeaea]">

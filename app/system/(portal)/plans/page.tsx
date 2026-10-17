@@ -4,7 +4,9 @@ import { StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Check, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSystemStats } from '@/lib/api/system';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 type Plan = {
   id: number;
@@ -122,6 +124,19 @@ function PlanCard({ plan }: { plan: Plan }) {
 /** System → Plans & Billing (board 778:38441). */
 export default function SystemPlansPage() {
   const [tab, setTab] = useState(0);
+  const [revenue, setRevenue] = useState('$1300');
+  const [overdue, setOverdue] = useState('$150');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSystemStats()
+      .then((s) => {
+        if (!s) return;
+        if (s.givingVolume) setRevenue(s.givingVolume);
+        if (s.overduePayments) setOverdue(String(s.overduePayments));
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -135,7 +150,7 @@ export default function SystemPlansPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           title="Total Revenue (This Month)"
-          value="$1300"
+          value={revenue}
           variant="blue"
         />
         <StatCard
@@ -146,7 +161,7 @@ export default function SystemPlansPage() {
         />
         <StatCard
           title="Overdue Amount"
-          value="$150"
+          value={overdue}
           variant="white"
           subtitle="-5% from last month"
         />

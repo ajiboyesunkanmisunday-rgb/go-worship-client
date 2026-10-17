@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 import {
   AlignLeft,
   Bold,
@@ -46,9 +48,42 @@ const TONE = {
 };
 
 export default function SystemSupportPage() {
+  const [tickets, setTickets] = useState<Ticket[]>(TICKETS);
   const [active, setActive] = useState('t1');
-  const current = TICKETS.find((t) => t.id === active)!;
+  const current = tickets.find((t) => t.id === active) ?? tickets[0]!;
   const [reply, setReply] = useState('');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>('/system/support/tickets') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: Ticket[] = arr.map((t, i) => {
+          const status = String(t['status'] ?? 'Open');
+          const priority = String(t['priority'] ?? t['severity'] ?? 'High');
+          return {
+            id: String(t['id'] ?? t['ticketId'] ?? `t${i + 1}`),
+            name: String(t['tenantName'] ?? t['requesterName'] ?? t['name'] ?? 'Unknown'),
+            preview: String(t['subject'] ?? t['title'] ?? t['preview'] ?? ''),
+            badges: [
+              { label: status, tone: 'open' as const },
+              { label: `${priority} priority`, tone: 'priority' as const },
+            ],
+          };
+        });
+        setTickets(mapped);
+        if (mapped.length > 0) setActive(mapped[0].id);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -70,7 +105,7 @@ export default function SystemSupportPage() {
             My open tickets (8)
           </p>
           <div className="mt-2 flex flex-col gap-2">
-            {TICKETS.map((t) => (
+            {tickets.map((t) => (
               <button
                 key={t.id}
                 type="button"
