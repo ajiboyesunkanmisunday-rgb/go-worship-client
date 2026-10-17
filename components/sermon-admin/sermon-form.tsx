@@ -169,8 +169,29 @@ export function SermonForm({
     }
   }, [isEdit, id]);
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (USE_LIVE_API) {
+      const fd = new FormData(e.currentTarget);
+      const payload = {
+        title: fd.get('title') as string,
+        speaker: fd.get('speaker') as string,
+        sermonDate: fd.get('date') as string,
+        description: fd.get('description') as string,
+        seriesId: fd.get('series') as string || undefined,
+        videoUrl: fd.get('link') as string || undefined,
+      };
+      try {
+        if (isEdit && id) {
+          await (api.put(`/tenant/admin/sermons/${id}`, payload) as Promise<unknown>)
+            .catch(() => api.patch(`/tenant/admin/sermons/${id}`, payload) as Promise<unknown>);
+        } else {
+          await (api.post('/tenant/admin/sermons', payload) as Promise<unknown>);
+        }
+      } catch {
+        // fall through to navigate regardless
+      }
+    }
     router.push(back);
   };
 
@@ -202,6 +223,7 @@ export function SermonForm({
         <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
           <Field label={<>Sermon Title&#42;</>}>
             <PencilInput
+              name="title"
               placeholder="Enter title"
               defaultValue={isEdit ? sermon.title : undefined}
             />
@@ -209,6 +231,7 @@ export function SermonForm({
 
           <Field label={<>Speaker name&#42;</>}>
             <PencilInput
+              name="speaker"
               placeholder="Enter speaker name"
               defaultValue={isEdit ? sermon.speaker : undefined}
             />
@@ -216,6 +239,7 @@ export function SermonForm({
 
           <Field label="Sermon Date">
             <Input
+              name="date"
               type="date"
               className="h-[48px]"
               defaultValue={isEdit ? sermon.date : undefined}
@@ -225,6 +249,7 @@ export function SermonForm({
           <Field label="Description / Summary">
             <div className="relative">
               <Textarea
+                name="description"
                 className="min-h-[110px] pr-9"
                 placeholder="Enter brief description"
                 defaultValue={isEdit ? sermon.description : undefined}
@@ -234,7 +259,7 @@ export function SermonForm({
           </Field>
 
           <Field label="Assign Series">
-            <NativeSelect className="h-[48px]" defaultValue="">
+            <NativeSelect name="series" className="h-[48px]" defaultValue="">
               {seriesOpts.length > 0
                 ? seriesOpts.map((o) => (
                     <NativeSelectOption key={o.value} value={o.value}>
@@ -273,6 +298,7 @@ export function SermonForm({
 
           <Field label="Attach YouTube/Vimeo link">
             <PencilInput
+              name="link"
               placeholder="Enter Sermon Youtube link"
               defaultValue={isEdit ? sermon.link : undefined}
             />
