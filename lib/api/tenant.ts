@@ -143,6 +143,19 @@ export async function getTenantMembers(): Promise<TenantMember[]> {
   return findTableRows(data, 'customer', 'member', 'user').map(mapMember).filter((m) => m.name || m.email);
 }
 
+/** [VERIFY PATH] GET /tenant/admin/users/customers/:id */
+export async function getTenantMember(id: string): Promise<TenantMember | null> {
+  try {
+    const data = await api.get<unknown>(`/tenant/admin/users/customers/${id}`);
+    const rows = findTableRows(data, 'customer', 'member', 'user');
+    if (rows.length > 0) return mapMember(rows[0]);
+    if (data && typeof data === 'object') return mapMember(data as Record<string, unknown>);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /* -------- Tenant Group -------- */
 
 export type TenantGroup = {
