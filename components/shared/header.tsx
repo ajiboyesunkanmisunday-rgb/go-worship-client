@@ -10,16 +10,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
+import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function CompanyInfo() {
   const [name, setName] = useState('Celebration Church Int.');
+  const [location, setLocation] = useState('Ontario Canada, Canada City');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {
       if (b.organizationName) setName(b.organizationName);
     }).catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+        if (loc) setLocation(loc);
+      }).catch(() => {});
   }, []);
 
   return (
@@ -35,7 +42,7 @@ function CompanyInfo() {
           {name}
         </p>
         <span className="text-[13px] leading-[100%] tracking-[0%] text-brand-gray-500 md:text-[14px]">
-          Ontario Canada, Canada City
+          {location}
         </span>
       </div>
     </div>
