@@ -517,7 +517,7 @@ function GroupMemberSheet({
  * Giving Receipt slide-over (with Refund on failed rows) — not built yet,
  * tracked as a follow-up; see docs/design-audit.md.
  */
-type TxnRow = { status: string; amount: string; type: string; name?: string; date?: string; method?: string };
+type TxnRow = { status: string; amount: string; type: string; name?: string; date?: string; method?: string; id?: string };
 
 const TRANSACTIONS: TxnRow[] = [
   { status: 'Pending', amount: '$1000', type: 'General Offering' },
@@ -568,6 +568,7 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
             name: String(t['donorName'] ?? t['memberName'] ?? t['name'] ?? 'Anonymous'),
             date: rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
             method: String(t['paymentMethod'] ?? t['method'] ?? 'Bank transfer'),
+            id: String(t['transactionId'] ?? t['paymentReference'] ?? t['reference'] ?? t['id'] ?? ''),
           };
         });
         if (mapped.length > 0) setTransactions(mapped);
@@ -712,7 +713,7 @@ function GivingReceiptSheet({
             <ReceiptRow label="Fund / Campaign" value={row?.type ?? 'General Offering'} />
             <ReceiptRow label="Donation Type" value="One-time" />
             <ReceiptRow label="Payment Method" value={row?.method ?? 'Debit Card'} />
-            <ReceiptRow label="Transaction ID" value="TXN-02939493" />
+            <ReceiptRow label="Transaction ID" value={row?.id || 'TXN-02939493'} />
             <ReceiptRow
               label="Status"
               value={
