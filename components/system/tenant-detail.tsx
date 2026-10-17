@@ -237,7 +237,7 @@ export function TenantDetail({ id }: { id: string }) {
       ) : tab === 'Members' ? (
         <MembersTab id={id} />
       ) : tab === 'Giving' ? (
-        <GivingTab id={id} />
+        <GivingTab id={id} tenantName={tenant.name} />
       ) : tab === 'Groups' ? (
         <GroupsTab id={id} />
       ) : tab === 'Events' ? (
@@ -534,7 +534,7 @@ const TXN_STATUS: Record<string, string> = {
   Failed: 'text-[#eb0000]',
 };
 
-function GivingTab({ id }: { id: string }) {
+function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
   const [transactions, setTransactions] = useState<TxnRow[]>(TRANSACTIONS);
   const [sub, setSub] = useState<'Non Member' | 'Member'>('Non Member');
   const [receipt, setReceipt] = useState<{ failed: boolean } | null>(null);
@@ -654,6 +654,7 @@ function GivingTab({ id }: { id: string }) {
         open={!!receipt}
         failed={receipt?.failed ?? false}
         onClose={() => setReceipt(null)}
+        tenantName={tenantName}
       />
     </div>
   );
@@ -668,10 +669,12 @@ function GivingReceiptSheet({
   open,
   failed,
   onClose,
+  tenantName,
 }: {
   open: boolean;
   failed: boolean;
   onClose(): void;
+  tenantName?: string;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
@@ -687,10 +690,7 @@ function GivingReceiptSheet({
           </div>
 
           <div className="text-center">
-            <p className="text-[13px] font-semibold">Celebration Church Int.</p>
-            <p className="text-[11px] text-brand-gray-500">
-              Ontario Canada, Canada City
-            </p>
+            <p className="text-[13px] font-semibold">{tenantName ?? 'Celebration Church Int.'}</p>
           </div>
 
           <div>

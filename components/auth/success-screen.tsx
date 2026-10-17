@@ -1,6 +1,11 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 type SuccessScreenProps = {
   title?: string;
@@ -11,10 +16,21 @@ type SuccessScreenProps = {
 
 export function SuccessScreen({
   title = 'Successful',
-  subtitle = 'Welcome to Celebration Church International Go worship Platform',
+  subtitle,
   actionLabel = 'Go to dashboard',
   actionHref = '/dashboard',
 }: SuccessScreenProps) {
+  const [defaultSubtitle, setDefaultSubtitle] = useState('Welcome to Celebration Church International Go worship Platform');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setDefaultSubtitle(`Welcome to ${b.organizationName} Go worship Platform`);
+    }).catch(() => {});
+  }, []);
+
+  const displaySubtitle = subtitle ?? defaultSubtitle;
+
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col items-center gap-6 rounded-[11px] bg-white px-6 py-12 shadow-[0_4px_30px_rgba(0,0,0,0.06)] lg:px-16 lg:py-16">
       <Image
@@ -30,7 +46,7 @@ export function SuccessScreen({
           {title}
         </h1>
         <p className="max-w-[400px] font-poppins text-[16px] font-light lg:text-[18px]">
-          {subtitle}
+          {displaySubtitle}
         </p>
       </div>
 

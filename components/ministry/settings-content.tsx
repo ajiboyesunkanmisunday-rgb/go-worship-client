@@ -22,6 +22,7 @@ import {
   type TenantInvoice,
 } from '@/lib/api/tenant';
 import { getProfile, type Profile } from '@/lib/api/auth';
+import { api } from '@/lib/api/client';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -428,11 +429,17 @@ function SubscriptionTab() {
 function ProfileTab() {
   const [branding, setBranding] = useState<TenantBranding>({});
   const [profile, setProfile] = useState<Profile>({});
+  const [location, setLocation] = useState('Ontario, Canada');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then(setBranding).catch(() => {});
     getProfile().then(setProfile).catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+        if (loc) setLocation(loc);
+      }).catch(() => {});
   }, []);
 
   return (
@@ -440,7 +447,7 @@ function ProfileTab() {
       <Field label="Church Name" value={branding.organizationName || 'Celebration Church Int.'} />
       <Field label="Email" value={profile.email || 'admin@celebration.org'} />
       <Field label="Phone number" value={profile.mobilePhone || '(+62) 821 554 - 5432'} />
-      <Field label="Location" value="Ontario, Canada" />
+      <Field label="Location" value={location} />
     </div>
   );
 }

@@ -1,11 +1,25 @@
+'use client';
+
 import { AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 import { MessageIcon } from '@/icons/message';
 import { GoogleIcon } from '@/icons/socials';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 export default function SignupPage() {
+  const [orgName, setOrgName] = useState('Celebration Church International');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
+  }, []);
+
   return (
     <AuthShell>
       <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
@@ -22,7 +36,7 @@ export default function SignupPage() {
             Create a free account
           </h1>
           <p className="max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px]">
-            Welcome to Celebration Church International Go worship Platform
+            Welcome to {orgName} Go worship Platform
           </p>
         </div>
 
