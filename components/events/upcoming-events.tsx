@@ -1,10 +1,28 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import { cn } from '@/lib/utils';
-import { events } from '@/data/events';
+import { events as MOCK_EVENTS } from '@/data/events';
 import { EventCard } from './event-card';
+import { getSelfEvents, TenantEvent } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
+import type { Event } from '@/types/event';
+
+function mapTenantEvent(e: TenantEvent): Event {
+  return {
+    id: e.id,
+    name: e.name,
+    eventDate: e.eventDate,
+    eventTime: e.eventTime || '00:00',
+    location: e.location,
+    type: e.type,
+    status: e.status.toLowerCase(),
+    createdAt: e.createdAt,
+    registered: true,
+    eventImg: '',
+  };
+}
 
 type Props = {
   isIntercepted?: boolean;
@@ -15,6 +33,19 @@ export function UpcomingEvents({ isIntercepted = false }: Props) {
     () => (isIntercepted ? undefined : '/dashboard/events'),
     [isIntercepted]
   );
+  const [events, setEvents] = useState<Event[]>(MOCK_EVENTS);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSelfEvents()
+      .then((data) => {
+        const upcoming = data
+          .filter((e) => e.status.toLowerCase().includes('upcoming') || e.status.toLowerCase() === 'active')
+          .map(mapTenantEvent);
+        if (upcoming.length > 0) setEvents(upcoming);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <SheetPage className="w-full max-w-[700px]! gap-0" backLink={returnUrl}>

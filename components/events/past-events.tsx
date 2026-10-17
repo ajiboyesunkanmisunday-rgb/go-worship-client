@@ -1,10 +1,28 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import { cn } from '@/lib/utils';
-import { events } from '@/data/events';
+import { events as MOCK_EVENTS } from '@/data/events';
 import { EventCard } from './event-card';
+import { getSelfEvents, TenantEvent } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
+import type { Event } from '@/types/event';
+
+function mapTenantEvent(e: TenantEvent): Event {
+  return {
+    id: e.id,
+    name: e.name,
+    eventDate: e.eventDate,
+    eventTime: e.eventTime || '00:00',
+    location: e.location,
+    type: e.type,
+    status: e.status.toLowerCase(),
+    createdAt: e.createdAt,
+    registered: true,
+    eventImg: '',
+  };
+}
 
 type Props = {
   isIntercepted?: boolean;
@@ -15,6 +33,22 @@ export function PastEvents({ isIntercepted = false }: Props) {
     () => (isIntercepted ? undefined : '/dashboard/events'),
     [isIntercepted]
   );
+  const [events, setEvents] = useState<Event[]>(MOCK_EVENTS.slice(0, 6));
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSelfEvents()
+      .then((data) => {
+        const past = data
+          .filter((e) => {
+            const s = e.status.toLowerCase();
+            return s.includes('past') || s.includes('completed') || s.includes('ended');
+          })
+          .map(mapTenantEvent);
+        if (past.length > 0) setEvents(past);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <SheetPage className="w-full max-w-[700px]! gap-0" backLink={returnUrl}>
@@ -45,7 +79,7 @@ export function PastEvents({ isIntercepted = false }: Props) {
         </div>
 
         <div className="w-full flex flex-col justify-start items-start gap-6">
-          {events.slice(0, 6).map((event) => (
+          {events.map((event) => (
             <EventCard key={event.id} event={event} isPast />
           ))}
         </div>

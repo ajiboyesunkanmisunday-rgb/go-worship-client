@@ -1,7 +1,12 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { NotepadIcon2 } from '@/icons/notes';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import Link from 'next/link';
+import { getSelfEvents } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 type AnalyticsCardProps = {
   title: string;
@@ -68,6 +73,26 @@ function AnalyticsCard({
 }
 
 export function Analytics() {
+  const [counts, setCounts] = useState({ upcoming: 5, registered: 9, past: 4 });
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSelfEvents()
+      .then((data) => {
+        const upcoming = data.filter((e) => {
+          const s = e.status.toLowerCase();
+          return s.includes('upcoming') || s === 'active';
+        }).length;
+        const past = data.filter((e) => {
+          const s = e.status.toLowerCase();
+          return s.includes('past') || s.includes('completed') || s.includes('ended');
+        }).length;
+        const registered = data.length;
+        setCounts({ upcoming, registered, past });
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="w-full flex flex-col justify-start items-start gap-10">
       <div
@@ -91,19 +116,19 @@ export function Analytics() {
       <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
         <AnalyticsCard
           title="Upcoming Events"
-          value="5"
+          value={String(counts.upcoming)}
           className="bg-[#E9F2FE]"
           href="/dashboard/events/upcoming"
         />
         <AnalyticsCard
           title="Registered Events"
-          value="9"
+          value={String(counts.registered)}
           className="bg-[#FFF7E9]"
           href="/dashboard/events/registered"
         />
         <AnalyticsCard
           title="Past Events"
-          value="4"
+          value={String(counts.past)}
           className="bg-[#FFFFFF]"
           iconBgColor="#F6F6F6"
           href="/dashboard/events/past"
