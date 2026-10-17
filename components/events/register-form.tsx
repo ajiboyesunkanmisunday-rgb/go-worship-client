@@ -5,6 +5,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { SheetPage } from '../ui/sheet-page';
 import {
@@ -19,6 +20,9 @@ import { Input } from '../ui/input';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 import { Button } from '../ui/button';
 import { fetchEvent } from '@/data/events';
+import { getSelfEvent } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
+import type { Event } from '@/types/event';
 
 const schema = z.object({
   fullName: z.string().min(1, { message: 'Please enter your name' }),
@@ -34,7 +38,26 @@ type Schema = z.infer<typeof schema>;
 export function RegisterForm() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const event = fetchEvent(params.id);
+  const [event, setEvent] = useState<Event | null>(fetchEvent(params.id) ?? null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSelfEvent(params.id).then((e) => {
+      if (!e) return;
+      setEvent({
+        id: e.id,
+        name: e.name,
+        eventDate: e.eventDate,
+        eventTime: e.eventTime || '00:00',
+        location: e.location,
+        type: e.type,
+        status: e.status.toLowerCase(),
+        createdAt: e.createdAt,
+        registered: true,
+        eventImg: '',
+      });
+    }).catch(() => {});
+  }, [params.id]);
 
   const form = useForm<Schema>({
     resolver: zodResolver(schema),

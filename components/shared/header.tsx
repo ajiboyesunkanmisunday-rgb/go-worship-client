@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import { CurrencyCircleDollarIcon } from '@/icons/currency';
@@ -6,8 +8,20 @@ import { RoleSwitcher } from '@/components/shared/role-switcher';
 import { ProfileMenu } from '@/components/shared/profile-menu';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function CompanyInfo() {
+  const [name, setName] = useState('Celebration Church Int.');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setName(b.organizationName);
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="flex flex-row items-center justify-start gap-3">
       <Image
@@ -18,7 +32,7 @@ function CompanyInfo() {
       />
       <div className="hidden flex-col items-start justify-start gap-1 md:flex">
         <p className="text-[14px] leading-[100%] font-bold tracking-[0%] md:text-[16px]">
-          Celebration Church Int.
+          {name}
         </p>
         <span className="text-[13px] leading-[100%] tracking-[0%] text-brand-gray-500 md:text-[14px]">
           Ontario Canada, Canada City

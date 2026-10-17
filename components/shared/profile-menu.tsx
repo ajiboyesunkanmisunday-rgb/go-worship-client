@@ -7,14 +7,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { getProfile } from '@/lib/api/auth';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * Avatar menu in the member top bar — surfaces the Profile page actions
  * (view profile / deactivate / log out) without navigating first.
  */
 export function ProfileMenu({
-  name = 'Natashia Khalerira',
-  email = 'Khalerira002@gmail.com',
+  name: nameProp,
+  email: emailProp,
   profileHref = '/dashboard/profile',
 }: {
   name?: string;
@@ -26,6 +28,18 @@ export function ProfileMenu({
   const [deactivate, setDeactivate] = useState(false);
   const [logout, setLogout] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [displayName, setDisplayName] = useState(nameProp ?? 'Natashia Khalerira');
+  const [displayEmail, setDisplayEmail] = useState(emailProp ?? 'Khalerira002@gmail.com');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getProfile().then((p) => {
+      if (!p) return;
+      const full = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      if (full) setDisplayName(full);
+      if (p.email) setDisplayEmail(p.email);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -81,10 +95,10 @@ export function ProfileMenu({
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold text-[#1a1a1a]">
-                {name}
+                {displayName}
               </span>
               <span className="block truncate text-[11px] text-brand-gray-500">
-                {email}
+                {displayEmail}
               </span>
             </span>
           </div>
