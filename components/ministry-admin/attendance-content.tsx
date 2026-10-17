@@ -38,6 +38,7 @@ const MOCK_EVENTS: EventRow[] = [
 export function AttendanceContent() {
   const [events, setEvents] = useState<EventRow[]>(MOCK_EVENTS);
   const [totalRegistration, setTotalRegistration] = useState(15);
+  const [chartData, setChartData] = useState(MOCK_CHART_DATA);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -56,6 +57,9 @@ export function AttendanceContent() {
 
     getUnifiedDashboard().then((s) => {
       if (s && s.totalEvents > 0) setTotalRegistration(s.totalEvents);
+      if (s && s.trend.length > 0) {
+        setChartData(s.trend.map((p) => ({ month: p.label, value: p.value })));
+      }
     }).catch(() => {});
   }, []);
 
@@ -73,7 +77,7 @@ export function AttendanceContent() {
             </span>
           </div>
           <ChartContainer config={chartConfig} className="h-[280px] w-full">
-            <BarChart data={MOCK_CHART_DATA} margin={{ top: 12, right: 8, bottom: 8, left: 8 }}>
+            <BarChart data={chartData} margin={{ top: 12, right: 8, bottom: 8, left: 8 }}>
               <XAxis
                 dataKey="month"
                 tickLine={{ strokeDasharray: '4 2' }}

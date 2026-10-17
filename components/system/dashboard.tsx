@@ -50,10 +50,10 @@ function fmt(n: number | string): string {
 
 export function SystemDashboard() {
   const [stats, setStats] = useState<SystemStats>(MOCK_STATS);
+  const [trendData, setTrendData] = useState(MOCK_TREND);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    // Try unified endpoint first (role-aware, richer data), fall back to /system/dashboard.
     getUnifiedDashboard().then((u) => {
       if (u && (u.totalTenants || u.totalUsers)) {
         setStats({
@@ -66,6 +66,9 @@ export function SystemDashboard() {
         });
       } else {
         getSystemStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+      }
+      if (u && u.trend.length > 0) {
+        setTrendData(u.trend.map((p) => ({ month: p.label, value: p.value })));
       }
     }).catch(() => {
       getSystemStats().then((s) => { if (s) setStats(s); }).catch(() => {});
@@ -104,7 +107,7 @@ export function SystemDashboard() {
           <h2 className="text-[18px] font-bold">Giving Volume Trend</h2>
           <ChartContainer config={chartConfig} className="mt-4 h-[260px] w-full">
             <AreaChart
-              data={MOCK_TREND}
+              data={trendData}
               margin={{ top: 10, right: 8, bottom: 4, left: 4 }}
             >
               <defs>
