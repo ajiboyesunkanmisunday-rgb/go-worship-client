@@ -81,7 +81,13 @@ export function GuestLoginForm({
       });
       const data = await res.json();
       if (!res.ok) { setError(data?.message ?? 'Invalid code'); return; }
-      router.push(redirectTo);
+      // If the backend says the guest can upgrade, offer the upgrade flow first.
+      // The upgrade page has a "Continue as guest" skip link that goes to redirectTo.
+      if (data?.canUpgrade) {
+        router.push('/auth/upgrade-account');
+      } else {
+        router.push(redirectTo);
+      }
     } catch {
       setError('Something went wrong. Please try again.');
     } finally { setBusy(false); }
