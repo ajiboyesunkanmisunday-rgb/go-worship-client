@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * System → Audit Logs (778:38441). Matches the design: heading + "Track all
@@ -51,10 +53,56 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
+function normalizeAction(raw: string): string {
+  const u = raw.toUpperCase();
+  if (u.includes('CREATE')) return 'Created';
+  if (u.includes('UPDATE') || u.includes('MODIFY') || u.includes('EDIT')) return 'Updated';
+  if (u.includes('SUSPEND') || u.includes('DISABLE') || u.includes('DEACTIVATE')) return 'Suspended';
+  if (u.includes('DELETE') || u.includes('REMOVE')) return 'Deleted';
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+}
+
+function fmtLogDate(iso?: string): string {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    });
+  } catch { return iso; }
+}
+
 export default function SystemAuditLogsPage() {
   const [selected, setSelected] = useState<Log | null>(null);
+  const [logs, setLogs] = useState<Log[]>(LOGS);
 
-  const rows: SmartRow[] = LOGS.map((l) => ({
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>('/system/audit-logs') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: Log[] = arr.map((e) => ({
+          action: normalizeAction(String(e['action'] ?? e['eventType'] ?? e['type'] ?? '')),
+          resource: String(e['resource'] ?? e['entityType'] ?? e['target'] ?? ''),
+          user: String(e['performedBy'] ?? e['actor'] ?? e['user'] ?? e['userId'] ?? 'Administrator'),
+          details: String(e['description'] ?? e['details'] ?? e['message'] ?? ''),
+          ip: String(e['ipAddress'] ?? e['ip'] ?? ''),
+          time: fmtLogDate(String(e['createdAt'] ?? e['timestamp'] ?? e['eventTime'] ?? '')),
+        }));
+        setLogs(mapped);
+      })
+      .catch(() => {});
+  }, []);
+
+  const rows: SmartRow[] = logs.map((l) => ({
     group: l.action,
     text: [l.action, l.resource, l.user, l.details, l.ip, l.time],
     cells: [
@@ -67,7 +115,7 @@ export default function SystemAuditLogsPage() {
       <button
         key="m"
         type="button"
-        onClick={() => setSelected(l)}
+        onClick={() => { setSelected(l); }}
         aria-label="Log details"
         className="flex size-7 items-center justify-center rounded-full hover:bg-[#eef1f6]"
       >
@@ -75,6 +123,8 @@ export default function SystemAuditLogsPage() {
       </button>,
     ],
   }));
+
+  const filterOptions = [...new Set(logs.map((l) => l.action))].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-5">
@@ -96,7 +146,7 @@ export default function SystemAuditLogsPage() {
           '',
         ]}
         rows={rows}
-        filterOptions={['Created', 'Updated', 'Suspended', 'Deleted']}
+        filterOptions={filterOptions.length > 0 ? filterOptions : ['Created', 'Updated', 'Suspended', 'Deleted']}
         filterAll="All actions"
       />
 
