@@ -3,6 +3,8 @@
 import { cn } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 type Notification = {
   title: string;
@@ -41,7 +43,32 @@ export function NotificationsBell({
   tone?: 'light' | 'dark';
 }) {
   const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    type R = Record<string, unknown>;
+    const tryFetch = (path: string) => api.get<unknown>(path) as Promise<unknown>;
+    tryFetch('/self/notifications')
+      .catch(() => tryFetch('/tenant/notifications'))
+      .then((data) => {
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: Notification[] = arr.map((n) => ({
+          title: String(n['title'] ?? n['subject'] ?? n['name'] ?? 'Notification'),
+          body: String(n['body'] ?? n['message'] ?? n['description'] ?? n['content'] ?? ''),
+          unread: !n['read'] && !n['isRead'],
+        })).filter((n) => n.body);
+        if (mapped.length > 0) setNotifications(mapped);
+      }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +103,9 @@ export function NotificationsBell({
         )}
       >
         <Bell className={tone === 'dark' ? 'size-5' : 'size-6'} />
-        <span className="absolute top-0 right-0 size-[7px] rounded-full bg-brand-red" />
+        {notifications.some((n) => n.unread) && (
+          <span className="absolute top-0 right-0 size-[7px] rounded-full bg-brand-red" />
+        )}
       </button>
 
       {open && (
@@ -92,7 +121,7 @@ export function NotificationsBell({
           </h2>
 
           <ul className="mt-3 flex flex-col">
-            {NOTIFICATIONS.map((n, i) => (
+            {notifications.map((n, i) => (
               <li
                 key={i}
                 className={cn(
