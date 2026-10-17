@@ -14,6 +14,8 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ReceiptButton } from '@/components/ministry/receipt-button';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
 import type { Transaction } from '@/components/ministry/shared';
@@ -365,10 +367,19 @@ export function MinistryDashboard() {
   const [txns, setTxns] = useState<Transaction[]>(DEFAULT_TXNS);
   const [activity, setActivity] = useState<ActivityItem[]>(DEFAULT_ACTIVITY);
   const [storageSubtitle, setStorageSubtitle] = useState('2.3GB · 40 items');
+  const [userName, setUserName] = useState('');
+  const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getUnifiedDashboard().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getProfile().then((p) => {
+      const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      if (name) setUserName(name);
+    }).catch(() => {});
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
     (api.get<Record<string, unknown>>('/tenant/admin/media/stats') as Promise<Record<string, unknown>>)
       .catch(() => api.get<Record<string, unknown>>('/tenant/media/stats') as Promise<Record<string, unknown>>)
       .then((d) => {
@@ -426,10 +437,10 @@ export function MinistryDashboard() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="flex items-center gap-2 text-[28px] font-bold lg:text-[32px]">
-          Welcome back! 👋
+          Welcome back{userName ? `, ${userName}` : ''}! 👋
         </h1>
         <p className="mt-1 text-[15px] text-brand-gray-500">
-          Welcome to the church dashboard
+          Welcome to {orgName || 'the church'} dashboard
         </p>
       </div>
 
