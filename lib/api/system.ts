@@ -110,6 +110,25 @@ export async function getSystemTenants(): Promise<SystemTenant[]> {
   return rows.map(mapTenant).filter((t) => t.name);
 }
 
+/** [VERIFY PATH] GET /system/dashboard/admin/tenants/:id */
+export async function getSystemTenant(id: string): Promise<SystemTenant | null> {
+  try {
+    const data = await api.get<unknown>(`/system/dashboard/admin/tenants/${id}`);
+    const rows = findTableRows(data, 'tenant');
+    if (rows.length > 0) return mapTenant(rows[0]);
+    if (data && typeof data === 'object') return mapTenant(data as Record<string, unknown>);
+    return null;
+  } catch {
+    // Fall back to fetching all and filtering by id
+    try {
+      const all = await getSystemTenants();
+      return all.find((t) => t.id === id) ?? null;
+    } catch {
+      return null;
+    }
+  }
+}
+
 /* -------- System user list -------- */
 
 export type SystemUser = {

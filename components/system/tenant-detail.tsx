@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSystemTenant, type SystemTenant } from '@/lib/api/system';
+import { USE_LIVE_API } from '@/lib/api/config';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   ArrowLeft,
@@ -56,12 +58,28 @@ const STATS = [
   { label: 'Current Plan', value: 'Enterprise', bg: 'bg-[#eef2fb]' },
 ];
 
+const MOCK_TENANT: SystemTenant = {
+  id: 'mock',
+  name: 'Grace Community Church',
+  domain: 'grace-community.churchapp.com',
+  status: 'Active',
+  plan: 'Enterprise',
+  members: 830,
+  createdAt: 'Jan 10, 2025',
+};
+
 export function TenantDetail({ id }: { id: string }) {
   const router = useRouter();
   const back = '/system/tenants';
   const [tab, setTab] = useState<Tab>('Overview');
   const [menu, setMenu] = useState(false);
   const [del, setDel] = useState(false);
+  const [tenant, setTenant] = useState<SystemTenant>(MOCK_TENANT);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSystemTenant(id).then((t: SystemTenant | null) => { if (t) setTenant(t); }).catch(() => {});
+  }, [id]);
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
@@ -78,13 +96,18 @@ export function TenantDetail({ id }: { id: string }) {
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-[26px] font-bold">Grace Community Church</h1>
-              <span className="rounded-full bg-[#eafaf0] px-3 py-1 text-[12px] font-medium text-[#22a45d]">
-                Active
+              <h1 className="text-[26px] font-bold">{tenant.name}</h1>
+              <span className={cn(
+                'rounded-full px-3 py-1 text-[12px] font-medium',
+                tenant.status === 'Active' ? 'bg-[#eafaf0] text-[#22a45d]' :
+                tenant.status === 'Suspended' ? 'bg-[#fef0f0] text-[#eb0000]' :
+                'bg-[#f6f8fb] text-brand-gray-500'
+              )}>
+                {tenant.status}
               </span>
             </div>
             <p className="text-[14px] text-brand-gray-500">
-              grace-community.churchapp.com
+              {tenant.domain}
             </p>
           </div>
         </div>
