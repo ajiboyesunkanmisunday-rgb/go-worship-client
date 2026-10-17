@@ -4,8 +4,10 @@ import {
   ActionCard,
   StatCard,
   TransactionsTable,
+  type Transaction,
 } from '@/components/ministry/shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
+import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { DollarSign } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -17,13 +19,39 @@ const MOCK = {
   failedTransactions: '20',
 };
 
+function mapStatus(s?: string): Transaction['status'] {
+  if (s === 'SUCCEEDED') return 'Success';
+  if (s === 'FAILED' || s === 'CANCELED' || s === 'EXPIRED') return 'Failed';
+  return 'Pending';
+}
+
 export default function MinistryFinancePage() {
   const [totalGiving, setTotalGiving] = useState(MOCK.totalGiving);
+  const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
+      .catch(() => {});
+    getCustomerPayments(0, 20)
+      .then((page) => {
+        const rows = (page?.content ?? []).map((p) => {
+          const g = paymentToGiving(p);
+          const fmt = (n: number, cur: string) =>
+            new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(n);
+          const date = g.date
+            ? new Date(g.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+          return {
+            status: mapStatus(g.status),
+            type: g.purpose,
+            amount: fmt(g.amount, g.currency),
+            date,
+          } satisfies Transaction;
+        });
+        if (rows.length > 0) setTxns(rows);
+      })
       .catch(() => {});
   }, []);
 
@@ -47,7 +75,7 @@ export default function MinistryFinancePage() {
         />
       </div>
 
-      <TransactionsTable />
+      <TransactionsTable rows={txns} />
     </div>
   );
 }

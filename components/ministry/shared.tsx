@@ -109,6 +109,11 @@ const STATUS = {
 export type Transaction = {
   status: keyof typeof STATUS;
   type: string;
+  name?: string;
+  date?: string;
+  amount?: string;
+  method?: string;
+  paymentId?: string;
 };
 
 const DEFAULT_TXNS: Transaction[] = [
@@ -128,17 +133,17 @@ export function TransactionsTable({
   const smartRows: SmartRow[] = rows.map((t, i) => ({
     group: t.status,
     text: [
-      'John Christain',
+      t.name ?? 'John Christain',
       t.status,
-      'June 12, 2025',
-      '$2000',
-      'Bank transfer',
+      t.date ?? 'June 12, 2025',
+      t.amount ?? '$2000',
+      t.method ?? 'Bank transfer',
       t.type,
     ],
     cells: [
       <span key="n" className="flex items-center gap-2">
         <span className="size-6 rounded-full bg-brand-gray-200" />
-        John Christain
+        {t.name ?? 'John Christain'}
       </span>,
       <span
         key="s"
@@ -149,9 +154,9 @@ export function TransactionsTable({
       >
         {t.status}
       </span>,
-      'June 12, 2025',
-      '$2000',
-      'Bank transfer',
+      t.date ?? 'June 12, 2025',
+      t.amount ?? '$2000',
+      t.method ?? 'Bank transfer',
       t.type,
       <ReceiptButton key="a" highlighted={i === 0} />,
     ],
