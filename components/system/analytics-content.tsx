@@ -11,6 +11,7 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
 
 /**
  * System → Analytics (778:38441). Distinct from the Ministry AnalyticsContent
@@ -155,10 +156,17 @@ function tableFor(tab: Tab): { title: string; headers: string[]; rows: SmartRow[
   };
 }
 
+type LiveTxn = { name: string; status: string; amount: string; type: string };
+type LiveEvent = { name: string; date: string; loc: string; reg: string; status: string };
+type LiveSub = { tenant: string; plan: string; status: string; amount: string; renewal: string };
+
 export function SystemAnalyticsContent() {
   const [tab, setTab] = useState<Tab>('Finance');
   const [liveTenants, setLiveTenants] = useState<SystemTenant[] | null>(null);
   const [financeTrend, setFinanceTrend] = useState<{ month: string; value: number }[]>([]);
+  const [liveTxns, setLiveTxns] = useState<LiveTxn[] | null>(null);
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[] | null>(null);
+  const [liveSubs, setLiveSubs] = useState<LiveSub[] | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -168,6 +176,84 @@ export function SystemAnalyticsContent() {
         if (s && s.trend.length > 0) {
           setFinanceTrend(s.trend.map((p) => ({ month: p.label, value: p.value })));
         }
+      })
+      .catch(() => {});
+
+    (api.get<unknown>('/system/transactions?page=0&size=10') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: LiveTxn[] = arr.map((t) => {
+          const raw = String(t['status'] ?? '').toUpperCase();
+          const status = raw.includes('SUCCESS') || raw.includes('COMPLET') ? 'Success'
+            : raw.includes('FAIL') || raw.includes('CANCEL') ? 'Failed' : 'Pending';
+          const rawAmt = Number(t['amount'] ?? t['totalAmount'] ?? 0);
+          const amount = rawAmt ? `$${rawAmt.toLocaleString()}` : String(t['amountFormatted'] ?? '');
+          return {
+            name: String(t['memberName'] ?? t['name'] ?? t['email'] ?? ''),
+            status, amount,
+            type: String(t['type'] ?? t['purpose'] ?? t['category'] ?? 'General Offering'),
+          };
+        }).filter((t) => t.name);
+        if (mapped.length > 0) setLiveTxns(mapped);
+      })
+      .catch(() => {});
+
+    (api.get<unknown>('/system/events?page=0&size=10') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : [];
+        if (arr.length === 0) return;
+        const mapped: LiveEvent[] = arr.map((e) => {
+          const rawDate = String(e['eventDate'] ?? e['date'] ?? e['startDate'] ?? '');
+          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const raw = String(e['status'] ?? '').toUpperCase();
+          const status = raw.includes('CANCEL') ? 'Inactive' : raw.includes('COMPLET') ? 'Inactive' : 'Active';
+          return {
+            name: String(e['name'] ?? e['title'] ?? e['eventName'] ?? ''),
+            date, loc: String(e['location'] ?? e['venue'] ?? ''),
+            reg: String(e['registrations'] ?? e['registrationCount'] ?? e['attendees'] ?? '0'),
+            status,
+          };
+        }).filter((e) => e.name);
+        if (mapped.length > 0) setLiveEvents(mapped);
+      })
+      .catch(() => {});
+
+    (api.get<unknown>('/system/billing/subscriptions?page=0&size=10') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : [];
+        if (arr.length === 0) return;
+        const mapped: LiveSub[] = arr.map((s) => {
+          const rawRenewal = String(s['renewalDate'] ?? s['nextBillingDate'] ?? s['endDate'] ?? '');
+          const renewal = rawRenewal ? new Date(rawRenewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+          const raw = String(s['status'] ?? '').toUpperCase();
+          const status = raw.includes('INACTIV') || raw.includes('CANCEL') ? 'Inactive' : 'Active';
+          const rawAmt = Number(s['amount'] ?? s['price'] ?? 0);
+          const amount = rawAmt ? `$${rawAmt}` : String(s['amountFormatted'] ?? '');
+          return {
+            tenant: String(s['tenantName'] ?? s['orgName'] ?? s['name'] ?? ''),
+            plan: String(s['planName'] ?? s['plan'] ?? ''),
+            status, amount, renewal,
+          };
+        }).filter((s) => s.tenant);
+        if (mapped.length > 0) setLiveSubs(mapped);
       })
       .catch(() => {});
   }, []);
@@ -186,6 +272,51 @@ export function SystemAnalyticsContent() {
             <span key="t" className="font-medium">{t.name}</span>,
             <Badge key="s" value={t.status} />,
             t.plan, '—', t.members, '—', t.createdAt,
+            <span key="a" className="text-brand-gray-500">•••</span>,
+          ],
+        })),
+      };
+    }
+    if (tab === 'Finance' && liveTxns) {
+      return {
+        title: 'Recent Transactions',
+        headers: ['Name/Email', 'Status', 'Date', 'Amount', 'Method', 'Type', 'Action'],
+        rows: liveTxns.map((t) => ({
+          group: t.status,
+          text: [t.name, t.status, '—', t.amount, 'Bank transfer', t.type],
+          cells: [
+            <span key="n" className="font-medium">{t.name}</span>,
+            <Badge key="s" value={t.status} />, '—', t.amount, 'Bank transfer', t.type,
+            <span key="a" className="text-brand-gray-500">•••</span>,
+          ],
+        })),
+      };
+    }
+    if (tab === 'Events' && liveEvents) {
+      return {
+        title: 'Recent Events',
+        headers: ['Event Name', 'Date & Time', 'Location', 'Registrations', 'Status', 'Action'],
+        rows: liveEvents.map((e) => ({
+          group: e.status,
+          text: [e.name, e.date, e.loc, e.reg, e.status],
+          cells: [
+            <span key="n" className="font-medium">{e.name}</span>,
+            e.date, e.loc, e.reg, <Badge key="s" value={e.status} />,
+            <span key="a" className="text-brand-gray-500">•••</span>,
+          ],
+        })),
+      };
+    }
+    if (tab === 'Subscriptions' && liveSubs) {
+      return {
+        title: 'Recent Subscriptions',
+        headers: ['Tenant', 'Plan', 'Status', 'Amount', 'Renewal', 'Action'],
+        rows: liveSubs.map((s) => ({
+          group: s.status,
+          text: [s.tenant, s.plan, s.status, s.amount, s.renewal],
+          cells: [
+            <span key="t" className="font-medium">{s.tenant}</span>,
+            s.plan, <Badge key="s" value={s.status} />, s.amount, s.renewal,
             <span key="a" className="text-brand-gray-500">•••</span>,
           ],
         })),

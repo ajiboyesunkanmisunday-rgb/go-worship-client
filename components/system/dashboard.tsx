@@ -9,6 +9,7 @@ import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import { getSystemStats, type SystemStats } from '@/lib/api/system';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
 
 const MOCK_TREND = [
   { month: 'May', value: 220 },
@@ -51,6 +52,8 @@ function fmt(n: number | string): string {
 export function SystemDashboard() {
   const [stats, setStats] = useState<SystemStats>(MOCK_STATS);
   const [trendData, setTrendData] = useState(MOCK_TREND);
+  const [activity, setActivity] = useState(MOCK_ACTIVITY);
+  const [plans, setPlans] = useState(MOCK_PLANS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -73,6 +76,45 @@ export function SystemDashboard() {
     }).catch(() => {
       getSystemStats().then((s) => { if (s) setStats(s); }).catch(() => {});
     });
+
+    (api.get<unknown>('/system/audit-logs?page=0&size=5') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : [];
+        if (arr.length === 0) return;
+        const mapped = arr.map((a) => {
+          const rawTs = String(a['createdAt'] ?? a['timestamp'] ?? a['actionDate'] ?? '');
+          const ts = rawTs ? new Date(rawTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          return {
+            title: String(a['action'] ?? a['title'] ?? a['message'] ?? a['eventType'] ?? ''),
+            meta: `${String(a['tenantName'] ?? a['orgName'] ?? a['performedBy'] ?? '')} · ${ts}`.replace(/^·\s*$/, ''),
+          };
+        }).filter((a) => a.title).slice(0, 5);
+        if (mapped.length > 0) setActivity(mapped);
+      })
+      .catch(() => {});
+
+    (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: [string, string][] = arr
+          .map((p) => [String(p['name'] ?? p['planName'] ?? ''), String(p['tenantCount'] ?? p['count'] ?? p['subscribers'] ?? '0')] as [string, string])
+          .filter(([name]) => name);
+        if (mapped.length > 0) setPlans(mapped);
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -144,7 +186,7 @@ export function SystemDashboard() {
         <div className="rounded-[14px] bg-white p-6">
           <h2 className="text-[18px] font-bold">Recent Activity</h2>
           <ul className="mt-4 flex flex-col gap-4">
-            {MOCK_ACTIVITY.map((a, i) => (
+            {activity.map((a, i) => (
               <li key={i} className="flex gap-3">
                 <span className="mt-1 size-2 shrink-0 rounded-full bg-brand-blue" />
                 <div>
@@ -163,7 +205,7 @@ export function SystemDashboard() {
         <div className="rounded-[14px] bg-white p-5">
           <p className="text-[14px] text-brand-gray-600">Plan Distribution</p>
           <div className="mt-3 flex flex-col gap-2 text-[13px]">
-            {MOCK_PLANS.map(([plan, n]) => (
+            {plans.map(([plan, n]) => (
               <div key={plan} className="flex items-center justify-between">
                 <span className="text-brand-gray-500">{plan}</span>
                 <span className="font-semibold">{n}</span>

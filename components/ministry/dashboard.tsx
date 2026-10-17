@@ -15,6 +15,7 @@ import { ReceiptButton } from '@/components/ministry/receipt-button';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
 import type { Transaction } from '@/components/ministry/shared';
 
 /* ---------------- Stat cards ---------------- */
@@ -196,17 +197,19 @@ function QuickActions() {
 
 /* ---------------- Recent activity ---------------- */
 
-const ACTIVITY = [
-  { state: 'Published' },
-  { state: 'Published' },
-  { state: 'Uploading' },
-  { state: 'Uploading' },
-  { state: 'Published' },
+type ActivityItem = { title: string; desc: string; date: string; state: string };
+
+const DEFAULT_ACTIVITY: ActivityItem[] = [
+  { title: 'Faith in Action', desc: 'Weekly faith teaching', date: 'Jan 10, 2025', state: 'Published' },
+  { title: 'Hope in Motion', desc: 'Monthly outreach program', date: 'Jan 15, 2025', state: 'Published' },
+  { title: 'Unity in Diversity', desc: 'Quarterly community gathering', date: 'Jan 20, 2025', state: 'Uploading' },
+  { title: 'Love as a Verb', desc: 'Annual charity event', date: 'Jan 25, 2025', state: 'Uploading' },
+  { title: 'Service Above Self', desc: 'Weekly volunteer opportunity', date: 'Jan 30, 2025', state: 'Published' },
 ];
 
-function RecentActivity() {
+function RecentActivity({ items }: { items: ActivityItem[] }) {
   const [newest, setNewest] = useState(true);
-  const items = newest ? ACTIVITY : [...ACTIVITY].reverse();
+  const shown = newest ? items : [...items].reverse();
 
   return (
     <div className="flex flex-col rounded-[14px] bg-white p-6">
@@ -237,15 +240,13 @@ function RecentActivity() {
       </div>
 
       <ul className="mt-4 flex flex-col gap-4">
-        {items.map((a, i) => (
+        {shown.map((a, i) => (
           <li key={i} className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[13px] font-medium">Faith in Action</p>
-              <p className="text-[12px] text-brand-gray-500">
-                Weekly faith teaching
-              </p>
+              <p className="text-[13px] font-medium">{a.title}</p>
+              <p className="text-[12px] text-brand-gray-500">{a.desc}</p>
             </div>
-            <span className="text-[12px] text-brand-gray-500">Jan 10, 2025</span>
+            <span className="text-[12px] text-brand-gray-500">{a.date}</span>
             {a.state === 'Published' ? (
               <span className="w-[70px] text-right text-[12px] font-medium text-[#34a853]">
                 Published
@@ -356,6 +357,7 @@ const MOCK_STATS: UnifiedDashboardStats = {
 export function MinistryDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats>(MOCK_STATS);
   const [txns, setTxns] = useState<Transaction[]>(DEFAULT_TXNS);
+  const [activity, setActivity] = useState<ActivityItem[]>(DEFAULT_ACTIVITY);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -373,6 +375,33 @@ export function MinistryDashboard() {
       });
       if (rows.length > 0) setTxns(rows);
     }).catch(() => {});
+
+    (api.get<unknown>('/tenant/admin/sermons?page=0&size=5') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: ActivityItem[] = arr.map((s) => {
+          const rawDate = String(s['publishedAt'] ?? s['createdAt'] ?? s['date'] ?? '');
+          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const rawStatus = String(s['status'] ?? '').toUpperCase();
+          const state = rawStatus.includes('UPLOAD') || rawStatus.includes('PROCESS') ? 'Uploading' : 'Published';
+          return {
+            title: String(s['title'] ?? s['sermonTitle'] ?? s['name'] ?? ''),
+            desc: String(s['seriesName'] ?? s['series'] ?? s['description'] ?? ''),
+            date,
+            state,
+          };
+        }).filter((a) => a.title);
+        if (mapped.length > 0) setActivity(mapped);
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -398,7 +427,7 @@ export function MinistryDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.6fr]">
-        <RecentActivity />
+        <RecentActivity items={activity} />
         <Transactions rows={txns} />
       </div>
     </div>
