@@ -8,6 +8,8 @@ import { UserProfile } from '@/types/user';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { api } from '@/lib/api/client';
 
 const MOCK: UserProfile = {
   id: '1',
@@ -40,6 +42,14 @@ export default function GroupLeaderProfilePage() {
         role: p.roles?.[0] ?? 'Group Leader',
       });
     }).catch(() => {});
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setUser((prev) => ({ ...prev, church: prev.church || b.organizationName! }));
+    }).catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+        if (loc) setUser((prev) => ({ ...prev, location: prev.location || loc }));
+      }).catch(() => {});
   }, []);
 
   return (

@@ -7,6 +7,8 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { getCustomerPaymentById, type PaymentStatusResponse } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { api } from '@/lib/api/client';
 
 type Props = {
   isIntercepted?: boolean;
@@ -19,6 +21,29 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     [isIntercepted]
   );
   const [payment, setPayment] = useState<PaymentStatusResponse | null>(null);
+  const [orgName, setOrgName] = useState('Celebration Church Int.');
+  const [orgLocation, setOrgLocation] = useState('Ontario Canada, Canada City');
+  const [orgPhone, setOrgPhone] = useState('+127-987-67543');
+  const [orgEmail, setOrgEmail] = useState('info@churchname.org');
+  const [orgWeb, setOrgWeb] = useState('www.churchname.org');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+        if (loc) setOrgLocation(loc);
+        const phone = d['phone'] as string | undefined;
+        if (phone) setOrgPhone(phone);
+        const email = d['email'] as string | undefined;
+        if (email) setOrgEmail(email);
+        const web = (d['website'] as string | undefined) ?? (d['websiteUrl'] as string | undefined);
+        if (web) setOrgWeb(web.replace(/^https?:\/\//, ''));
+      }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -53,28 +78,28 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
           />
 
           <div className="w-full flex flex-col justify-start items-start gap-0 leading-[143%] tracking-[0%]">
-            <span className="font-bold">Celebration Church Int.</span>
-            <span>Ontario Canada, Canada City</span>
+            <span className="font-bold">{orgName}</span>
+            <span>{orgLocation}</span>
             <a
-              href="tel:+127-987-67543"
+              href={`tel:${orgPhone}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              +127-987-67543
+              {orgPhone}
             </a>
             <a
-              href="mailto:info@churchname.org"
+              href={`mailto:${orgEmail}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              info@churchname.org
+              {orgEmail}
             </a>
             <a
-              href="https://www.churchname.org"
+              href={`https://${orgWeb}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              www.churchname.org
+              {orgWeb}
             </a>
           </div>
 
