@@ -7,16 +7,24 @@ import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
-const LINES = [
-  ['Donor', 'John Christain'],
-  ['Reference', 'GW-2025-004821'],
-  ['Date', 'June 12, 2025'],
-  ['Method', 'Bank transfer'],
-  ['Fund / Campaign', 'General Offering'],
-];
-
 /** Transaction receipt modal — makes the table's "View" action functional. */
-export function ReceiptButton({ highlighted }: { highlighted?: boolean }) {
+export function ReceiptButton({
+  highlighted,
+  name,
+  reference,
+  date,
+  method,
+  fund,
+  amount,
+}: {
+  highlighted?: boolean;
+  name?: string;
+  reference?: string;
+  date?: string;
+  method?: string;
+  fund?: string;
+  amount?: string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -59,7 +67,13 @@ export function ReceiptButton({ highlighted }: { highlighted?: boolean }) {
             </div>
 
             <div className="flex flex-col gap-3 rounded-[10px] bg-[#f7f9fc] p-4">
-              {LINES.map(([k, v]) => (
+              {[
+                ['Donor', name ?? 'John Christain'],
+                ['Reference', reference ?? 'GW-2025-004821'],
+                ['Date', date ?? 'June 12, 2025'],
+                ['Method', method ?? 'Bank transfer'],
+                ['Fund / Campaign', fund ?? 'General Offering'],
+              ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-4">
                   <span className="text-[12px] text-brand-gray-500">{k}</span>
                   <span className="text-[12px] font-medium text-[#1a1a1a]">
@@ -70,7 +84,7 @@ export function ReceiptButton({ highlighted }: { highlighted?: boolean }) {
               <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#e5e9f0] pt-3">
                 <span className="text-[13px] font-semibold">Total</span>
                 <span className="text-[16px] font-bold text-brand-blue">
-                  $2000
+                  {amount ?? '$2000'}
                 </span>
               </div>
             </div>

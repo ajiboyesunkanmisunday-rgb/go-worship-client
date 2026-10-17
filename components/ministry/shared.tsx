@@ -158,7 +158,15 @@ export function TransactionsTable({
       t.amount ?? '$2000',
       t.method ?? 'Bank transfer',
       t.type,
-      <ReceiptButton key="a" highlighted={i === 0} />,
+      <ReceiptButton
+        key="a"
+        highlighted={i === 0}
+        name={t.name}
+        date={t.date}
+        method={t.method}
+        fund={t.type}
+        amount={t.amount}
+      />,
     ],
   }));
 
