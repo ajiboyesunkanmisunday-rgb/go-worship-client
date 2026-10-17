@@ -91,6 +91,25 @@ function mapEvent(row: R): TenantEvent {
   };
 }
 
+export type CreateEventPayload = {
+  name: string;
+  hostName?: string;
+  eventDate?: string;
+  eventTime?: string;
+  type?: string;
+  location?: string;
+  requiresRegistration?: boolean;
+  description?: string;
+  capacity?: number;
+  status?: string;
+  [key: string]: unknown;
+};
+
+/** POST /tenant/admin/events */
+export async function createTenantEvent(payload: CreateEventPayload): Promise<void> {
+  await api.post('/tenant/admin/events', payload);
+}
+
 /** [VERIFY PATH] GET /tenant/admin/events */
 export async function getTenantEvents(): Promise<TenantEvent[]> {
   const data = await api.get<unknown>('/tenant/admin/events');
@@ -199,6 +218,32 @@ export async function getTenantGroup(id: string): Promise<TenantGroup | null> {
   } catch {
     return null;
   }
+}
+
+export type CreateGroupPayload = {
+  name: string;
+  type?: string;
+  description?: string;
+  leaderId?: string;
+  leaderName?: string;
+  meetingFrequency?: string;
+  meetingDays?: string[];
+  meetingTime?: string;
+  meetingType?: string;
+  venueName?: string;
+  onlineMeetingLink?: string;
+  isActive?: boolean;
+  isPublic?: boolean;
+};
+
+/** POST /tenant/admin/groups */
+export async function createTenantGroup(payload: CreateGroupPayload): Promise<void> {
+  await api.post('/tenant/admin/groups', payload);
+}
+
+/** PUT /tenant/admin/groups/:id */
+export async function updateTenantGroup(id: string, payload: Partial<CreateGroupPayload>): Promise<void> {
+  await api.put(`/tenant/admin/groups/${id}`, payload);
 }
 
 /* -------- Tenant Admin Dashboard Stats -------- */

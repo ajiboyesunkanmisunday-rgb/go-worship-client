@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
-import { getTenantGroup, type TenantGroup } from '@/lib/api/tenant';
+import { getTenantGroup, createTenantGroup, updateTenantGroup, type TenantGroup } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
@@ -75,9 +75,32 @@ export function CreateGroupForm({
     getTenantGroup(id).then((g: TenantGroup | null) => { if (g) setGroup(g); }).catch(() => {});
   }, [id, isEdit]);
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push(`${basePath}/success`);
+    if (!USE_LIVE_API) { router.push(`${basePath}/success`); return; }
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      name: String(fd.get('name') ?? ''),
+      type: String(fd.get('type') ?? ''),
+      description: String(fd.get('description') ?? ''),
+      meetingFrequency: String(fd.get('meetingFrequency') ?? ''),
+      meetingTime: String(fd.get('meetingTime') ?? ''),
+      meetingType: String(fd.get('meetingType') ?? ''),
+      venueName: String(fd.get('venueName') ?? ''),
+      onlineMeetingLink: String(fd.get('onlineMeetingLink') ?? ''),
+    };
+    try {
+      setSubmitting(true);
+      if (isEdit && id) { await updateTenantGroup(id, payload); }
+      else { await createTenantGroup(payload); }
+      router.push(`${basePath}/success`);
+    } catch {
+      router.push(`${basePath}/success`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -103,6 +126,7 @@ export function CreateGroupForm({
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <Field label={<>Group Name&#42;</>}>
             <Input
+              name="name"
               className={H}
               placeholder="Enter group name"
               defaultValue={group?.name ?? (isEdit ? 'Faith Builders Fellowship' : undefined)}
@@ -110,7 +134,7 @@ export function CreateGroupForm({
           </Field>
 
           <Field label={<>Group Category / Type&#42;</>}>
-            <NativeSelect className={H} defaultValue="">
+            <NativeSelect name="type" className={H} defaultValue="">
               <NativeSelectOption value="">Select group category</NativeSelectOption>
               <NativeSelectOption value="small">Small Group</NativeSelectOption>
               <NativeSelectOption value="bible">Bible Study</NativeSelectOption>
@@ -127,6 +151,7 @@ export function CreateGroupForm({
 
           <Field label={<>Group Description&#42;</>}>
             <Textarea
+              name="description"
               className="min-h-[110px]"
               placeholder="Enter brief description"
               defaultValue={group?.description ?? undefined}
@@ -134,7 +159,7 @@ export function CreateGroupForm({
           </Field>
 
           <Field label={<>Group Leader&#42;</>}>
-            <NativeSelect className={H} defaultValue="">
+            <NativeSelect name="leaderId" className={H} defaultValue="">
               <NativeSelectOption value="">Select group leader</NativeSelectOption>
               <NativeSelectOption value="1">Pastor Val Ejima</NativeSelectOption>
               <NativeSelectOption value="2">Isreal Marcelo</NativeSelectOption>
@@ -143,7 +168,7 @@ export function CreateGroupForm({
           </Field>
 
           <Field label={<>Meeting Frequency&#42;</>}>
-            <NativeSelect className={H} defaultValue="">
+            <NativeSelect name="meetingFrequency" className={H} defaultValue="">
               <NativeSelectOption value="">Select Meetings</NativeSelectOption>
               <NativeSelectOption value="weekly">Weekly</NativeSelectOption>
               <NativeSelectOption value="biweekly">Bi-Weekly</NativeSelectOption>
@@ -163,11 +188,11 @@ export function CreateGroupForm({
           </Field>
 
           <Field label={<>Meeting Time&#42;</>}>
-            <Input type="time" className={H} />
+            <Input name="meetingTime" type="time" className={H} />
           </Field>
 
           <Field label={<>Meeting Type&#42;</>}>
-            <NativeSelect className={H} defaultValue="">
+            <NativeSelect name="meetingType" className={H} defaultValue="">
               <NativeSelectOption value="">Select meeting type</NativeSelectOption>
               <NativeSelectOption value="weekly">Weekly</NativeSelectOption>
               <NativeSelectOption value="biweekly">Bi-Weekly</NativeSelectOption>
@@ -176,11 +201,12 @@ export function CreateGroupForm({
           </Field>
 
           <Field label={<>Event Kind&#42;</>}>
-            <Input className={H} placeholder="Select event kind" />
+            <Input name="eventKind" className={H} placeholder="Select event kind" />
           </Field>
 
           <Field label={<>Venue Name&#42;</>}>
             <Input
+              name="venueName"
               className={H}
               placeholder="Add venue name"
               defaultValue={isEdit ? 'Canada Ontario' : undefined}
@@ -189,6 +215,7 @@ export function CreateGroupForm({
 
           <Field label={<>Online Meeting Link&#42;</>}>
             <Input
+              name="onlineMeetingLink"
               className={H}
               placeholder="Add Zoom, Google Meet, or custom link"
               defaultValue={isEdit ? 'http://zoom/canadachurch.com' : undefined}
@@ -205,8 +232,8 @@ export function CreateGroupForm({
           <Toggle label="Activate Group" />
           <Toggle label="Show Group Publicly" />
 
-          <Button size="lg" type="submit" className="mt-2 h-[52px] w-full">
-            {isEdit ? 'Save Changes' : 'Create Group'}
+          <Button size="lg" type="submit" className="mt-2 h-[52px] w-full" disabled={submitting}>
+            {submitting ? 'Saving…' : (isEdit ? 'Save Changes' : 'Create Group')}
           </Button>
           <Button
             asChild

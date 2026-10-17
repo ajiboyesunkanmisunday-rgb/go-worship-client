@@ -10,7 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Pencil, UploadCloud } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
+import { createTenantEvent } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -41,9 +43,33 @@ export function EventForm() {
   const router = useRouter();
   const back = '/ministry-admin/events';
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push(back);
+    if (!USE_LIVE_API) { router.push(back); return; }
+    const fd = new FormData(e.currentTarget);
+    const dtRaw = String(fd.get('datetime') ?? '');
+    const [eventDate, eventTime] = dtRaw.includes('T') ? dtRaw.split('T') : [dtRaw, ''];
+    const payload = {
+      name: String(fd.get('name') ?? ''),
+      hostName: String(fd.get('hostName') ?? ''),
+      eventDate,
+      eventTime,
+      type: String(fd.get('type') ?? ''),
+      location: String(fd.get('location') ?? ''),
+      requiresRegistration: fd.get('requiresRegistration') === 'yes',
+      description: String(fd.get('description') ?? ''),
+    };
+    try {
+      setSubmitting(true);
+      await createTenantEvent(payload);
+      router.push(back);
+    } catch {
+      router.push(back);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -75,15 +101,16 @@ export function EventForm() {
           </div>
 
           <Field label={<>Event Name&#42;</>}>
-            <PencilInput placeholder="Enter event name" />
+            <PencilInput name="name" placeholder="Enter event name" />
           </Field>
 
           <Field label={<>Host Name&#42;</>}>
-            <PencilInput placeholder="Enter host name" />
+            <PencilInput name="hostName" placeholder="Enter host name" />
           </Field>
 
           <Field label={<>Date &amp; Time&#42;</>}>
             <Input
+              name="datetime"
               type="datetime-local"
               className="h-[48px]"
               placeholder="Set date & time"
@@ -91,7 +118,7 @@ export function EventForm() {
           </Field>
 
           <Field label="Event Type">
-            <NativeSelect className="h-[48px]" defaultValue="">
+            <NativeSelect name="type" className="h-[48px]" defaultValue="">
               <NativeSelectOption value="">Select event type</NativeSelectOption>
               <NativeSelectOption value="online">Online</NativeSelectOption>
               <NativeSelectOption value="onsite">Onsite</NativeSelectOption>
@@ -100,11 +127,11 @@ export function EventForm() {
           </Field>
 
           <Field label={<>Location&#42;</>}>
-            <PencilInput placeholder="Add Location" />
+            <PencilInput name="location" placeholder="Add Location" />
           </Field>
 
           <Field label={<>Does Event Require Registration?&#42;</>}>
-            <NativeSelect className="h-[48px]" defaultValue="">
+            <NativeSelect name="requiresRegistration" className="h-[48px]" defaultValue="">
               <NativeSelectOption value="">Select</NativeSelectOption>
               <NativeSelectOption value="yes">Yes</NativeSelectOption>
               <NativeSelectOption value="no">No</NativeSelectOption>
@@ -114,6 +141,7 @@ export function EventForm() {
           <Field label="Event Description">
             <div className="relative">
               <Textarea
+                name="description"
                 className="min-h-[110px] pr-9"
                 placeholder="Enter brief description"
               />
@@ -121,8 +149,8 @@ export function EventForm() {
             </div>
           </Field>
 
-          <Button size="lg" type="submit" className="mt-1 h-[52px] w-full">
-            Create Event
+          <Button size="lg" type="submit" className="mt-1 h-[52px] w-full" disabled={submitting}>
+            {submitting ? 'Creating…' : 'Create Event'}
           </Button>
           <Button asChild size="lg" variant="outline" className="h-[52px] w-full">
             <button type="button" onClick={() => router.push(back)}>
