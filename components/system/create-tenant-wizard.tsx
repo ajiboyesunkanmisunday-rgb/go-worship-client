@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,7 +11,7 @@ import { ResultModal } from '@/components/system/result-modal';
 import { StepUpMfaDialog, isStepUpChallenge } from '@/components/shared/step-up-mfa-dialog';
 import type { StepUpMfaChallengeResponse } from '@/components/shared/step-up-mfa-dialog';
 import { provisionTenant } from '@/lib/api/system';
-import { ApiError } from '@/lib/api/client';
+import { ApiError, api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
@@ -42,11 +42,13 @@ type Basic = {
 
 type Billing = 'Monthly' | 'Quarterly' | 'Annually';
 
-const PLANS = [
+type Plan = { key: string; tier: string; price: string };
+
+const DEFAULT_PLANS: Plan[] = [
   { key: 'starter', tier: 'Starter', price: '$0' },
   { key: 'professional', tier: 'Professional', price: '$70,000' },
   { key: 'enterprise', tier: 'Enterprise', price: '$250,000' },
-] as const;
+];
 
 const FEATURES = [
   'Omni-channel inbox (WhatsApp, IG DM, Messenger)',
@@ -130,6 +132,7 @@ export function CreateTenantWizard() {
   const router = useRouter();
   const back = '/system/tenants';
 
+  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
   const [step, setStep] = useState(1);
   const [basic, setBasic] = useState<Basic>({
     churchName: '',
@@ -142,7 +145,35 @@ export function CreateTenantWizard() {
     adminEmail: '',
   });
   const [billing, setBilling] = useState<Billing>('Quarterly');
-  const [plan, setPlan] = useState<(typeof PLANS)[number]['key']>('professional');
+  const [plan, setPlan] = useState<string>('professional');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
+      .catch(() => api.get<unknown>('/system/plans') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: Plan[] = arr.map((p) => {
+          const rawPrice = Number(p['price'] ?? p['amount'] ?? p['monthlyPrice'] ?? 0);
+          const price = rawPrice ? `$${rawPrice.toLocaleString()}` : String(p['priceLabel'] ?? p['price'] ?? '$0');
+          return {
+            key: String(p['key'] ?? p['planKey'] ?? p['code'] ?? p['id'] ?? ''),
+            tier: String(p['name'] ?? p['tier'] ?? p['displayName'] ?? ''),
+            price,
+          };
+        }).filter((p) => p.key && p.tier);
+        if (mapped.length > 0) setPlans(mapped);
+      })
+      .catch(() => {});
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<'success' | null>(null);
   const [challenge, setChallenge] = useState<StepUpMfaChallengeResponse | null>(null);
@@ -151,7 +182,7 @@ export function CreateTenantWizard() {
   const set = (k: keyof Basic) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setBasic((b) => ({ ...b, [k]: e.target.value }));
 
-  const selectedPlan = PLANS.find((p) => p.key === plan)!;
+  const selectedPlan = (plans.find((p) => p.key === plan) ?? plans[0])!;
 
   const domainDisplay =
     basic.domainType === 'subdomain'
@@ -375,7 +406,7 @@ export function CreateTenantWizard() {
       {/* ---------------- Step 2: Plan ---------------- */}
       {step === 2 && (
         <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {PLANS.map((p) => {
+          {plans.map((p) => {
             const active = p.key === plan;
             return (
               <div
