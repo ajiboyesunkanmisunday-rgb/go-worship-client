@@ -24,10 +24,12 @@ function StatCard({
   title,
   value,
   variant,
+  subtitle,
 }: {
   title: string;
   value: string;
   variant: 'blue' | 'green' | 'white';
+  subtitle?: string;
 }) {
   const blue = variant === 'blue';
   return (
@@ -57,14 +59,16 @@ function StatCard({
       <p className={cn('text-[32px] font-bold', blue ? 'text-white' : 'text-black')}>
         {value}
       </p>
-      <p
-        className={cn(
-          'text-[11px] font-light',
-          blue ? 'text-white/80' : 'text-brand-gray-500'
-        )}
-      >
-        40% Increased from Last month
-      </p>
+      {subtitle && (
+        <p
+          className={cn(
+            'text-[11px] font-light',
+            blue ? 'text-white/80' : 'text-brand-gray-500'
+          )}
+        >
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -173,7 +177,7 @@ const QUICK_ACTIONS = [
   },
 ];
 
-function QuickActions() {
+function QuickActions({ storageSubtitle }: { storageSubtitle: string }) {
   return (
     <div className="flex flex-col gap-3">
       {QUICK_ACTIONS.map((a) => (
@@ -187,7 +191,9 @@ function QuickActions() {
             <p className="text-[13px] font-semibold text-brand-blue">
               {a.title}
             </p>
-            <p className="text-[11px] text-brand-gray-500">{a.subtitle}</p>
+            <p className="text-[11px] text-brand-gray-500">
+              {a.title === 'Uploaded Media' ? storageSubtitle : a.subtitle}
+            </p>
           </div>
         </Link>
       ))}
@@ -358,10 +364,22 @@ export function MinistryDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats>(MOCK_STATS);
   const [txns, setTxns] = useState<Transaction[]>(DEFAULT_TXNS);
   const [activity, setActivity] = useState<ActivityItem[]>(DEFAULT_ACTIVITY);
+  const [storageSubtitle, setStorageSubtitle] = useState('2.3GB · 40 items');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getUnifiedDashboard().then((s) => { if (s) setStats(s); }).catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/admin/media/stats') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/tenant/media/stats') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const size = (d['usedFormatted'] as string | undefined) ?? (d['totalSize'] as string | undefined) ?? (d['size'] as string | undefined);
+        const count = (d['count'] as number | undefined) ?? (d['itemCount'] as number | undefined) ?? (d['totalCount'] as number | undefined);
+        if (size || count != null) {
+          const parts = [size, count != null ? `${count} items` : undefined].filter(Boolean);
+          if (parts.length > 0) setStorageSubtitle(parts.join(' · '));
+        }
+      })
+      .catch(() => {});
     getCustomerPayments(0, 6).then((page) => {
       const rows = (page?.content ?? []).map((p) => {
         const g = paymentToGiving(p);
@@ -423,7 +441,7 @@ export function MinistryDashboard() {
           <StatCard title="Total Events" value={String(stats.totalEvents)} variant="white" />
         </div>
         <FinanceOverview data={stats.trend} />
-        <QuickActions />
+        <QuickActions storageSubtitle={storageSubtitle} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.6fr]">

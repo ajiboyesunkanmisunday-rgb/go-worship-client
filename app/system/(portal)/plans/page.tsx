@@ -127,6 +127,7 @@ export default function SystemPlansPage() {
   const [tab, setTab] = useState(0);
   const [revenue, setRevenue] = useState('$1300');
   const [overdue, setOverdue] = useState('$150');
+  const [pendingPayments, setPendingPayments] = useState('$830');
   const [plans, setPlans] = useState<Plan[]>(PLANS);
 
   useEffect(() => {
@@ -136,6 +137,13 @@ export default function SystemPlansPage() {
         if (!s) return;
         if (s.givingVolume) setRevenue(s.givingVolume);
         if (s.overduePayments) setOverdue(String(s.overduePayments));
+        if (s.pendingPayments) setPendingPayments(String(s.pendingPayments));
+      })
+      .catch(() => {});
+    (api.get<Record<string, unknown>>('/system/billing/stats') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const pp = d['pendingPayments'] ?? d['pending'] ?? d['pendingAmount'];
+        if (pp != null) setPendingPayments(typeof pp === 'number' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(pp) : String(pp));
       })
       .catch(() => {});
 
@@ -193,7 +201,7 @@ export default function SystemPlansPage() {
         />
         <StatCard
           title="Pending Payments"
-          value="$830"
+          value={pendingPayments}
           variant="green"
           subtitle="5% of total"
         />

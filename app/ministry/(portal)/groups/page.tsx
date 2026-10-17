@@ -9,21 +9,25 @@ import { getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 
-type GroupRow = { name: string; category: string; leader: string; members: number; status: string };
+type GroupRow = { name: string; category: string; leader: string; members: number; status: string; schedule: string };
 
 const MOCK_GROUPS: GroupRow[] = [
-  { name: 'Faith Builders Fellowship', category: 'Small Group', leader: 'John Samuel', members: 22, status: 'Active' },
-  { name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Inactive' },
-  { name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Active' },
+  { name: 'Faith Builders Fellowship', category: 'Small Group', leader: 'John Samuel', members: 22, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
+  { name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Inactive', schedule: 'Tuesdays at 6:00 PM' },
+  { name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
 ];
 
 function toGroupRow(g: TenantGroup): GroupRow {
+  const days = g.meetingDays?.length ? g.meetingDays.join('/') : '';
+  const time = g.meetingTime ?? '';
+  const schedule = [days, time].filter(Boolean).join(' at ') || g.meetingFrequency || 'Tuesdays at 6:00 PM';
   return {
     name: g.name,
     category: g.description || 'Group',
     leader: g.leaderName || '—',
     members: g.memberCount,
     status: g.status.charAt(0).toUpperCase() + g.status.slice(1).toLowerCase(),
+    schedule,
   };
 }
 
@@ -40,12 +44,12 @@ export default function MinistryGroupsPage() {
   const leaders = new Set(groups.map((g) => g.leader).filter(Boolean)).size;
 
   const rows: SmartRow[] = groups.map((g, i) => ({
-    text: [g.name, g.category, g.leader, 'Tuesdays at 6:00 PM', String(g.members), g.status],
+    text: [g.name, g.category, g.leader, g.schedule, String(g.members), g.status],
     cells: [
       g.name,
       g.category,
       g.leader,
-      'Tuesdays at 6:00 PM',
+      g.schedule,
       g.members,
       <span
         key="s"

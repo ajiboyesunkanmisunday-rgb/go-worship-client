@@ -9,7 +9,7 @@ import { Bell, Mail, Plus } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-type Message = { title: string; recipients: string; status: string; rate: number; date?: string };
+type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number };
 
 const MESSAGES: Message[] = [
   { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
@@ -22,6 +22,7 @@ const MESSAGES: Message[] = [
 
 export default function MinistryCommunicationPage() {
   const [messages, setMessages] = useState<Message[]>(MESSAGES);
+  const [activeRecipients, setActiveRecipients] = useState('260');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -42,8 +43,16 @@ export default function MinistryCommunicationPage() {
           status: String(m['status'] ?? m['deliveryStatus'] ?? 'Sent'),
           rate: Number(m['readRate'] ?? m['openRate'] ?? m['deliveryRate'] ?? 0),
           date: String(m['sentAt'] ?? m['scheduledAt'] ?? m['createdAt'] ?? ''),
+          recipientCount: m['recipientCount'] != null ? Number(m['recipientCount']) : m['totalRecipients'] != null ? Number(m['totalRecipients']) : undefined,
         })).filter((m) => m.title);
         if (mapped.length > 0) setMessages(mapped);
+      })
+      .catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/admin/members/count') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/tenant/admin/communications/stats') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const count = d['activeCount'] ?? d['active'] ?? d['count'] ?? d['total'] ?? d['activeRecipients'];
+        if (count != null) setActiveRecipients(String(count));
       })
       .catch(() => {});
   }, []);
@@ -57,7 +66,7 @@ export default function MinistryCommunicationPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard title="Total Messages" value={String(messages.length || 6)} variant="white" subtitle="12% from last week" />
-        <StatCard title="Active Recipients" value="260" variant="green" subtitle="5% from last week" />
+        <StatCard title="Active Recipients" value={activeRecipients} variant="green" subtitle="5% from last week" />
         <StatCard title="Sent Messages" value={String(sentCount || 5)} variant="white" subtitle="Click here to create group" />
         <StatCard title="Scheduled" value={String(scheduledCount || 4)} variant="white" subtitle="Click here to create group" />
         <ActionCard
@@ -92,7 +101,7 @@ export default function MinistryCommunicationPage() {
                   <td className="py-4">{m.title}</td>
                   <td className="py-4">
                     <p>{m.recipients}</p>
-                    <p className="text-brand-gray-500">245 recipients</p>
+                    <p className="text-brand-gray-500">{m.recipientCount != null ? `${m.recipientCount} recipients` : '245 recipients'}</p>
                   </td>
                   <td className="py-4">
                     <span className="flex items-center gap-2 text-brand-blue">

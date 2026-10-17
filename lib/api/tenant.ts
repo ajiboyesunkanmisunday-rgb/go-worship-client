@@ -186,6 +186,9 @@ export type TenantGroup = {
   leaderName: string;
   status: string;
   createdAt: string;
+  meetingDays?: string[];
+  meetingTime?: string;
+  meetingFrequency?: string;
 };
 
 function mapGroup(row: R): TenantGroup {
@@ -198,6 +201,9 @@ function mapGroup(row: R): TenantGroup {
     leaderName: fieldOf(row, ['leaderName', 'leader', 'ownerName']),
     status: fieldOf(row, ['status', 'groupStatus']),
     createdAt: fmtDate(fieldOf(row, ['createdAt', 'createdDate'])),
+    meetingDays: Array.isArray(row['meetingDays']) ? (row['meetingDays'] as string[]) : undefined,
+    meetingTime: fieldOf(row, ['meetingTime', 'time']) || undefined,
+    meetingFrequency: fieldOf(row, ['meetingFrequency', 'frequency', 'schedule']) || undefined,
   };
 }
 

@@ -58,6 +58,8 @@ export default function SystemTransactionsPage() {
   const [txns, setTxns] = useState<SysTxn[]>(TXNS);
   const [totalGiving, setTotalGiving] = useState('$60500');
   const [totalCount, setTotalCount] = useState(20);
+  const [offlineGiving, setOfflineGiving] = useState('$87,730');
+  const [recurringGivers, setRecurringGivers] = useState('130');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -89,6 +91,15 @@ export default function SystemTransactionsPage() {
       .catch(() => {});
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
+      .catch(() => {});
+    (api.get<Record<string, unknown>>('/system/finance/stats') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/system/transactions/summary') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const og = d['offlineGiving'] ?? d['offline'] ?? d['offlineAmount'];
+        const rg = d['recurringGivers'] ?? d['recurring'] ?? d['recurringCount'];
+        if (og != null) setOfflineGiving(fmtAmt(og, 'USD'));
+        if (rg != null) setRecurringGivers(String(rg));
+      })
       .catch(() => {});
   }, []);
 
@@ -133,8 +144,8 @@ export default function SystemTransactionsPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard title="Total Giving" value={totalGiving} variant="blue" />
-        <StatCard title="Offline Giving" value="$87,730" variant="white" />
-        <StatCard title="Recurring Givers" value="130" variant="green" />
+        <StatCard title="Offline Giving" value={offlineGiving} variant="white" />
+        <StatCard title="Recurring Givers" value={recurringGivers} variant="green" />
         <StatCard title="Total Transactions" value={String(totalCount)} variant="white" />
         <ActionCard
           href="/system/transactions"

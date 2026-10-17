@@ -180,6 +180,7 @@ export type SystemStats = {
   givingVolume: string;
   trialTenants: number;
   overduePayments: number;
+  pendingPayments?: number;
 };
 
 export async function getSystemStats(): Promise<SystemStats | null> {
@@ -195,6 +196,7 @@ export async function getSystemStats(): Promise<SystemStats | null> {
       givingVolume:    fieldOf(inner, ['givingVolume', 'totalGiving', 'volume', 'totalRevenue']),
       trialTenants:    Number(fieldOf(inner, ['trialTenants', 'trialCount'])) || 0,
       overduePayments: Number(fieldOf(inner, ['overduePayments', 'overdue'])) || 0,
+      pendingPayments: Number(fieldOf(inner, ['pendingPayments', 'pending'])) || undefined,
     };
   } catch {
     return null;
