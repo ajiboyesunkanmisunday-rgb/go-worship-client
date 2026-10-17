@@ -4,7 +4,7 @@ import { StatCard } from '@/components/ministry/shared';
 import { ClipboardList, Plus, SquareCheckBig } from 'lucide-react';
 import { DataPanel, QuickAccessCard, type TableRow } from './shared';
 import { useState, useEffect } from 'react';
-import { getTenantMembers, getTenantStats, type TenantMember, type TenantStats } from '@/lib/api/tenant';
+import { getTenantMembers, getTenantStats, getTenantBranding, type TenantMember, type TenantStats } from '@/lib/api/tenant';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 
@@ -65,6 +65,7 @@ export function GroupLeaderDashboard() {
   const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [userName, setUserName] = useState('');
+  const [orgName, setOrgName] = useState('Go Worship');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -73,6 +74,9 @@ export function GroupLeaderDashboard() {
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
+    }).catch(() => {});
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
   }, []);
 
@@ -88,7 +92,7 @@ export function GroupLeaderDashboard() {
         <div className="relative overflow-hidden rounded-[14px] bg-white p-6">
           <h1 className="text-[28px] font-bold lg:text-[32px]">Hello{userName ? `, ${userName}` : ''} 👋</h1>
           <p className="mt-2 max-w-[300px] text-[14px] text-brand-gray-500">
-            Welcome to Go Worship Platform
+            Welcome to {orgName} Go worship Platform
           </p>
           <span className="pointer-events-none absolute -right-10 top-8 size-[220px] rounded-full border-[6px] border-[#e7f7ee]" />
           <span className="pointer-events-none absolute right-16 top-24 size-[140px] rounded-full border-[6px] border-[#d4f0df]" />

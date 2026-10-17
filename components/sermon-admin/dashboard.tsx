@@ -4,7 +4,7 @@ import { StatCard } from '@/components/ministry/shared';
 import type { SmartRow } from '@/components/shared/smart-table';
 import { DataCard, QuickAccess, StatusText, ViewEditButton } from './shared';
 import { useEffect, useState } from 'react';
-import { getTenantStats, type TenantStats } from '@/lib/api/tenant';
+import { getTenantStats, getTenantBranding, type TenantStats } from '@/lib/api/tenant';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
@@ -53,6 +53,7 @@ export function SermonAdminDashboard() {
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [series, setSeries] = useState<SeriesItem[]>(SERIES);
   const [userName, setUserName] = useState('');
+  const [orgName, setOrgName] = useState('Go Worship');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -60,6 +61,9 @@ export function SermonAdminDashboard() {
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
+    }).catch(() => {});
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
 
     (api.get<unknown>('/tenant/admin/media/series') as Promise<unknown>)
@@ -119,7 +123,7 @@ export function SermonAdminDashboard() {
         <div className="relative overflow-hidden rounded-[14px] bg-white p-6">
           <h1 className="text-[28px] font-bold lg:text-[32px]">Hello{userName ? `, ${userName}` : ''} 👋</h1>
           <p className="mt-2 max-w-[320px] text-[14px] text-brand-gray-500">
-            Welcome to Go Worship Platform
+            Welcome to {orgName} Go worship Platform
           </p>
           <span className="pointer-events-none absolute -right-8 top-8 size-[210px] rounded-full border-[6px] border-[#eef1fb]" />
           <span className="pointer-events-none absolute right-16 top-24 size-[130px] rounded-full border-[6px] border-[#e6ebf8]" />
