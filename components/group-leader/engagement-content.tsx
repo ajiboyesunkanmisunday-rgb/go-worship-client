@@ -7,9 +7,10 @@ import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { DataPanel, type TableRow } from './shared';
 import { GROUP_ROWS } from './groups-data';
 import { getTenantGroups, getTenantStats, type TenantGroup, type TenantStats } from '@/lib/api/tenant';
+import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const data = [
+const MOCK_CHART_DATA = [
   { month: 'Jan', v: 3000 },
   { month: 'Feb', v: 6500 },
   { month: 'Mar', v: 3500 },
@@ -30,10 +31,25 @@ const config = {
 
 function EngagementChart() {
   const [stats, setStats] = useState<TenantStats | null>(null);
+  const [chartData, setChartData] = useState(MOCK_CHART_DATA);
+  const [engagementScore, setEngagementScore] = useState('78%');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getTenantStats().then((s) => {
+      if (s) {
+        setStats(s);
+        if (s.totalMembers > 0) {
+          const pct = Math.round((s.activeMembers / s.totalMembers) * 100);
+          setEngagementScore(`${pct}%`);
+        }
+      }
+    }).catch(() => {});
+    getUnifiedDashboard('LAST_12_MONTHS').then((d) => {
+      if (d && d.trend.length > 0) {
+        setChartData(d.trend.map((p) => ({ month: p.label, v: p.value })));
+      }
+    }).catch(() => {});
   }, []);
 
   return (
@@ -45,7 +61,7 @@ function EngagementChart() {
               <p className="text-[22px] font-bold text-[#1a1a1a]">
                 Engagement Score
               </p>
-              <p className="text-[34px] font-bold text-brand-blue">78%</p>
+              <p className="text-[34px] font-bold text-brand-blue">{engagementScore}</p>
             </div>
             <span className="rounded-[6px] bg-[#f2f2f2] px-3 py-1.5 text-[11px] text-brand-gray-500">
               Dec 31, 2024 – Dec 31, 2025
@@ -53,7 +69,7 @@ function EngagementChart() {
           </div>
 
           <ChartContainer config={config} className="mt-4 h-[240px] w-full">
-            <BarChart data={data} margin={{ top: 10, right: 8, bottom: 4, left: 4 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 8, bottom: 4, left: 4 }}>
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -82,8 +98,8 @@ function EngagementChart() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <StatCard title="Active Members" value={String(stats?.totalMembers ?? 50)} variant="blue" />
-          <StatCard title="Inactive Members" value="15" variant="white" />
+          <StatCard title="Active Members" value={String(stats?.activeMembers ?? 50)} variant="blue" />
+          <StatCard title="Inactive Members" value={String(stats && stats.totalMembers > 0 ? stats.totalMembers - stats.activeMembers : 15)} variant="white" />
         </div>
       </div>
     </div>
