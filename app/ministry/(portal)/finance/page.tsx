@@ -9,6 +9,7 @@ import {
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
 import { DollarSign } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -27,6 +28,9 @@ function mapStatus(s?: string): Transaction['status'] {
 
 export default function MinistryFinancePage() {
   const [totalGiving, setTotalGiving] = useState(MOCK.totalGiving);
+  const [offlineGiving, setOfflineGiving] = useState(MOCK.offlineGiving);
+  const [recurringGivers, setRecurringGivers] = useState(MOCK.recurringGivers);
+  const [failedTransactions, setFailedTransactions] = useState(MOCK.failedTransactions);
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
@@ -50,7 +54,29 @@ export default function MinistryFinancePage() {
             date,
           } satisfies Transaction;
         });
-        if (rows.length > 0) setTxns(rows);
+        if (rows.length > 0) {
+          setTxns(rows);
+          const failed = rows.filter((r) => r.status === 'Failed').length;
+          if (failed > 0) setFailedTransactions(String(failed));
+        }
+      })
+      .catch(() => {});
+
+    (api.get<unknown>('/tenant/admin/finance/summary') as Promise<unknown>)
+      .catch(() => api.get<unknown>('/tenant/finance/stats') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const d = data as R;
+        const rawOffline = d['offlineGiving'] ?? d['offlineDonations'] ?? d['cashGiving'];
+        const rawRecurring = d['recurringGivers'] ?? d['recurringDonors'] ?? d['recurringCount'];
+        const rawFailed = d['failedTransactions'] ?? d['failedCount'] ?? d['failedPayments'];
+        const fmtAmt = (v: unknown) => {
+          const n = Number(v);
+          return n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n) : String(v ?? '');
+        };
+        if (rawOffline != null) setOfflineGiving(fmtAmt(rawOffline));
+        if (rawRecurring != null) setRecurringGivers(String(rawRecurring));
+        if (rawFailed != null) setFailedTransactions(String(rawFailed));
       })
       .catch(() => {});
   }, []);
@@ -61,9 +87,9 @@ export default function MinistryFinancePage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard title="Total Giving" value={totalGiving} variant="blue" />
-        <StatCard title="Offline Giving" value={MOCK.offlineGiving} variant="white" />
-        <StatCard title="Recurring Givers" value={MOCK.recurringGivers} variant="green" />
-        <StatCard title="Failed Transactions" value={MOCK.failedTransactions} variant="white" />
+        <StatCard title="Offline Giving" value={offlineGiving} variant="white" />
+        <StatCard title="Recurring Givers" value={recurringGivers} variant="green" />
+        <StatCard title="Failed Transactions" value={failedTransactions} variant="white" />
         <ActionCard
           title="Giving List"
           subtitle="Click here to view"
