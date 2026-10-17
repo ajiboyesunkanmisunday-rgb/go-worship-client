@@ -17,7 +17,6 @@ import {
 import { NotificationsBell } from '@/components/shared/notifications-bell';
 import { TopbarSearch } from '@/components/shared/topbar-search';
 import { AdminProfileMenu } from '@/components/shared/admin-profile-menu';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -43,11 +42,10 @@ function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col gap-6 bg-[#152242] p-4 lg:flex">
       <div className="flex items-center gap-2 px-2 pt-2">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/leadremit-logo-white.svg"
           alt="Leadremit"
-          width={110}
-          height={34}
           className="h-[26px] w-auto"
         />
       </div>

@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import { LogOut, Settings, UserRound } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -121,13 +120,12 @@ export function AdminProfileMenu({
           className="absolute right-0 top-[calc(100%+10px)] z-50 w-[260px] overflow-hidden rounded-[14px] border border-[#e8e8e8] bg-white shadow-[0_16px_48px_rgba(0,0,0,0.16)]"
         >
           {/* Leadremit branded header */}
-          <div className="flex items-center gap-3 bg-[#152242] px-4 py-3">
-            <Image
+          <div className="flex items-center gap-2 bg-[#152242] px-4 py-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/leadremit-logo-white.svg"
               alt="Leadremit"
-              width={90}
-              height={28}
-              className="h-[22px] w-auto"
+              className="h-[20px] w-auto"
             />
             <span className="text-[12px] font-semibold text-white/80">Account</span>
           </div>
