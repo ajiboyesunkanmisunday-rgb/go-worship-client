@@ -13,7 +13,9 @@ import Link from 'next/link';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ReceiptButton } from '@/components/ministry/receipt-button';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
+import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
+import type { Transaction } from '@/components/ministry/shared';
 
 /* ---------------- Stat cards ---------------- */
 
@@ -280,10 +282,7 @@ const STATUS = {
   Failed: 'bg-[#fde8e8] text-[#eb0000]',
 } as const;
 
-const TRANSACTIONS: {
-  status: keyof typeof STATUS;
-  type: string;
-}[] = [
+const DEFAULT_TXNS: Transaction[] = [
   { status: 'Pending', type: 'General Offering' },
   { status: 'Success', type: 'Tithe Offering' },
   { status: 'Failed', type: 'Offering' },
@@ -292,14 +291,20 @@ const TRANSACTIONS: {
   { status: 'Failed', type: 'General Offering' },
 ];
 
-function Transactions() {
-  const rows: SmartRow[] = TRANSACTIONS.map((t, i) => ({
+function mapTxnStatus(s?: string): Transaction['status'] {
+  if (s === 'SUCCEEDED') return 'Success';
+  if (s === 'FAILED' || s === 'CANCELED' || s === 'EXPIRED') return 'Failed';
+  return 'Pending';
+}
+
+function Transactions({ rows }: { rows: Transaction[] }) {
+  const smartRows: SmartRow[] = rows.map((t, i) => ({
     group: t.status,
-    text: ['John Christain', t.status, 'June 12, 2025', '$2000', 'Bank transfer', t.type],
+    text: [t.name ?? 'John Christain', t.status, t.date ?? 'June 12, 2025', t.amount ?? '$2000', t.method ?? 'Bank transfer', t.type],
     cells: [
       <span key="n" className="flex items-center gap-2">
         <span className="size-6 rounded-full bg-brand-gray-200" />
-        John Christain
+        {t.name ?? 'John Christain'}
       </span>,
       <span
         key="s"
@@ -310,11 +315,11 @@ function Transactions() {
       >
         {t.status}
       </span>,
-      'June 12, 2025',
-      '$2000',
-      'Bank transfer',
+      t.date ?? 'June 12, 2025',
+      t.amount ?? '$2000',
+      t.method ?? 'Bank transfer',
       t.type,
-      <ReceiptButton key="a" highlighted={i === 0} />,
+      <ReceiptButton key="a" highlighted={i === 0} name={t.name} date={t.date} method={t.method} fund={t.type} amount={t.amount} />,
     ],
   }));
 
@@ -323,7 +328,7 @@ function Transactions() {
       <SmartTable
         title="Transactions"
         headers={['Name', 'Status', 'Date', 'Amount', 'Method', 'Type', 'Receipt']}
-        rows={rows}
+        rows={smartRows}
         showSearch={false}
         showExport={false}
         sortToggle
@@ -350,10 +355,24 @@ const MOCK_STATS: UnifiedDashboardStats = {
 
 export function MinistryDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats>(MOCK_STATS);
+  const [txns, setTxns] = useState<Transaction[]>(DEFAULT_TXNS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getUnifiedDashboard().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getCustomerPayments(0, 6).then((page) => {
+      const rows = (page?.content ?? []).map((p) => {
+        const g = paymentToGiving(p);
+        const fmt = (n: number, cur: string) =>
+          new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(n);
+        const date = g.date
+          ? new Date(g.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : undefined;
+        const status: Transaction['status'] = mapTxnStatus(g.status);
+        return { status, type: g.purpose, amount: fmt(g.amount, g.currency), date } satisfies Transaction;
+      });
+      if (rows.length > 0) setTxns(rows);
+    }).catch(() => {});
   }, []);
 
   return (
@@ -380,7 +399,7 @@ export function MinistryDashboard() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.6fr]">
         <RecentActivity />
-        <Transactions />
+        <Transactions rows={txns} />
       </div>
     </div>
   );

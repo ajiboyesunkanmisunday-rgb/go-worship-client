@@ -5,7 +5,10 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { cn } from '@/lib/utils';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
+import { getUnifiedDashboard } from '@/lib/api/dashboard';
 
 const STATUS: Record<string, string> = {
   Success: 'bg-[#e7f7ee] text-[#34a853]',
@@ -20,14 +23,76 @@ const TXNS = [
   { name: 'Cornerstone Church', email: 'admin@cornerstone.org', status: 'Failed', date: 'Jan 10, 2025', amount: '$45.00', method: 'Bank transfer', type: 'General Offering', channel: 'Online' },
 ];
 
+type SysTxn = typeof TXNS[number];
+
+function normalizeStatus(s?: string): string {
+  if (!s) return 'Pending';
+  const u = s.toUpperCase();
+  if (u === 'SUCCEEDED' || u === 'SUCCESS' || u === 'COMPLETED') return 'Success';
+  if (u === 'FAILED' || u === 'CANCELED' || u === 'EXPIRED') return 'Failed';
+  return 'Pending';
+}
+
+function fmtAmt(amount: unknown, currency?: string): string {
+  const n = Number(amount);
+  if (!n && n !== 0) return String(amount ?? '');
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD' }).format(n);
+  } catch {
+    return String(n);
+  }
+}
+
+function fmtDate(iso?: string): string {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  } catch { return iso; }
+}
+
 const TABS = ['All Transactions', 'Online', 'Offline'];
 
 /** System → Transactions (board 778:38441). */
 export default function SystemTransactionsPage() {
   const [tab, setTab] = useState(0);
+  const [txns, setTxns] = useState<SysTxn[]>(TXNS);
+  const [totalGiving, setTotalGiving] = useState('$60500');
+  const [totalCount, setTotalCount] = useState(20);
 
-  const filtered =
-    tab === 0 ? TXNS : TXNS.filter((t) => t.channel === TABS[tab]);
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    // Try platform-level payment list — follows same admin dashboard pattern
+    (api.get<unknown>('/system/dashboard/admin/payments') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: SysTxn[] = arr.map((p) => ({
+          name: String(p['donorName'] ?? p['name'] ?? p['payerName'] ?? 'Unknown'),
+          email: String(p['donorEmail'] ?? p['email'] ?? ''),
+          status: normalizeStatus(String(p['status'] ?? '')),
+          date: fmtDate(String(p['paidAt'] ?? p['requestedAt'] ?? p['createdAt'] ?? '')),
+          amount: fmtAmt(p['amount'], String(p['currency'] ?? 'USD')),
+          method: String(p['gatewayType'] ?? p['paymentMethod'] ?? 'Online'),
+          type: String(p['purpose'] ?? p['type'] ?? 'Donation'),
+          channel: String(p['channel'] ?? 'Online'),
+        }));
+        setTxns(mapped);
+        setTotalCount(mapped.length);
+      })
+      .catch(() => {});
+    getUnifiedDashboard()
+      .then((s) => { if (s) setTotalGiving(s.totalGiving); })
+      .catch(() => {});
+  }, []);
+
+  const filtered = tab === 0 ? txns : txns.filter((t) => t.channel === TABS[tab]);
 
   const rows: SmartRow[] = filtered.map((t, i) => ({
     group: t.status,
@@ -39,7 +104,7 @@ export default function SystemTransactionsPage() {
       </span>,
       <span
         key="s"
-        className={cn('rounded-full px-2.5 py-1 text-[11px] font-medium', STATUS[t.status])}
+        className={cn('rounded-full px-2.5 py-1 text-[11px] font-medium', STATUS[t.status] ?? STATUS.Pending)}
       >
         {t.status}
       </span>,
@@ -67,10 +132,10 @@ export default function SystemTransactionsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Giving" value="$60500" variant="blue" />
+        <StatCard title="Total Giving" value={totalGiving} variant="blue" />
         <StatCard title="Offline Giving" value="$87,730" variant="white" />
         <StatCard title="Recurring Givers" value="130" variant="green" />
-        <StatCard title="Total Transactions" value="20" variant="white" />
+        <StatCard title="Total Transactions" value={String(totalCount)} variant="white" />
         <ActionCard
           href="/system/transactions"
           title="Giving List"

@@ -4,8 +4,9 @@ import { cn } from '@/lib/utils';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
-import { TransactionsTable } from './shared';
+import { TransactionsTable, type Transaction } from './shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
+import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
@@ -34,10 +35,17 @@ const chartConfig = {
   value: { label: 'Overview', color: '#5a4fe0' },
 } satisfies ChartConfig;
 
+function mapStatus(s?: string): Transaction['status'] {
+  if (s === 'SUCCEEDED') return 'Success';
+  if (s === 'FAILED' || s === 'CANCELED' || s === 'EXPIRED') return 'Failed';
+  return 'Pending';
+}
+
 export function AnalyticsContent() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Finance');
   const [audience, setAudience] = useState<string | null>(null);
   const [financeTrend, setFinanceTrend] = useState<{ month: string; value: number }[]>([]);
+  const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -46,6 +54,20 @@ export function AnalyticsContent() {
         if (s && s.trend.length > 0) {
           setFinanceTrend(s.trend.map((p) => ({ month: p.label, value: p.value })));
         }
+      })
+      .catch(() => {});
+    getCustomerPayments(0, 20)
+      .then((page) => {
+        const rows = (page?.content ?? []).map((p) => {
+          const g = paymentToGiving(p);
+          const fmt = (n: number, cur: string) =>
+            new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(n);
+          const date = g.date
+            ? new Date(g.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : undefined;
+          return { status: mapStatus(g.status), type: g.purpose, amount: fmt(g.amount, g.currency), date } satisfies Transaction;
+        });
+        if (rows.length > 0) setTxns(rows);
       })
       .catch(() => {});
   }, []);
@@ -147,7 +169,7 @@ export function AnalyticsContent() {
         </div>
       )}
 
-      <TransactionsTable />
+      <TransactionsTable rows={txns} />
     </div>
   );
 }
