@@ -60,6 +60,16 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
   const reference = payment?.paymentReference ?? payment?.id ?? 'TXN-02939493';
   const statusColor = status.toUpperCase() === 'SUCCEEDED' || status.toLowerCase() === 'successful' ? '#22A45D' : '#ff8d28';
 
+  const donorName = payment
+    ? String(payment['donorName'] ?? payment['payerName'] ?? payment['customerName'] ?? payment['fullName'] ?? 'Aderemi Doe')
+    : 'Aderemi Doe';
+  const donorEmail = payment
+    ? String(payment['donorEmail'] ?? payment['payerEmail'] ?? payment['customerEmail'] ?? payment['email'] ?? 'aderemidoe@email.com')
+    : 'aderemidoe@email.com';
+  const donorPhone = payment
+    ? String(payment['donorPhone'] ?? payment['payerPhone'] ?? payment['customerPhone'] ?? payment['phone'] ?? payment['mobilePhone'] ?? '+234 812 345 6789')
+    : '+234 812 345 6789';
+
   return (
     <SheetPage className="w-full max-w-[665px]! gap-0" backLink={returnUrl}>
       <div className="w-full h-full overflow-y-auto flex flex-col justify-between items-center gap-4">
@@ -107,21 +117,21 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
             <span className="text-[#243F84] font-bold md:text-[18px]">
               Donor Information
             </span>
-            <span>Aderemi Doe</span>
+            <span>{donorName}</span>
             <a
-              href="mailto:aderemidoe@email.com"
+              href={`mailto:${donorEmail}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              aderemidoe@email.com
+              {donorEmail}
             </a>
 
             <a
-              href="tel:+2348123456789"
+              href={`tel:${donorPhone}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              +234 812 345 6789
+              {donorPhone}
             </a>
           </div>
 

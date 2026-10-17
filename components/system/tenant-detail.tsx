@@ -537,7 +537,7 @@ const TXN_STATUS: Record<string, string> = {
 function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
   const [transactions, setTransactions] = useState<TxnRow[]>(TRANSACTIONS);
   const [sub, setSub] = useState<'Non Member' | 'Member'>('Non Member');
-  const [receipt, setReceipt] = useState<{ failed: boolean } | null>(null);
+  const [receipt, setReceipt] = useState<{ failed: boolean; row?: TxnRow } | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -637,7 +637,7 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
                   <button
                     type="button"
                     onClick={() =>
-                      setReceipt({ failed: t.status === 'Failed' })
+                      setReceipt({ failed: t.status === 'Failed', row: t })
                     }
                     className="rounded-full bg-[#eef1f6] px-5 py-1.5 text-[12px] font-medium text-brand-blue hover:bg-[#e2e7f0]"
                   >
@@ -655,6 +655,7 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
         failed={receipt?.failed ?? false}
         onClose={() => setReceipt(null)}
         tenantName={tenantName}
+        row={receipt?.row}
       />
     </div>
   );
@@ -670,11 +671,13 @@ function GivingReceiptSheet({
   failed,
   onClose,
   tenantName,
+  row,
 }: {
   open: boolean;
   failed: boolean;
   onClose(): void;
   tenantName?: string;
+  row?: TxnRow;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
@@ -693,23 +696,22 @@ function GivingReceiptSheet({
             <p className="text-[13px] font-semibold">{tenantName ?? 'Celebration Church Int.'}</p>
           </div>
 
-          <div>
-            <p className="text-[11px] text-brand-gray-500">Donor Information</p>
-            <p className="text-[14px] font-semibold">Aderemi Doe</p>
-            <p className="text-[11px] text-brand-gray-500">
-              aderimidoe@email.com · +234 812 345 6789
-            </p>
-          </div>
+          {row?.name && (
+            <div>
+              <p className="text-[11px] text-brand-gray-500">Donor Information</p>
+              <p className="text-[14px] font-semibold">{row.name}</p>
+            </div>
+          )}
 
           <Dialog.Title className="text-[16px] font-bold text-brand-blue">
             Giving Receipt
           </Dialog.Title>
           <div className="flex flex-col gap-3">
-            <ReceiptRow label="Donation Date" value="January 12, 2025" />
-            <ReceiptRow label="Amount Given" value="$25.00" />
-            <ReceiptRow label="Fund / Campaign" value="General Offering" />
+            <ReceiptRow label="Donation Date" value={row?.date ?? 'January 12, 2025'} />
+            <ReceiptRow label="Amount Given" value={row?.amount ?? '$25.00'} />
+            <ReceiptRow label="Fund / Campaign" value={row?.type ?? 'General Offering'} />
             <ReceiptRow label="Donation Type" value="One-time" />
-            <ReceiptRow label="Payment Method" value="Debit Card (Visa •••• 2920)" />
+            <ReceiptRow label="Payment Method" value={row?.method ?? 'Debit Card'} />
             <ReceiptRow label="Transaction ID" value="TXN-02939493" />
             <ReceiptRow
               label="Status"
