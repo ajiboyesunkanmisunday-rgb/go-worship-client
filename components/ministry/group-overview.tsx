@@ -6,7 +6,9 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getTenantGroup, type TenantGroup } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -53,10 +55,27 @@ function QrCode() {
 }
 
 /** Church Admin "Group Overview" slide-over (Figma 418:23947). */
-export function GroupOverview() {
+const MOCK_GROUP: TenantGroup = {
+  id: '1',
+  name: 'Faith Builders Fellowship',
+  description: 'A complete breakdown of what happens when a user clicks View on the Group List.',
+  memberCount: 22,
+  leaderId: '',
+  leaderName: 'Isaiah Christian',
+  status: 'Active',
+  createdAt: 'Jun 10, 2025',
+};
+
+export function GroupOverview({ id }: { id?: string }) {
   const router = useRouter();
   const back = '/ministry/groups';
   const [qr, setQr] = useState(true);
+  const [group, setGroup] = useState<TenantGroup>(MOCK_GROUP);
+
+  useEffect(() => {
+    if (!USE_LIVE_API || !id) return;
+    getTenantGroup(id).then((g: TenantGroup | null) => { if (g) setGroup(g); }).catch(() => {});
+  }, [id]);
 
   return (
     <SheetPage
@@ -90,15 +109,19 @@ export function GroupOverview() {
           <div>
             <p className="text-[10px] text-brand-gray-500">Group Name:</p>
             <p className="text-[20px] font-bold text-brand-blue">
-              Faith Builders Fellowship
+              {group.name}
             </p>
             <p className="text-[12px] text-brand-gray-500">
-              Category: Small Group / Bible Study
+              {group.description || 'Small Group'}
             </p>
             <p className="flex items-center gap-1.5 text-[12px] text-brand-gray-500">
-              Created on June 10, 2025
+              {group.createdAt ? `Created on ${group.createdAt}` : ''}
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-[#34a853]" /> Active
+                <span className={cn(
+                  'size-2 rounded-full',
+                  group.status?.toLowerCase() === 'active' ? 'bg-[#34a853]' : 'bg-[#eb0000]'
+                )} />
+                {group.status || 'Active'}
               </span>
             </p>
           </div>
@@ -108,17 +131,13 @@ export function GroupOverview() {
           <h2 className="text-[15px] font-bold">Group Information</h2>
           <ReadonlyField
             label="Group Description*"
-            value="A complete breakdown of what happens when a user clicks View on the Group List."
+            value={group.description || '—'}
           />
           <ReadonlyField label="Meeting Frequency*" value="Every Tuesdays" />
           <ReadonlyField label="Meeting Day*" value="Tuesdays" />
           <ReadonlyField label="Meeting Time*" value="6:00 PM" />
-          <ReadonlyField label="Group Leader*" value="Isaiah Christian" />
-          <ReadonlyField label="Venue Name*" value="Canada Ontario" />
-          <ReadonlyField
-            label="Online Meeting Link*"
-            value="http://zoom/canadachurch.com"
-          />
+          <ReadonlyField label="Group Leader*" value={group.leaderName || '—'} />
+          <ReadonlyField label="Members" value={String(group.memberCount)} />
 
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-[#333]">
@@ -149,7 +168,7 @@ export function GroupOverview() {
           <Button
             size="lg"
             className="h-[52px] w-full"
-            onClick={() => router.push(`${back}/1/edit`)}
+            onClick={() => router.push(`${back}/${id ?? group.id}/edit`)}
           >
             Edit Group
           </Button>

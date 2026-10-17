@@ -175,6 +175,19 @@ export async function getTenantGroups(): Promise<TenantGroup[]> {
   return findTableRows(data, 'group').map(mapGroup).filter((g) => g.name);
 }
 
+/** [VERIFY PATH] GET /tenant/admin/groups/:id */
+export async function getTenantGroup(id: string): Promise<TenantGroup | null> {
+  try {
+    const data = await api.get<unknown>(`/tenant/admin/groups/${id}`);
+    const rows = findTableRows(data, 'group');
+    if (rows.length > 0) return mapGroup(rows[0]);
+    if (data && typeof data === 'object') return mapGroup(data as Record<string, unknown>);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /* -------- Tenant Admin Dashboard Stats -------- */
 
 export type TenantStats = {
