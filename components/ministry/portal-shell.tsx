@@ -21,6 +21,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { RoleSwitcher } from '@/components/shared/role-switcher';
+import { useState, useEffect } from 'react';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 const NAV_ITEMS = [
   { href: '/ministry/dashboard', label: 'Dashboard', icon: LayoutGrid },
@@ -77,6 +81,28 @@ function Sidebar() {
 }
 
 function Topbar() {
+  const [orgName, setOrgName] = useState('Celebration Church Int.');
+  const [orgLocation, setOrgLocation] = useState('Ontario Canada, Canada City');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding()
+      .then((b) => {
+        if (b.organizationName) setOrgName(b.organizationName);
+      })
+      .catch(() => {});
+    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const loc =
+          (d['city'] as string | undefined) ??
+          (d['location'] as string | undefined) ??
+          (d['address'] as string | undefined) ??
+          (d['country'] as string | undefined);
+        if (loc) setOrgLocation(loc);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <header className="flex h-[64px] items-center justify-between gap-4 border-b border-[#ededed] bg-white px-6">
       <TopbarSearch />
@@ -92,9 +118,9 @@ function Topbar() {
             height={39}
           />
           <div className="hidden flex-col md:flex">
-            <p className="text-[13px] font-bold">Celebration Church Int.</p>
+            <p className="text-[13px] font-bold">{orgName}</p>
             <span className="text-[12px] text-brand-gray-500">
-              Ontario Canada, Canada City
+              {orgLocation}
             </span>
           </div>
         </div>

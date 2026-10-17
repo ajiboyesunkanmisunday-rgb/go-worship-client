@@ -1,7 +1,12 @@
+'use client';
+
 import { cn } from '@/lib/utils';
 import { FolderClosed, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /* ---------------- Quick Access ---------------- */
 
@@ -31,6 +36,24 @@ function QuickCard({
 }
 
 export function QuickAccess() {
+  const [storageSubtitle, setStorageSubtitle] = useState('2.3GB · 40 items');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<Record<string, unknown>>('/tenant/media/storage-stats') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/tenant/media/stats') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/tenant/stats') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const size = (d['usedFormatted'] as string | undefined) ?? (d['totalSize'] as string | undefined) ?? (d['size'] as string | undefined);
+        const count = (d['count'] as number | undefined) ?? (d['itemCount'] as number | undefined) ?? (d['totalCount'] as number | undefined);
+        if (size || count != null) {
+          const parts = [size, count != null ? `${count} items` : undefined].filter(Boolean);
+          if (parts.length > 0) setStorageSubtitle(parts.join(' · '));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="rounded-[14px] bg-white p-5">
       <h2 className="text-[16px] font-bold">Quick Access</h2>
@@ -38,7 +61,7 @@ export function QuickAccess() {
         <QuickCard
           href="/sermon-admin/media"
           title="Uploaded Media"
-          subtitle="2.3GB · 40 items"
+          subtitle={storageSubtitle}
           icon={
             <span className="flex size-9 items-center justify-center rounded-[8px] bg-[#ff8d28]">
               <FolderClosed className="size-5 text-white" />

@@ -128,7 +128,7 @@ export default function MinistryCommunicationPage() {
                     </span>
                   </td>
                   <td className="py-4">
-                    <ReceiptButton highlighted={i === 0} />
+                    <ReceiptButton highlighted={i === 0} name={m.recipients} date={m.date} />
                   </td>
                 </tr>
               ))}
