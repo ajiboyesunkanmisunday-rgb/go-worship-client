@@ -12,6 +12,7 @@ import {
   Search,
   Settings,
   LifeBuoy,
+  ShieldCheck,
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
 import { TopbarSearch } from '@/components/shared/topbar-search';
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { href: '/system/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/system/plans', label: 'Plans & Billing', icon: ReceiptText },
   { href: '/system/platform-users', label: 'Platform Users', icon: UsersRound },
+  { href: '/system/roles', label: 'Roles', icon: ShieldCheck },
   { href: '/system/analytics', label: 'Analytics', icon: ChartNoAxesColumn },
   { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },
   { href: '/system/support', label: 'Support management', icon: LifeBuoy },
