@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import {
   DropdownMenu,
@@ -11,12 +11,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
+import { cn } from '@/lib/utils';
 
-const MEMBERS = Array.from({ length: 11 }).map((_, i) => ({
+const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 11 }, (_, i) => ({
   id: String(i + 1),
   name: 'Grace Anita',
-  role: 'Member',
-  status: 'Active',
+  email: '',
+  phone: '',
+  status: 'Active' as const,
+  joinedAt: '',
+  groups: [],
 }));
 
 const FILTERS = ['All member', 'Youth Fellowship', 'Music Group', 'Prayer Group'];
@@ -24,6 +30,12 @@ const FILTERS = ['All member', 'Youth Fellowship', 'Music Group', 'Prayer Group'
 export function GroupMembers() {
   const router = useRouter();
   const [filter, setFilter] = useState(FILTERS[0]);
+  const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantMembers().then(setMembers).catch(() => {});
+  }, []);
 
   return (
     <SheetPage
@@ -74,7 +86,7 @@ export function GroupMembers() {
         </div>
 
         <ul className="mt-4 flex flex-col divide-y divide-[#ededed]">
-          {MEMBERS.map((m) => (
+          {members.map((m) => (
             <li key={m.id} className="flex items-center gap-4 py-4">
               <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-gray-200">
                 <Image
@@ -89,9 +101,12 @@ export function GroupMembers() {
                 {m.name}
               </span>
               <span className="w-[100px] text-[14px] text-brand-gray-500">
-                {m.role}
+                Member
               </span>
-              <span className="w-[70px] text-right text-[14px] font-medium text-[#34a853]">
+              <span className={cn(
+                'w-[70px] text-right text-[14px] font-medium',
+                m.status === 'Active' ? 'text-[#34a853]' : 'text-[#eb0000]'
+              )}>
                 {m.status}
               </span>
             </li>
