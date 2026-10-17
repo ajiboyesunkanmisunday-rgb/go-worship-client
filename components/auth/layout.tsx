@@ -13,10 +13,11 @@ type AuthLayoutProps = {
 export function AuthLayout({
   children,
   containerClassName,
+  imgSrc,
   imgAlt,
 }: AuthLayoutProps) {
   return (
-    <AuthShell contentClassName={containerClassName} imgAlt={imgAlt}>
+    <AuthShell contentClassName={containerClassName} imgSrc={imgSrc} imgAlt={imgAlt}>
       {children}
     </AuthShell>
   );

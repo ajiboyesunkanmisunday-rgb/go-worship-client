@@ -45,19 +45,24 @@ type FormSchema = z.infer<typeof formSchema>;
 type Props = {
   /** Where to go after a successful sign in. */
   redirectTo?: string;
-  /** Where the "Create an account" link points. */
+  /** Where the "Create an account" link points. Omit to hide member-facing links. */
   signupHref?: string;
   /** Force Google button off — use for TENANT_ADMIN / SYSTEM_OWNER portals. */
   disableGoogle?: boolean;
   /** Show a "Register your church" link — only relevant on the platform root login. */
   showRegisterChurch?: boolean;
+  /** Override the left-panel background image (default: church photo). */
+  imgSrc?: string;
+  imgAlt?: string;
 };
 
 function SignInFormInner({
   redirectTo = '/dashboard',
-  signupHref = '/auth/signup',
+  signupHref,
   disableGoogle = false,
   showRegisterChurch = false,
+  imgSrc,
+  imgAlt,
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -170,7 +175,7 @@ function SignInFormInner({
   };
 
   return (
-    <AuthLayout imgAlt="Celebration Church">
+    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'}>
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
         <Image
           src="/auth/infinity-blue.svg"
@@ -304,12 +309,14 @@ function SignInFormInner({
               </>
             )}
 
-            <p className="text-[15px] font-light">
-              Don&apos;t have any?{' '}
-              <Link href={signupHref} className="font-bold text-brand-orange">
-                Create an account
-              </Link>
-            </p>
+            {signupHref && (
+              <p className="text-[15px] font-light">
+                Don&apos;t have any?{' '}
+                <Link href={signupHref} className="font-bold text-brand-orange">
+                  Create an account
+                </Link>
+              </p>
+            )}
 
             {showRegisterChurch && (
               <p className="text-center text-[14px] font-light text-brand-gray-500">
@@ -323,7 +330,7 @@ function SignInFormInner({
               </p>
             )}
 
-            {showGoogle && (
+            {showGoogle && signupHref && (
               <p className="text-center text-[14px] font-light text-brand-gray-500">
                 Just browsing?{' '}
                 <Link href="/auth/guest" className="font-medium text-brand-blue hover:underline">
