@@ -287,6 +287,25 @@ export async function getSelfEvents(): Promise<TenantEvent[]> {
   return findTableRows(data, 'event').map(mapEvent).filter((e) => e.name);
 }
 
+/** [VERIFY PATH] GET /self/events/:id — single event detail for member */
+export async function getSelfEvent(id: string): Promise<TenantEvent | null> {
+  try {
+    const data = await api.get<unknown>(`/self/events/${id}`);
+    const rows = findTableRows(data, 'event');
+    if (rows.length > 0) return mapEvent(rows[0]);
+    if (data && typeof data === 'object') return mapEvent(data as Record<string, unknown>);
+    return null;
+  } catch {
+    // Fall back to fetching all and filtering
+    try {
+      const all = await getSelfEvents();
+      return all.find((e) => e.id === id) ?? null;
+    } catch {
+      return null;
+    }
+  }
+}
+
 /** [VERIFY PATH] GET /self/groups — groups the member belongs to */
 export async function getSelfGroups(): Promise<TenantGroup[]> {
   const data = await api.get<unknown>('/self/groups');

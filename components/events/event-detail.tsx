@@ -1,12 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { fetchEvent } from '@/data/events';
+import type { Event } from '@/types/event';
 import { NoDataPlaceholder } from '../ui/no-data-placeholder';
 import { Button } from '../ui/button';
+import { getSelfEvent } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 type Props = {
   isIntercepted?: boolean;
@@ -19,7 +22,27 @@ export function EventDetail({ isIntercepted = false, id }: Props) {
     [isIntercepted]
   );
 
-  const event = useMemo(() => fetchEvent(id), [id]);
+  const mockEvent = useMemo(() => fetchEvent(id), [id]);
+  const [event, setEvent] = useState<Event | null>(mockEvent ?? null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSelfEvent(id).then((e) => {
+      if (!e) return;
+      setEvent({
+        id: e.id,
+        name: e.name,
+        eventDate: e.eventDate,
+        eventTime: e.eventTime || '00:00',
+        location: e.location,
+        type: e.type,
+        status: e.status.toLowerCase(),
+        createdAt: e.createdAt,
+        registered: true,
+        eventImg: '',
+      });
+    }).catch(() => {});
+  }, [id]);
 
   let content = null;
   if (event) {
