@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import { cn } from '@/lib/utils';
 import {
@@ -8,6 +8,9 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
+import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
+import { getUnifiedDashboard } from '@/lib/api/dashboard';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * System → Analytics (778:38441). Distinct from the Ministry AnalyticsContent
@@ -154,7 +157,42 @@ function tableFor(tab: Tab): { title: string; headers: string[]; rows: SmartRow[
 
 export function SystemAnalyticsContent() {
   const [tab, setTab] = useState<Tab>('Finance');
-  const table = tableFor(tab);
+  const [liveTenants, setLiveTenants] = useState<SystemTenant[] | null>(null);
+  const [financeTrend, setFinanceTrend] = useState<{ month: string; value: number }[]>([]);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSystemTenants().then(setLiveTenants).catch(() => {});
+    getUnifiedDashboard()
+      .then((s) => {
+        if (s && s.trend.length > 0) {
+          setFinanceTrend(s.trend.map((p) => ({ month: p.label, value: p.value })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const chartData = tab === 'Finance' && financeTrend.length > 0 ? financeTrend : trend;
+
+  const table = (() => {
+    if (tab === 'Tenants' && liveTenants) {
+      return {
+        title: 'Recent Tenants',
+        headers: ['Tenant', 'Status', 'Plan', 'Users', 'Members', 'Giving Volume', 'Created', 'Action'],
+        rows: liveTenants.map((t) => ({
+          group: t.status,
+          text: [t.name, t.status, t.plan, '—', String(t.members), '—', t.createdAt],
+          cells: [
+            <span key="t" className="font-medium">{t.name}</span>,
+            <Badge key="s" value={t.status} />,
+            t.plan, '—', t.members, '—', t.createdAt,
+            <span key="a" className="text-brand-gray-500">•••</span>,
+          ],
+        })),
+      };
+    }
+    return tableFor(tab);
+  })();
 
   return (
     <div className="flex flex-col gap-5">
@@ -186,7 +224,7 @@ export function SystemAnalyticsContent() {
       <div className="rounded-[14px] bg-white p-6">
         <h2 className="text-[18px] font-bold">{OVERVIEW[tab]}</h2>
         <ChartContainer config={chartConfig} className="mt-4 h-[260px] w-full">
-          <AreaChart data={trend} margin={{ top: 10, right: 8, bottom: 4, left: 4 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 8, bottom: 4, left: 4 }}>
             <defs>
               <linearGradient id="sysAnFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#5a4fe0" stopOpacity={0.5} />

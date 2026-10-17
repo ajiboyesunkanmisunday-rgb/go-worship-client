@@ -11,6 +11,7 @@ import {
   Search,
   Settings,
   UserCog,
+  UserRound,
   Users,
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/ministry/dashboard', label: 'Dashboard', icon: LayoutGrid },
   { href: '/ministry/finance', label: 'Finance', icon: DollarSign },
   { href: '/ministry/groups', label: 'Groups', icon: Users },
+  { href: '/ministry/members', label: 'Members', icon: UserRound },
   { href: '/ministry/events', label: 'Events', icon: CalendarDays },
   {
     href: '/ministry/communication',

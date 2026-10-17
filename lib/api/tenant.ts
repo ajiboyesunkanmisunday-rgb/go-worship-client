@@ -230,6 +230,29 @@ export type ProvisionTenantUserPayload = {
 export const provisionTenantUser = (payload: ProvisionTenantUserPayload) =>
   api.post<unknown>('/tenant/admin/users/provision', payload);
 
+/* -------- Member Provisioning (confirmed: TN-007) -------- */
+
+export type ProvisionTenantMemberPayload = {
+  email: string;
+  username?: string;
+  displayName: string;
+  sendInviteEmail?: boolean;
+  profile?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    address?: string;
+    preferredLocale?: string;
+    preferredTimezone?: string;
+  };
+};
+
+/** TN-007  POST /tenant/admin/users/customers/provision — ADMIN provisions a member (INDIRECT) */
+export const provisionTenantMember = (payload: ProvisionTenantMemberPayload) =>
+  api.post<unknown>('/tenant/admin/users/customers/provision', payload);
+
 /* -------- Member self-service content -------- */
 
 /** [VERIFY PATH] GET /self/events — member's registered/upcoming events */
