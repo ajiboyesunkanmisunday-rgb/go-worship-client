@@ -1,19 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getTenantStats, getTenantEvents, type TenantStats, type TenantEvent } from '@/lib/api/tenant';
+import { getTenantStats, getTenantEvents, getTenantBranding, type TenantStats, type TenantEvent } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { EventsTable, QuickAccessCard, StatCard, type EventRow } from './shared';
 
-function HelloCard() {
+function HelloCard({ orgName }: { orgName: string }) {
   return (
     <div className="relative flex min-h-[190px] flex-col justify-center overflow-hidden rounded-[15px] border border-[#fdfdfd] bg-white p-8">
       <span className="pointer-events-none absolute -top-10 right-[-60px] size-[260px] rounded-full border-[16px] border-brand-orange/15" />
       <h1 className="relative text-[28px] font-medium lg:text-[32px]">
-        Hello Christain 👋
+        Hello 👋
       </h1>
       <p className="relative mt-3 max-w-[341px] font-poppins text-[15px] font-light">
-        Welcome to Celebration Church International Go worship Platform
+        Welcome to {orgName} Go worship Platform
       </p>
     </div>
   );
@@ -60,9 +60,13 @@ const RECENT_EVENTS = [
 export function GroupLeaderDashboard() {
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventRow[]>(RECENT_EVENTS);
+  const [orgName, setOrgName] = useState('Celebration Church International');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
     getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
     getTenantEvents().then((events) => {
       const mapped: EventRow[] = events.slice(0, 5).map((e: TenantEvent) => ({
@@ -81,7 +85,7 @@ export function GroupLeaderDashboard() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <HelloCard />
+        <HelloCard orgName={orgName} />
         <QuickAccessCard />
       </div>
 

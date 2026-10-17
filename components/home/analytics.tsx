@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSelfEvents, getSelfGroups } from '@/lib/api/tenant';
+import { getSelfEvents, getSelfGroups, getTenantBranding } from '@/lib/api/tenant';
 import { getCustomerPayments } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { CurrencyCircleDollarIcon } from '@/icons/currency';
@@ -83,9 +83,14 @@ export function Analytics() {
   const [totalGiven, setTotalGiven] = useState('$1000');
   const [totalGroups, setTotalGroups] = useState(9);
   const [upcomingEvents, setUpcomingEvents] = useState(4);
+  const [orgName, setOrgName] = useState('Celebration Church International');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
+
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
 
     getCustomerPayments(0, 100).then((page) => {
       const sum = (page?.content ?? [])
@@ -114,7 +119,7 @@ export function Analytics() {
           Hello 👋
         </h1>
         <p className="max-w-[356px] text-[16px] leading-[150%] font-light text-brand-gray-500">
-          Welcome to Celebration Church International Go worship Platform
+          Welcome to {orgName} Go worship Platform
         </p>
       </div>
 

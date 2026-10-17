@@ -9,7 +9,9 @@ import {
 } from '@/components/ui/native-select';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FormEvent } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -31,6 +33,14 @@ const INPUT_CLASS =
 
 export default function CheckoutGivingPage() {
   const router = useRouter();
+  const [orgName, setOrgName] = useState('Celebration Church');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
+  }, []);
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,7 +60,7 @@ export default function CheckoutGivingPage() {
 
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-[26px] font-bold leading-[1.15] text-[#1a1a1a] lg:text-[30px]">
-            Celebration Church
+            {orgName}
             <br />
             Giving Platform
           </h1>

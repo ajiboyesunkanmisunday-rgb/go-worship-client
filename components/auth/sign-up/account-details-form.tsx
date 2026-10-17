@@ -19,8 +19,10 @@ import {
   NativeSelectOption,
 } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * Required-ness follows the red asterisks in the design: First Name, Last
@@ -65,7 +67,6 @@ function Required() {
  * tenant from the domain and registers the user "in the current tenant", so
  * this is shown for confirmation rather than chosen.
  */
-const CURRENT_CHURCH = 'Celebration Church Canada';
 
 type Props = {
   onSuccess?(): void;
@@ -76,6 +77,14 @@ export function AccountDetailsForm({ onSuccess }: Props) {
     'signup-account-details',
     {}
   );
+  const [currentChurch, setCurrentChurch] = useState('Celebration Church Canada');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then((b) => {
+      if (b.organizationName) setCurrentChurch(b.organizationName);
+    }).catch(() => {});
+  }, []);
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -205,7 +214,7 @@ export function AccountDetailsForm({ onSuccess }: Props) {
           <FormItem className="col-span-2 md:col-span-1">
             <FormLabel>Church</FormLabel>
             <FormControl>
-              <Input value={CURRENT_CHURCH} readOnly tabIndex={-1} />
+              <Input value={currentChurch} readOnly tabIndex={-1} />
             </FormControl>
           </FormItem>
 
