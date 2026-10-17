@@ -5,6 +5,7 @@ import { ClipboardList, Plus, SquareCheckBig } from 'lucide-react';
 import { DataPanel, QuickAccessCard, type TableRow } from './shared';
 import { useState, useEffect } from 'react';
 import { getTenantMembers, getTenantStats, type TenantMember, type TenantStats } from '@/lib/api/tenant';
+import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const GREEN_ICON =
@@ -63,11 +64,16 @@ const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, () => ({
 export function GroupLeaderDashboard() {
   const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
   const [stats, setStats] = useState<TenantStats | null>(null);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => {});
     getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getProfile().then((p) => {
+      const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      if (name) setUserName(name);
+    }).catch(() => {});
   }, []);
 
   const rows: TableRow[] = members.slice(0, 5).map((m) => ({
@@ -80,7 +86,7 @@ export function GroupLeaderDashboard() {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_1.3fr]">
         {/* Hello card */}
         <div className="relative overflow-hidden rounded-[14px] bg-white p-6">
-          <h1 className="text-[28px] font-bold lg:text-[32px]">Hello 👋</h1>
+          <h1 className="text-[28px] font-bold lg:text-[32px]">Hello{userName ? `, ${userName}` : ''} 👋</h1>
           <p className="mt-2 max-w-[300px] text-[14px] text-brand-gray-500">
             Welcome to Go Worship Platform
           </p>

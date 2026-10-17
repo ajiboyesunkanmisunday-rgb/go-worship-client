@@ -5,6 +5,7 @@ import type { SmartRow } from '@/components/shared/smart-table';
 import { DataCard, QuickAccess, StatusText, ViewEditButton } from './shared';
 import { useEffect, useState } from 'react';
 import { getTenantStats, type TenantStats } from '@/lib/api/tenant';
+import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
 
@@ -51,10 +52,15 @@ type SeriesItem = { name: string; desc: string; count: string; status: string; d
 export function SermonAdminDashboard() {
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [series, setSeries] = useState<SeriesItem[]>(SERIES);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getProfile().then((p) => {
+      const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      if (name) setUserName(name);
+    }).catch(() => {});
 
     (api.get<unknown>('/tenant/admin/media/series') as Promise<unknown>)
       .then((data) => {
@@ -111,7 +117,7 @@ export function SermonAdminDashboard() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1.15fr]">
         <div className="relative overflow-hidden rounded-[14px] bg-white p-6">
-          <h1 className="text-[28px] font-bold lg:text-[32px]">Hello 👋</h1>
+          <h1 className="text-[28px] font-bold lg:text-[32px]">Hello{userName ? `, ${userName}` : ''} 👋</h1>
           <p className="mt-2 max-w-[320px] text-[14px] text-brand-gray-500">
             Welcome to Go Worship Platform
           </p>
