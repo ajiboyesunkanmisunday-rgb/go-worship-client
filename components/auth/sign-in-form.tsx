@@ -300,6 +300,15 @@ function SignInFormInner({
                 Create an account
               </Link>
             </p>
+
+            {showGoogle && (
+              <p className="text-center text-[14px] font-light text-brand-gray-500">
+                Just browsing?{' '}
+                <Link href="/auth/guest" className="font-medium text-brand-blue hover:underline">
+                  Continue as guest
+                </Link>
+              </p>
+            )}
           </form>
         </Form>
       </div>

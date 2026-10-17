@@ -298,3 +298,29 @@ export type TenantRegistration = {
 
 export const registerTenant = (payload: TenantRegistration) =>
   authRoute<{ ok: true }>('/bff/auth/register-tenant', payload);
+
+/* -------- Guest user flow (auth-endpoints memory) -------- */
+
+/** POST /bff/auth/guest/otp/start — sends OTP to the email, returns tokenId */
+export const startGuestOtp = (email: string, captchaToken: string) =>
+  authRoute<{ tokenId?: string; sessionId?: string; ok: boolean }>(
+    '/bff/auth/guest/otp/start',
+    { email, captchaToken }
+  );
+
+/** POST /bff/auth/guest/otp/verify — verifies OTP, sets guest session cookie */
+export const verifyGuestOtp = (email: string, tokenId: string, code: string) =>
+  authRoute<{ ok: boolean; userType?: string; canUpgrade?: boolean }>(
+    '/bff/auth/guest/otp/verify',
+    { email, tokenId, code }
+  );
+
+/** POST /tenant/admin/users/guests/upgrade-to-customer (authed via /bff/gw) */
+export const upgradeGuestToCustomer = (payload: {
+  displayName?: string;
+  rawPassword?: string;
+  confirmPassword?: string;
+}) =>
+  import('./client').then(({ api }) =>
+    api.post<unknown>('/tenant/admin/users/guests/upgrade-to-customer', payload)
+  );
