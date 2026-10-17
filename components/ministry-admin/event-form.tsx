@@ -39,9 +39,9 @@ function PencilInput(props: React.ComponentProps<typeof Input>) {
 }
 
 /** Create Event slide-over (Figma board 239:15681 — Frame 1321316435). */
-export function EventForm() {
+export function EventForm({ backPath }: { backPath?: string } = {}) {
   const router = useRouter();
-  const back = '/ministry-admin/events';
+  const back = backPath ?? '/ministry-admin/events';
 
   const [submitting, setSubmitting] = useState(false);
 

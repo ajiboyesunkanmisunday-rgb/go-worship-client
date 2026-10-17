@@ -54,6 +54,7 @@ export default function MinistryEventsPage() {
         <StatCard title="Upcoming Events" value={String(upcoming)} variant="green" />
         <StatCard title="Total Registrations" value={String(totalReg)} variant="white" />
         <ActionCard
+          href="/ministry/events/create"
           title="Create Event"
           subtitle="Click here to create events"
           icon={
