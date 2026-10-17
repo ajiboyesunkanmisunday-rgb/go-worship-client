@@ -197,7 +197,7 @@ function ForgotPasswordOtpPage() {
   return (
     <AuthLayout imgAlt="Celebration Church">
       <OtpForm
-        onVerify={() => router.push('/auth/set-password')}
+        onVerify={(otp) => router.push(`/auth/set-password?token=${encodeURIComponent(otp)}`)}
         header={<ResetProgress step={2} />}
         footer={
           <p className="text-[15px] font-light">

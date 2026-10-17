@@ -1,4 +1,5 @@
 'use client';
+
 import { z } from 'zod';
 import { AuthLayout } from '@/components/auth/layout';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PasswordInput } from '@/components/ui/password-input';
 import { ResetProgress } from '@/components/auth/reset-progress';
 import Link from 'next/link';
+import { Suspense, useState } from 'react';
+import { resetPassword } from '@/lib/api/auth';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 const formSchema = z
   .object({
@@ -35,7 +39,7 @@ const formSchema = z
 
 type FormSchema = z.infer<typeof formSchema>;
 
-export default function SetPasswordPage() {
+function SetPasswordInner() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -45,9 +49,32 @@ export default function SetPasswordPage() {
   });
 
   const router = useRouter();
+  const params = useSearchParams();
+  const token = params.get('token') ?? '';
 
-  const onSubmit: SubmitHandler<FormSchema> = (data) => {
-    console.log(data);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit: SubmitHandler<FormSchema> = async (data) => {
+    setFormError(null);
+
+    if (USE_LIVE_API) {
+      if (!token) {
+        setFormError('Your reset session has expired. Please start over.');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        await resetPassword(token, data.password);
+      } catch (e) {
+        setFormError(e instanceof Error ? e.message : 'Could not reset your password.');
+        setSubmitting(false);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    }
+
     router.push('/auth/login');
   };
 
@@ -138,22 +165,39 @@ export default function SetPasswordPage() {
               )}
             />
 
-            <Button size="lg" className="w-full mt-6" type="submit">
-              Reset Password
+            {formError && (
+              <p role="alert" className="text-[14px] text-destructive">
+                {formError}{' '}
+                <Link href="/auth/forgot-password" className="font-bold underline">
+                  Start over
+                </Link>
+              </p>
+            )}
+
+            <Button size="lg" className="w-full mt-6" type="submit" disabled={submitting}>
+              {submitting ? 'Saving…' : 'Reset Password'}
             </Button>
 
             <div className="w-full flex justify-center items-center gap-2">
-              <p className="text-[14px] lg:text-[17px]">Don&apos;t have any?</p>
+              <p className="text-[14px] lg:text-[17px]">Remember your password?</p>
               <Link
-                href="/auth/signup"
+                href="/auth/login"
                 className="text-[14px] lg:text-[17px] text-brand-orange font-bold"
               >
-                Create an account
+                Sign in
               </Link>
             </div>
           </form>
         </Form>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function SetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetPasswordInner />
+    </Suspense>
   );
 }
