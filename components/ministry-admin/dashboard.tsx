@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { getTenantStats, getTenantEvents, getTenantBranding, type TenantStats, type TenantEvent } from '@/lib/api/tenant';
+import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { EventsTable, QuickAccessCard, StatCard, type EventRow } from './shared';
 
-function HelloCard({ orgName }: { orgName: string }) {
+function HelloCard({ orgName, userName }: { orgName: string; userName: string }) {
   return (
     <div className="relative flex min-h-[190px] flex-col justify-center overflow-hidden rounded-[15px] border border-[#fdfdfd] bg-white p-8">
       <span className="pointer-events-none absolute -top-10 right-[-60px] size-[260px] rounded-full border-[16px] border-brand-orange/15" />
       <h1 className="relative text-[28px] font-medium lg:text-[32px]">
-        Hello 👋
+        Hello{userName ? `, ${userName}` : ''} 👋
       </h1>
       <p className="relative mt-3 max-w-[341px] font-poppins text-[15px] font-light">
         Welcome to {orgName} Go worship Platform
@@ -61,11 +62,16 @@ export function GroupLeaderDashboard() {
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventRow[]>(RECENT_EVENTS);
   const [orgName, setOrgName] = useState('Celebration Church International');
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
+    getProfile().then((p) => {
+      const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      if (name) setUserName(name);
     }).catch(() => {});
     getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
     getTenantEvents().then((events) => {
@@ -85,7 +91,7 @@ export function GroupLeaderDashboard() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <HelloCard orgName={orgName} />
+        <HelloCard orgName={orgName} userName={userName} />
         <QuickAccessCard />
       </div>
 

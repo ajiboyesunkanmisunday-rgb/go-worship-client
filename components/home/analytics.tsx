@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getSelfEvents, getSelfGroups, getTenantBranding } from '@/lib/api/tenant';
+import { getProfile } from '@/lib/api/auth';
 import { getCustomerPayments } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { CurrencyCircleDollarIcon } from '@/icons/currency';
@@ -84,12 +85,17 @@ export function Analytics() {
   const [totalGroups, setTotalGroups] = useState(9);
   const [upcomingEvents, setUpcomingEvents] = useState(4);
   const [orgName, setOrgName] = useState('Celebration Church International');
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
+    }).catch(() => {});
+    getProfile().then((p) => {
+      const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      if (name) setUserName(name);
     }).catch(() => {});
 
     getCustomerPayments(0, 100).then((page) => {
@@ -116,7 +122,7 @@ export function Analytics() {
     <div className="flex w-full flex-col items-start justify-start gap-8">
       <div className="flex flex-col items-start justify-start gap-3">
         <h1 className="text-[24px] leading-[100%] font-bold md:text-[32px]">
-          Hello 👋
+          Hello{userName ? `, ${userName}` : ''} 👋
         </h1>
         <p className="max-w-[356px] text-[16px] leading-[150%] font-light text-brand-gray-500">
           Welcome to {orgName} Go worship Platform
