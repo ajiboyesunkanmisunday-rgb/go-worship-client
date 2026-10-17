@@ -10,6 +10,7 @@ import { getSystemStats, type SystemStats } from '@/lib/api/system';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
+import { getProfile } from '@/lib/api/auth';
 
 const MOCK_TREND = [
   { month: 'May', value: 220 },
@@ -54,9 +55,15 @@ export function SystemDashboard() {
   const [trendData, setTrendData] = useState(MOCK_TREND);
   const [activity, setActivity] = useState(MOCK_ACTIVITY);
   const [plans, setPlans] = useState(MOCK_PLANS);
+  const [adminName, setAdminName] = useState('Super System Administrator');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
+    getProfile().then((p) => {
+      const joined = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      const name = p.displayName ?? (joined || undefined);
+      if (name) setAdminName(name);
+    }).catch(() => {});
     getUnifiedDashboard().then((u) => {
       if (u && (u.totalTenants || u.totalUsers)) {
         setStats({
@@ -115,6 +122,29 @@ export function SystemDashboard() {
         if (mapped.length > 0) setPlans(mapped);
       })
       .catch(() => {});
+
+    (api.get<Record<string, unknown>>('/system/security/stats') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/system/audit/stats') as Promise<Record<string, unknown>>)
+      .catch(() => api.get<Record<string, unknown>>('/system/dashboard/security') as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const patch: Partial<SystemStats> = {};
+        const n = (keys: string[]) => { const v = keys.map((k) => d[k]).find((v) => v != null); return v != null ? Number(v) : undefined; };
+        const sa = n(['successfulAuths', 'successfulLogins', 'authSuccess']);
+        const fa = n(['failedAuths', 'failedLogins', 'authFailures']);
+        const la = n(['lockedAccounts', 'lockedUsers']);
+        const mu = n(['mfaEnabledUsers', 'mfaCount']);
+        const af = n(['auditFailures', 'auditErrors']);
+        const as_ = n(['activeSessions', 'sessionCount']);
+        const rs = n(['riskySessions', 'riskySessionCount']);
+        if (sa != null) patch.successfulAuths = sa;
+        if (fa != null) patch.failedAuths = fa;
+        if (la != null) patch.lockedAccounts = la;
+        if (mu != null) patch.mfaEnabledUsers = mu;
+        if (af != null) patch.auditFailures = af;
+        if (as_ != null) patch.activeSessions = as_;
+        if (rs != null) patch.riskySessions = rs;
+        if (Object.keys(patch).length > 0) setStats((prev) => ({ ...prev, ...patch }));
+      }).catch(() => {});
   }, []);
 
   return (
@@ -122,10 +152,10 @@ export function SystemDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-bold lg:text-[32px]">
-            Platform Overview
+            Hello, {adminName} 👋
           </h1>
           <p className="mt-1 text-[14px] text-brand-gray-500">
-            Monitor your multi-tenant church platform
+            Go Worship
           </p>
         </div>
         <Link
@@ -137,11 +167,19 @@ export function SystemDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard title="Total Tenants"  value={fmt(stats.totalTenants)}  variant="blue" />
-        <StatCard title="Active Tenants" value={fmt(stats.activeTenants)} variant="green" />
-        <StatCard title="Total Users"    value={fmt(stats.totalUsers)}    variant="white" />
-        <StatCard title="Giving Volume"  value={fmt(stats.givingVolume)}  variant="white" />
+      <div>
+        <p className="mb-3 text-[16px] font-bold">Platform overview</p>
+        <p className="mb-4 text-[13px] text-brand-gray-500">Current platform tenant, user, campus and session health.</p>
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <StatCard title="Total tenants"   value={fmt(stats.totalTenants)}                                        variant="blue" />
+          <StatCard title="Active tenants"  value={fmt(stats.activeTenants)}                                       variant="green" />
+          <StatCard title="New tenants"     value={fmt(stats.newTenants ?? 0)}                                     variant="white" />
+          <StatCard title="Total campuses"  value={fmt(stats.totalCampuses ?? 0)}                                  variant="white" />
+          <StatCard title="Active users"    value={fmt(stats.activeUsers ?? stats.totalUsers)}                     variant="white" />
+          <StatCard title="New users"       value={fmt(stats.newUsers ?? 0)}                                       variant="white" />
+          <StatCard title="Active sessions" value={fmt(stats.activeSessions ?? 0)}                                 variant="white" />
+          <StatCard title="Risky sessions"  value={fmt(stats.riskySessions ?? 0)}                                  variant="white" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.7fr_1fr]">
@@ -196,6 +234,20 @@ export function SystemDashboard() {
               </li>
             ))}
           </ul>
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-3 text-[16px] font-bold">Security</p>
+        <p className="mb-4 text-[13px] text-brand-gray-500">Authentication, session, MFA and audit health.</p>
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <StatCard title="Successful authentications" value={fmt(stats.successfulAuths ?? 0)} variant="green" />
+          <StatCard title="Failed authentications"     value={fmt(stats.failedAuths ?? 0)}     variant="white" />
+          <StatCard title="Active sessions"            value={fmt(stats.activeSessions ?? 0)}  variant="white" />
+          <StatCard title="Risky sessions"             value={fmt(stats.riskySessions ?? 0)}   variant="white" />
+          <StatCard title="Locked accounts"            value={fmt(stats.lockedAccounts ?? 0)}  variant="white" />
+          <StatCard title="MFA-enabled users"          value={fmt(stats.mfaEnabledUsers ?? 0)} variant="white" />
+          <StatCard title="Audit failures"             value={fmt(stats.auditFailures ?? 0)}   variant="white" />
         </div>
       </div>
 

@@ -193,6 +193,17 @@ export type SystemStats = {
   trialTenants: number;
   overduePayments: number;
   pendingPayments?: number;
+  newTenants?: number;
+  totalCampuses?: number;
+  activeUsers?: number;
+  newUsers?: number;
+  activeSessions?: number;
+  riskySessions?: number;
+  successfulAuths?: number;
+  failedAuths?: number;
+  lockedAccounts?: number;
+  mfaEnabledUsers?: number;
+  auditFailures?: number;
 };
 
 export async function getSystemStats(): Promise<SystemStats | null> {
@@ -209,6 +220,17 @@ export async function getSystemStats(): Promise<SystemStats | null> {
       trialTenants:    Number(fieldOf(inner, ['trialTenants', 'trialCount'])) || 0,
       overduePayments: Number(fieldOf(inner, ['overduePayments', 'overdue'])) || 0,
       pendingPayments: Number(fieldOf(inner, ['pendingPayments', 'pending'])) || undefined,
+      newTenants:      Number(fieldOf(inner, ['newTenants', 'newTenantCount', 'recentTenants'])) || undefined,
+      totalCampuses:   Number(fieldOf(inner, ['totalCampuses', 'campusCount', 'campuses'])) || undefined,
+      activeUsers:     Number(fieldOf(inner, ['activeUsers', 'activeUserCount'])) || undefined,
+      newUsers:        Number(fieldOf(inner, ['newUsers', 'newUserCount', 'recentUsers'])) || undefined,
+      activeSessions:  Number(fieldOf(inner, ['activeSessions', 'sessionCount', 'sessions'])) || undefined,
+      riskySessions:   Number(fieldOf(inner, ['riskySessions', 'riskySessionCount', 'suspiciousSessions'])) || undefined,
+      successfulAuths: Number(fieldOf(inner, ['successfulAuths', 'successfulLogins', 'authSuccess', 'loginSuccess'])) || undefined,
+      failedAuths:     Number(fieldOf(inner, ['failedAuths', 'failedLogins', 'authFailures', 'loginFailures'])) || undefined,
+      lockedAccounts:  Number(fieldOf(inner, ['lockedAccounts', 'lockedUsers', 'blockedAccounts'])) || undefined,
+      mfaEnabledUsers: Number(fieldOf(inner, ['mfaEnabledUsers', 'mfaCount', 'mfaUsers'])) || undefined,
+      auditFailures:   Number(fieldOf(inner, ['auditFailures', 'auditErrors'])) || undefined,
     };
   } catch {
     return null;
