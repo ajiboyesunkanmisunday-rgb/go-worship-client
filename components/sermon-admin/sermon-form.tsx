@@ -10,7 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Music, Pencil, UploadCloud, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -108,9 +110,11 @@ const COPY = {
 export function SermonForm({
   mode,
   backTo,
+  id,
 }: {
   mode: 'add' | 'edit' | 'upload';
   backTo?: string;
+  id?: string;
 }) {
   const router = useRouter();
   const isEdit = mode === 'edit';
@@ -118,6 +122,52 @@ export function SermonForm({
   const back = backTo ?? '/sermon-admin/sermons';
   const [hasAudio, setHasAudio] = useState(isEdit);
   const [hasCover, setHasCover] = useState(isEdit);
+  const [sermon, setSermon] = useState(SERMON);
+  const [formKey, setFormKey] = useState(0);
+  const [seriesOpts, setSeriesOpts] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+
+    (api.get<unknown>('/tenant/admin/media/series') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        const opts = arr
+          .map((s) => ({
+            value: String(s['id'] ?? s['seriesId'] ?? ''),
+            label: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
+          }))
+          .filter((o) => o.label);
+        if (opts.length > 0) setSeriesOpts(opts);
+      })
+      .catch(() => {});
+
+    if (isEdit && id) {
+      (api.get<unknown>(`/tenant/admin/sermons/${id}`) as Promise<unknown>)
+        .then((data) => {
+          type R = Record<string, unknown>;
+          const d = data as R;
+          const rawDate = String(d['sermonDate'] ?? d['date'] ?? d['createdAt'] ?? '');
+          const date = rawDate ? rawDate.split('T')[0] : SERMON.date;
+          setSermon({
+            title: String(d['title'] ?? d['sermonTitle'] ?? SERMON.title),
+            speaker: String(d['speaker'] ?? d['speakerName'] ?? SERMON.speaker),
+            date,
+            description: String(d['description'] ?? d['summary'] ?? SERMON.description),
+            link: String(d['videoUrl'] ?? d['youtubeUrl'] ?? d['link'] ?? SERMON.link),
+          });
+          setFormKey((k) => k + 1);
+        })
+        .catch(() => {});
+    }
+  }, [isEdit, id]);
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -149,18 +199,18 @@ export function SermonForm({
           )}
         </div>
 
-        <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+        <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
           <Field label={<>Sermon Title&#42;</>}>
             <PencilInput
               placeholder="Enter title"
-              defaultValue={isEdit ? SERMON.title : undefined}
+              defaultValue={isEdit ? sermon.title : undefined}
             />
           </Field>
 
           <Field label={<>Speaker name&#42;</>}>
             <PencilInput
               placeholder="Enter speaker name"
-              defaultValue={isEdit ? SERMON.speaker : undefined}
+              defaultValue={isEdit ? sermon.speaker : undefined}
             />
           </Field>
 
@@ -168,7 +218,7 @@ export function SermonForm({
             <Input
               type="date"
               className="h-[48px]"
-              defaultValue={isEdit ? SERMON.date : undefined}
+              defaultValue={isEdit ? sermon.date : undefined}
             />
           </Field>
 
@@ -177,7 +227,7 @@ export function SermonForm({
               <Textarea
                 className="min-h-[110px] pr-9"
                 placeholder="Enter brief description"
-                defaultValue={isEdit ? SERMON.description : undefined}
+                defaultValue={isEdit ? sermon.description : undefined}
               />
               <Pencil className="pointer-events-none absolute right-3 bottom-3 size-3.5 text-brand-gray-400" />
             </div>
@@ -185,16 +235,20 @@ export function SermonForm({
 
           <Field label="Assign Series">
             <NativeSelect className="h-[48px]" defaultValue="">
-              <NativeSelectOption value="">Faith at work</NativeSelectOption>
-              <NativeSelectOption value="reform">
-                Frequently reform
-              </NativeSelectOption>
-              <NativeSelectOption value="christ">
-                Sermons in Christ
-              </NativeSelectOption>
-              <NativeSelectOption value="power">
-                Power to break yeal
-              </NativeSelectOption>
+              {seriesOpts.length > 0
+                ? seriesOpts.map((o) => (
+                    <NativeSelectOption key={o.value} value={o.value}>
+                      {o.label}
+                    </NativeSelectOption>
+                  ))
+                : (
+                  <>
+                    <NativeSelectOption value="">Faith at work</NativeSelectOption>
+                    <NativeSelectOption value="reform">Frequently reform</NativeSelectOption>
+                    <NativeSelectOption value="christ">Sermons in Christ</NativeSelectOption>
+                    <NativeSelectOption value="power">Power to break yeal</NativeSelectOption>
+                  </>
+                )}
             </NativeSelect>
           </Field>
 
@@ -220,7 +274,7 @@ export function SermonForm({
           <Field label="Attach YouTube/Vimeo link">
             <PencilInput
               placeholder="Enter Sermon Youtube link"
-              defaultValue={isEdit ? SERMON.link : undefined}
+              defaultValue={isEdit ? sermon.link : undefined}
             />
           </Field>
 

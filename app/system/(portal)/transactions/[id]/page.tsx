@@ -6,5 +6,5 @@ export default async function SystemTransactionReceiptPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <GivingReceipt failed={id === 'failed'} />;
+  return <GivingReceipt failed={id === 'failed'} id={id} />;
 }

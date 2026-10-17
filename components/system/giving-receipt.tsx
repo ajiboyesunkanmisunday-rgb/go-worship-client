@@ -6,6 +6,9 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -18,10 +21,79 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+type ReceiptData = {
+  org: string; orgAddress: string; orgPhone: string; orgEmail: string; orgWeb: string;
+  donorName: string; donorEmail: string; donorPhone: string;
+  date: string; amount: string; fund: string; donationType: string;
+  paymentMethod: string; txnId: string; subtotal: string;
+};
+
+const DEFAULT_RECEIPT: ReceiptData = {
+  org: 'Celebration Church Int.',
+  orgAddress: 'Ontario Canada, Canada City',
+  orgPhone: '+321 762 - 4763',
+  orgEmail: 'info@churchonline.org',
+  orgWeb: 'www.churchonline.org',
+  donorName: 'Adewale Bola',
+  donorEmail: 'adminadje@gmail.com',
+  donorPhone: '+234 812 345 6789',
+  date: 'January 12, 2025',
+  amount: '$55.00',
+  fund: 'General Offering',
+  donationType: 'One-time',
+  paymentMethod: 'Debit Card (Express 2405)',
+  txnId: 'TXN-2295465',
+  subtotal: '$206.00',
+};
+
 /** System → Transactions → Giving Receipt (success / failed variants). */
-export function GivingReceipt({ failed = false }: { failed?: boolean }) {
+export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: string }) {
   const router = useRouter();
   const back = '/system/transactions';
+  const [receipt, setReceipt] = useState<ReceiptData>(DEFAULT_RECEIPT);
+  const [isFailed, setIsFailed] = useState(failed);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    if (!id || id === 'failed') return;
+    (api.get<unknown>(`/system/transactions/${id}`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const d = data as R;
+        const cur = String(d['currency'] ?? 'USD');
+        const safeCur = cur.length === 3 ? cur : 'USD';
+        const fmtAmt = (v: unknown) => {
+          const n = Number(v);
+          if (!n) return '';
+          return new Intl.NumberFormat('en-US', { style: 'currency', currency: safeCur }).format(n);
+        };
+        const rawDate = String(d['createdAt'] ?? d['paymentDate'] ?? d['transactionDate'] ?? '');
+        const date = rawDate
+          ? new Date(rawDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : DEFAULT_RECEIPT.date;
+        const rawStatus = String(d['status'] ?? '').toUpperCase();
+        const statusFailed = rawStatus === 'FAILED' || rawStatus === 'CANCELED' || rawStatus === 'EXPIRED';
+        setIsFailed(statusFailed);
+        setReceipt({
+          org: String(d['organizationName'] ?? d['tenantName'] ?? d['churchName'] ?? DEFAULT_RECEIPT.org),
+          orgAddress: String(d['organizationAddress'] ?? d['address'] ?? DEFAULT_RECEIPT.orgAddress),
+          orgPhone: String(d['organizationPhone'] ?? d['phone'] ?? DEFAULT_RECEIPT.orgPhone),
+          orgEmail: String(d['organizationEmail'] ?? d['email'] ?? DEFAULT_RECEIPT.orgEmail),
+          orgWeb: String(d['organizationWebsite'] ?? d['website'] ?? DEFAULT_RECEIPT.orgWeb),
+          donorName: String(d['donorName'] ?? d['payerName'] ?? d['customerName'] ?? DEFAULT_RECEIPT.donorName),
+          donorEmail: String(d['donorEmail'] ?? d['payerEmail'] ?? d['customerEmail'] ?? DEFAULT_RECEIPT.donorEmail),
+          donorPhone: String(d['donorPhone'] ?? d['payerPhone'] ?? d['customerPhone'] ?? DEFAULT_RECEIPT.donorPhone),
+          date,
+          amount: fmtAmt(d['amount'] ?? d['amountPaid']) || DEFAULT_RECEIPT.amount,
+          fund: String(d['fund'] ?? d['campaign'] ?? d['purpose'] ?? DEFAULT_RECEIPT.fund),
+          donationType: String(d['donationType'] ?? d['type'] ?? d['frequency'] ?? DEFAULT_RECEIPT.donationType),
+          paymentMethod: String(d['paymentMethod'] ?? d['method'] ?? d['paymentChannel'] ?? DEFAULT_RECEIPT.paymentMethod),
+          txnId: String(d['transactionId'] ?? d['reference'] ?? d['id'] ?? DEFAULT_RECEIPT.txnId),
+          subtotal: fmtAmt(d['subtotal'] ?? d['totalAmount'] ?? d['grossAmount']) || DEFAULT_RECEIPT.subtotal,
+        });
+      })
+      .catch(() => {});
+  }, [id]);
 
   return (
     <SheetPage
@@ -42,12 +114,12 @@ export function GivingReceipt({ failed = false }: { failed?: boolean }) {
         <div className="flex items-start justify-between gap-4">
           <div className="text-[11px] leading-relaxed text-brand-gray-500">
             <p className="text-[13px] font-bold text-[#1a1a1a]">
-              Celebration Church Int.
+              {receipt.org}
             </p>
-            <p>Ontario Canada, Canada City</p>
-            <p>+321 762 - 4763</p>
-            <p>info@churchonline.org</p>
-            <p>www.churchonline.org</p>
+            <p>{receipt.orgAddress}</p>
+            <p>{receipt.orgPhone}</p>
+            <p>{receipt.orgEmail}</p>
+            <p>{receipt.orgWeb}</p>
           </div>
           <Image
             src="/auth/infinity-blue.svg"
@@ -62,9 +134,9 @@ export function GivingReceipt({ failed = false }: { failed?: boolean }) {
           <p className="text-[12px] font-semibold text-[#1a1a1a]">
             Donor Information
           </p>
-          <p>Adewale Bola</p>
-          <p>adminadje@gmail.com</p>
-          <p>+234 812 345 6789</p>
+          <p>{receipt.donorName}</p>
+          <p>{receipt.donorEmail}</p>
+          <p>{receipt.donorPhone}</p>
         </div>
 
         <div className="border-t border-[#ededed] pt-4">
@@ -72,28 +144,28 @@ export function GivingReceipt({ failed = false }: { failed?: boolean }) {
             Giving Receipt:
           </p>
           <div className="mt-2 flex flex-col divide-y divide-[#f4f4f4]">
-            <Row label="Donation Date" value="January 12, 2025" />
-            <Row label="Amount Given" value="$55.00" />
-            <Row label="Fund/Campaign" value="General Offering" />
-            <Row label="Donation Type" value="One-time" />
-            <Row label="Payment Method" value="Debit Card (Express 2405)" />
-            <Row label="Transaction ID" value="TXN-2295465" />
+            <Row label="Donation Date" value={receipt.date} />
+            <Row label="Amount Given" value={receipt.amount} />
+            <Row label="Fund/Campaign" value={receipt.fund} />
+            <Row label="Donation Type" value={receipt.donationType} />
+            <Row label="Payment Method" value={receipt.paymentMethod} />
+            <Row label="Transaction ID" value={receipt.txnId} />
             <Row
               label="Status"
               value={
                 <span
                   className={cn(
                     'inline-flex items-center gap-1.5 font-medium',
-                    failed ? 'text-[#eb0000]' : 'text-[#34a853]'
+                    isFailed ? 'text-[#eb0000]' : 'text-[#34a853]'
                   )}
                 >
                   <span
                     className={cn(
                       'size-1.5 rounded-full',
-                      failed ? 'bg-[#eb0000]' : 'bg-[#34a853]'
+                      isFailed ? 'bg-[#eb0000]' : 'bg-[#34a853]'
                     )}
                   />
-                  {failed ? 'Failed' : 'Successful'}
+                  {isFailed ? 'Failed' : 'Successful'}
                 </span>
               }
             />
@@ -102,7 +174,7 @@ export function GivingReceipt({ failed = false }: { failed?: boolean }) {
 
         <div className="flex items-center justify-between border-t border-[#ededed] pt-4">
           <span className="text-[13px] font-semibold">Subtotal</span>
-          <span className="text-[15px] font-bold">$206.00</span>
+          <span className="text-[15px] font-bold">{receipt.subtotal}</span>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -113,7 +185,7 @@ export function GivingReceipt({ failed = false }: { failed?: boolean }) {
           >
             Download Receipt
           </Button>
-          {failed && (
+          {isFailed && (
             <button
               type="button"
               onClick={() => router.push(back)}
