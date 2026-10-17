@@ -11,7 +11,9 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
+import { getTenantGroup, type TenantGroup } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -58,12 +60,21 @@ function Toggle({ label }: { label: string }) {
 export function CreateGroupForm({
   basePath = '/group-leader/groups',
   mode = 'create',
+  id,
 }: {
   basePath?: string;
   mode?: 'create' | 'edit';
+  id?: string;
 } = {}) {
   const router = useRouter();
   const isEdit = mode === 'edit';
+  const [group, setGroup] = useState<TenantGroup | null>(null);
+
+  useEffect(() => {
+    if (!isEdit || !USE_LIVE_API || !id) return;
+    getTenantGroup(id).then((g: TenantGroup | null) => { if (g) setGroup(g); }).catch(() => {});
+  }, [id, isEdit]);
+
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     router.push(`${basePath}/success`);
@@ -94,7 +105,7 @@ export function CreateGroupForm({
             <Input
               className={H}
               placeholder="Enter group name"
-              defaultValue={isEdit ? 'Faith Builders Fellowship' : undefined}
+              defaultValue={group?.name ?? (isEdit ? 'Faith Builders Fellowship' : undefined)}
             />
           </Field>
 
@@ -115,7 +126,11 @@ export function CreateGroupForm({
           </Field>
 
           <Field label={<>Group Description&#42;</>}>
-            <Textarea className="min-h-[110px]" placeholder="Enter brief description" />
+            <Textarea
+              className="min-h-[110px]"
+              placeholder="Enter brief description"
+              defaultValue={group?.description ?? undefined}
+            />
           </Field>
 
           <Field label={<>Group Leader&#42;</>}>
