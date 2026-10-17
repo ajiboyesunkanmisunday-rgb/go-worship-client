@@ -16,11 +16,9 @@ import {
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
 import { TopbarSearch } from '@/components/shared/topbar-search';
+import { AdminProfileMenu } from '@/components/shared/admin-profile-menu';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { getProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const NAV_ITEMS = [
   // Nav matches the design's 9-item System sidebar (778:38441). There is no
@@ -72,19 +70,6 @@ function Sidebar() {
 }
 
 function Topbar() {
-  const [adminName, setAdminName] = useState('Admin');
-
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    getProfile()
-      .then((p) => {
-        const joined = [p.firstName, p.lastName].filter(Boolean).join(' ');
-        const name = p.displayName ?? (joined || undefined);
-        if (name) setAdminName(name);
-      })
-      .catch(() => {});
-  }, []);
-
   return (
     <header className="flex h-[60px] items-center justify-between gap-4 bg-[#152242] px-6">
       <TopbarSearch tone="dark" />
@@ -98,13 +83,11 @@ function Topbar() {
           <Settings className="size-5" />
         </Link>
         <NotificationsBell tone="dark" />
-        <Link
-          href="/system/settings"
-          className="flex items-center gap-2 rounded-full px-1 py-1 no-underline transition-colors hover:bg-white/10"
-        >
-          <span className="size-8 rounded-full bg-white/20" />
-          <span className="hidden text-[13px] text-white md:inline">{adminName}</span>
-        </Link>
+        <AdminProfileMenu
+          profileHref="/system/settings"
+          settingsHref="/system/settings"
+          tone="dark"
+        />
       </div>
     </header>
   );

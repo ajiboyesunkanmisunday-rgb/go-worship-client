@@ -11,6 +11,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
+import { AdminProfileMenu } from '@/components/shared/admin-profile-menu';
 import { TopbarSearch } from '@/components/shared/topbar-search';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -105,6 +106,11 @@ function Topbar() {
             </span>
           </div>
         </div>
+
+        <AdminProfileMenu
+          profileHref="/sermon-admin/profile"
+          settingsHref="/sermon-admin/profile"
+        />
       </div>
     </header>
   );

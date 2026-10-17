@@ -11,7 +11,7 @@ import {
   UserCircle,
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
-import { TopbarSearch } from '@/components/shared/topbar-search';
+import { AdminProfileMenu } from '@/components/shared/admin-profile-menu';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -109,6 +109,11 @@ function Topbar() {
             </span>
           </div>
         </div>
+
+        <AdminProfileMenu
+          profileHref="/ministry-admin/profile"
+          settingsHref="/ministry-admin/profile"
+        />
       </div>
     </header>
   );

@@ -17,6 +17,7 @@ import {
 import { NotificationsBell } from '@/components/shared/notifications-bell';
 import { TopbarSearch } from '@/components/shared/topbar-search';
 import { NeedHelpPill } from '@/components/shared/need-help';
+import { AdminProfileMenu } from '@/components/shared/admin-profile-menu';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -124,6 +125,11 @@ function Topbar() {
             </span>
           </div>
         </div>
+
+        <AdminProfileMenu
+          profileHref="/ministry/settings"
+          settingsHref="/ministry/settings"
+        />
       </div>
     </header>
   );
