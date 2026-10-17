@@ -1,11 +1,18 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { StatCard } from '@/components/ministry/shared';
 import type { SmartRow } from '@/components/shared/smart-table';
 import { DataCard, QuickAccess } from '@/components/sermon-admin/shared';
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { ArrowUpRight, FolderPlus, Music } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
-const MEDIA = [
+type MediaFile = { name: string; type: string; size: string; used: string; date: string };
+
+const MEDIA: MediaFile[] = [
   { name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
   { name: 'Hope in Motion', type: 'MP3 File', size: '18mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
   { name: 'Unity in Diversity', type: 'MP4 File', size: '52mb', used: 'Love in Action series', date: 'Jan 3, 2025' },
@@ -26,16 +33,49 @@ function UploadMediaCard() {
       </div>
       <div>
         <p className="text-[15px] font-semibold text-black">Upload Media</p>
-        <p className="text-[12px] text-brand-gray-500">
-          Click here to Upload Media
-        </p>
+        <p className="text-[12px] text-brand-gray-500">Click here to Upload Media</p>
       </div>
     </Link>
   );
 }
 
 export default function SermonAdminMediaPage() {
-  const rows: SmartRow[] = MEDIA.map((m, i) => ({
+  const [media, setMedia] = useState<MediaFile[]>(MEDIA);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>('/tenant/admin/media') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: MediaFile[] = arr.map((m) => {
+          const rawDate = String(m['uploadedAt'] ?? m['createdAt'] ?? m['date'] ?? '');
+          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const rawSize = Number(m['fileSize'] ?? m['size'] ?? 0);
+          const size = rawSize ? `${Math.round(rawSize / (1024 * 1024))}mb` : String(m['sizeLabel'] ?? m['size'] ?? '');
+          const mimeType = String(m['mimeType'] ?? m['fileType'] ?? m['type'] ?? '');
+          const type = mimeType.includes('video') || mimeType.toUpperCase().includes('MP4') ? 'MP4 File' : 'MP3 File';
+          return {
+            name: String(m['name'] ?? m['title'] ?? m['fileName'] ?? ''),
+            type,
+            size,
+            used: String(m['seriesName'] ?? m['linkedSeries'] ?? m['usedIn'] ?? ''),
+            date,
+          };
+        }).filter((m) => m.name);
+        if (mapped.length > 0) setMedia(mapped);
+      })
+      .catch(() => {});
+  }, []);
+
+  const rows: SmartRow[] = media.map((m, i) => ({
     group: m.type,
     text: [m.name, m.type, m.size, m.used, m.date],
     cells: [
@@ -57,7 +97,7 @@ export default function SermonAdminMediaPage() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="grid grid-cols-2 gap-4">
-          <StatCard title="Total Media" value="45" variant="blue" />
+          <StatCard title="Total Media" value={String(media.length || 45)} variant="blue" />
           <UploadMediaCard />
         </div>
         <QuickAccess />
