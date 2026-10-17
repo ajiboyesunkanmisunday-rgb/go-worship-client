@@ -1,10 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import Image from 'next/image';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
+import { getCustomerPaymentById, type PaymentStatusResponse } from '@/lib/api/customer';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 type Props = {
   isIntercepted?: boolean;
@@ -16,6 +18,22 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     () => (isIntercepted ? undefined : '/dashboard/givings'),
     [isIntercepted]
   );
+  const [payment, setPayment] = useState<PaymentStatusResponse | null>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getCustomerPaymentById(id).then(setPayment).catch(() => {});
+  }, [id]);
+
+  const amount = payment?.amount ?? 25;
+  const dateStr = payment
+    ? new Date(String(payment['paidAt'] ?? payment['requestedAt'] ?? '')).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'January 12, 2025';
+  const status = payment?.status
+    ? payment.status.charAt(0).toUpperCase() + payment.status.slice(1).toLowerCase()
+    : 'Successful';
+  const reference = payment?.paymentReference ?? payment?.id ?? 'TXN-02939493';
+  const statusColor = status.toUpperCase() === 'SUCCEEDED' || status.toLowerCase() === 'successful' ? '#22A45D' : '#ff8d28';
 
   return (
     <SheetPage className="w-full max-w-[665px]! gap-0" backLink={returnUrl}>
@@ -91,17 +109,17 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
           <div className="w-full flex flex-col justify-start items-start gap-4">
             <div className="w-full flex justify-between items-center gap-4">
               <span>Donation Date</span>
-              <span className="text-right">January 12, 2025</span>
+              <span className="text-right">{dateStr}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Amount Given</span>
-              <span className="text-right">{formatCurrency(25)}</span>
+              <span className="text-right">{formatCurrency(amount)}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Fund/Campaign</span>
-              <span className="text-right">General Offering</span>
+              <span className="text-right">{String(payment?.['purpose'] ?? 'General Offering')}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
@@ -111,19 +129,19 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Payment Method</span>
-              <span className="text-right">Debit Card (Visa •••• 2920)</span>
+              <span className="text-right">{String(payment?.['gatewayType'] ?? 'Debit Card (Visa •••• 2920)')}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Transaction ID</span>
-              <span className="text-right">TXN-02939493</span>
+              <span className="text-right">{reference}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Status</span>
               <span className="flex items-center gap-2 text-right">
-                <span className="size-2 rounded-full bg-[#22A45D]" />
-                Successful
+                <span className="size-2 rounded-full" style={{ backgroundColor: statusColor }} />
+                {status}
               </span>
             </div>
           </div>
@@ -134,7 +152,7 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
                 Subtotal:
               </span>
               <span className="font-bold leading-[100%] tracking-[0%] text-[18px]">
-                {formatCurrency(25)}
+                {formatCurrency(amount)}
               </span>
             </div>
 
