@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { StatCard } from '@/components/ministry/shared';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
-import { DataPanel } from './shared';
+import { DataPanel, type TableRow } from './shared';
 import { GROUP_ROWS } from './groups-data';
+import { getTenantGroups, getTenantStats, type TenantGroup, type TenantStats } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 const data = [
   { month: 'Jan', v: 3000 },
@@ -26,6 +29,13 @@ const config = {
 } satisfies ChartConfig;
 
 function EngagementChart() {
+  const [stats, setStats] = useState<TenantStats | null>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+  }, []);
+
   return (
     <div className="rounded-[14px] bg-white p-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_0.7fr]">
@@ -72,7 +82,7 @@ function EngagementChart() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <StatCard title="Active Members" value="50" variant="blue" />
+          <StatCard title="Active Members" value={String(stats?.totalMembers ?? 50)} variant="blue" />
           <StatCard title="Inactive Members" value="15" variant="white" />
         </div>
       </div>
@@ -80,14 +90,32 @@ function EngagementChart() {
   );
 }
 
+function toRow(g: TenantGroup): TableRow {
+  return {
+    cells: [g.name, g.description || 'Group', g.leaderName || '—', '—', String(g.memberCount)],
+    status: g.status.toLowerCase() === 'active' ? 'Active' : ('Inactive' as const),
+    href: `/group-leader/groups/${g.id}`,
+  };
+}
+
 export function EngagementContent() {
+  const [rows, setRows] = useState<TableRow[]>(GROUP_ROWS);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantGroups().then((groups) => {
+      const mapped = groups.map(toRow);
+      if (mapped.length > 0) setRows(mapped);
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="flex flex-col gap-5">
       <EngagementChart />
       <DataPanel
         title="All Groups"
         columns={['Group Name', 'Category', 'Leader', 'Meeting Day & Time', 'Members']}
-        rows={GROUP_ROWS}
+        rows={rows}
       />
     </div>
   );
