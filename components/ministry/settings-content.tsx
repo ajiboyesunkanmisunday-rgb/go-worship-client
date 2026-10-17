@@ -424,16 +424,27 @@ function SubscriptionTab() {
   );
 }
 
+function ProfileTab() {
+  const [branding, setBranding] = useState<TenantBranding>({});
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantBranding().then(setBranding).catch(() => {});
+  }, []);
+
+  return (
+    <div className="rounded-[14px] bg-white p-6">
+      <Field label="Church Name" value={branding.organizationName || 'Celebration Church Int.'} />
+      <Field label="Email" value="admin@celebration.org" />
+      <Field label="Phone number" value="(+62) 821 554 - 5432" />
+      <Field label="Location" value="Ontario, Canada" />
+    </div>
+  );
+}
+
 function TabContent({ tab }: { tab: string }) {
   if (tab === 'Profile') {
-    return (
-      <div className="rounded-[14px] bg-white p-6">
-        <Field label="Church Name" value="Celebration Church Int." />
-        <Field label="Email" value="admin@celebration.org" />
-        <Field label="Phone number" value="(+62) 821 554 - 5432" />
-        <Field label="Location" value="Ontario, Canada" />
-      </div>
-    );
+    return <ProfileTab />;
   }
   if (tab === 'Church branding') return <BrandingTab />;
   if (tab === 'Subscription') return <SubscriptionTab />;
