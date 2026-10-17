@@ -7,24 +7,13 @@ import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-
-const META = [
-  ['Last Updated', '2025-09-01'],
-  ['Created by', 'Super Admin'],
-  ['Created on', '10.08.25 | 10:30pm'],
-  ['Last Edited', '10.08.25 | 10:30pm'],
-  ['Assigned users', '45'],
-];
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 const PERMS = ['View', 'Create', 'Edit', 'Delete', 'Export'];
 
-/** [module, [view, create, edit, delete, export]] */
-// Sample permission pattern transcribed from the design (640:34210), read
-// column by column. NOTE: the design lists "Settings" TWICE (once here with
-// [Create, Delete] and again lower down with [View] only) — that's a design
-// duplication, so this keeps a single Settings row rather than copying the bug.
-const MATRIX: [string, boolean[]][] = [
+const DEFAULT_MATRIX: [string, boolean[]][] = [
   ['Members', [true, false, false, false, false]],
   ['Finance', [true, true, true, true, true]],
   ['Events', [false, true, false, true, false]],
@@ -36,6 +25,20 @@ const MATRIX: [string, boolean[]][] = [
   ['Billing', [true, false, false, false, false]],
   ['Support', [true, false, false, false, false]],
 ];
+
+type AccountData = {
+  name: string; email: string; status: string;
+  lastUpdated: string; createdBy: string; createdOn: string;
+  lastEdited: string; assignedUsers: string;
+  matrix: [string, boolean[]][];
+};
+
+const DEFAULT_ACCOUNT: AccountData = {
+  name: 'Mayowa Ola', email: 'mayowa@sellyt.ai', status: 'Active',
+  lastUpdated: '2025-09-01', createdBy: 'Super Admin',
+  createdOn: '10.08.25 | 10:30pm', lastEdited: '10.08.25 | 10:30pm',
+  assignedUsers: '45', matrix: DEFAULT_MATRIX,
+};
 
 function SectionBar({ label }: { label: string }) {
   return (
@@ -55,10 +58,53 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 /** Admin Management → View Account (Figma 640:34210). */
-export function ViewAccount() {
+export function ViewAccount({ id }: { id?: string } = {}) {
   const router = useRouter();
   const back = '/ministry/admin-management';
   const [del, setDel] = useState(false);
+  const [account, setAccount] = useState<AccountData>(DEFAULT_ACCOUNT);
+
+  useEffect(() => {
+    if (!USE_LIVE_API || !id) return;
+    (api.get<unknown>(`/tenant/admin/sub-admins/${id}`) as Promise<unknown>)
+      .catch(() => api.get<unknown>(`/tenant/members/${id}`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const d = data as R;
+        const fmt = (raw: unknown) => {
+          const s = String(raw ?? '');
+          if (!s) return '';
+          const d = new Date(s);
+          return isNaN(d.getTime()) ? s : d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) + ' | ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        };
+        const rawPerms = d['permissions'] ?? d['roles'] ?? d['accessMatrix'];
+        let matrix: [string, boolean[]][] = DEFAULT_MATRIX;
+        if (rawPerms && typeof rawPerms === 'object' && !Array.isArray(rawPerms)) {
+          const permsObj = rawPerms as Record<string, unknown>;
+          const mapped: [string, boolean[]][] = Object.entries(permsObj).map(([mod, flags]) => {
+            const f = flags as Record<string, boolean> | boolean[];
+            const bools: boolean[] = Array.isArray(f)
+              ? (f as boolean[]).slice(0, 5)
+              : PERMS.map((p) => !!(f as Record<string, boolean>)[p.toLowerCase()]);
+            while (bools.length < 5) bools.push(false);
+            return [mod, bools] as [string, boolean[]];
+          });
+          if (mapped.length > 0) matrix = mapped;
+        }
+        setAccount({
+          name: String(d['name'] ?? d['fullName'] ?? d['username'] ?? DEFAULT_ACCOUNT.name),
+          email: String(d['email'] ?? DEFAULT_ACCOUNT.email),
+          status: String(d['status'] ?? DEFAULT_ACCOUNT.status),
+          lastUpdated: String(d['updatedAt'] ?? d['lastUpdated'] ?? DEFAULT_ACCOUNT.lastUpdated).slice(0, 10) || DEFAULT_ACCOUNT.lastUpdated,
+          createdBy: String(d['createdBy'] ?? DEFAULT_ACCOUNT.createdBy),
+          createdOn: fmt(d['createdAt']) || DEFAULT_ACCOUNT.createdOn,
+          lastEdited: fmt(d['updatedAt']) || DEFAULT_ACCOUNT.lastEdited,
+          assignedUsers: String(d['assignedUsers'] ?? d['userCount'] ?? DEFAULT_ACCOUNT.assignedUsers),
+          matrix,
+        });
+      })
+      .catch(() => {});
+  }, [id]);
 
   return (
     <SheetPage
@@ -80,18 +126,12 @@ export function ViewAccount() {
           <div>
             <h1 className="text-[22px] font-bold">Sub Admin</h1>
             <div className="mt-2 flex flex-col gap-1 text-[12px] text-brand-gray-500">
-              <p>
-                Last Updated: <span className="text-[#333]">2025-09-01</span>
-              </p>
-              <p>
-                Status:{' '}
-                <span className="font-medium text-[#22a45d]">Active</span>
-              </p>
-              {META.slice(1).map(([k, v]) => (
-                <p key={k}>
-                  {k}: <span className="text-[#333]">{v}</span>
-                </p>
-              ))}
+              <p>Last Updated: <span className="text-[#333]">{account.lastUpdated}</span></p>
+              <p>Status: <span className="font-medium text-[#22a45d]">{account.status}</span></p>
+              <p>Created by: <span className="text-[#333]">{account.createdBy}</span></p>
+              <p>Created on: <span className="text-[#333]">{account.createdOn}</span></p>
+              <p>Last Edited: <span className="text-[#333]">{account.lastEdited}</span></p>
+              <p>Assigned users: <span className="text-[#333]">{account.assignedUsers}</span></p>
             </div>
           </div>
           <span className="flex size-[64px] shrink-0 items-center justify-center rounded-full bg-[#ff8d28]">
@@ -101,9 +141,9 @@ export function ViewAccount() {
 
         <SectionBar label="Account Info:" />
         <div className="flex flex-col gap-4">
-          <Field label="Sub Admin name" value="Mayowa Ola" />
+          <Field label="Sub Admin name" value={account.name} />
           <Field label="Password" value="Admin@sellyt001" />
-          <Field label="Email" value="mayowa@sellyt.ai" />
+          <Field label="Email" value={account.email} />
         </div>
 
         <SectionBar label="Permissions Matrix:" />
@@ -113,14 +153,12 @@ export function ViewAccount() {
               <tr className="text-left text-[12px] text-[#333]">
                 <th className="py-2 font-medium">Module</th>
                 {PERMS.map((p) => (
-                  <th key={p} className="py-2 text-center font-medium">
-                    {p}
-                  </th>
+                  <th key={p} className="py-2 text-center font-medium">{p}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {MATRIX.map(([mod, flags]) => (
+              {account.matrix.map(([mod, flags]) => (
                 <tr key={mod} className="border-t border-[#f2f2f2]">
                   <td className="py-2.5 text-[12px] text-[#333]">{mod}</td>
                   {flags.map((on, i) => (
