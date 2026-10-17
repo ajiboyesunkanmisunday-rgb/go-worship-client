@@ -49,12 +49,15 @@ type Props = {
   signupHref?: string;
   /** Force Google button off — use for TENANT_ADMIN / SYSTEM_OWNER portals. */
   disableGoogle?: boolean;
+  /** Show a "Register your church" link — only relevant on the platform root login. */
+  showRegisterChurch?: boolean;
 };
 
 function SignInFormInner({
   redirectTo = '/dashboard',
   signupHref = '/auth/signup',
   disableGoogle = false,
+  showRegisterChurch = false,
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -307,6 +310,18 @@ function SignInFormInner({
                 Create an account
               </Link>
             </p>
+
+            {showRegisterChurch && (
+              <p className="text-center text-[14px] font-light text-brand-gray-500">
+                Running a church?{' '}
+                <Link
+                  href="/auth/register-church"
+                  className="font-medium text-brand-blue hover:underline"
+                >
+                  Register your church
+                </Link>
+              </p>
+            )}
 
             {showGoogle && (
               <p className="text-center text-[14px] font-light text-brand-gray-500">
