@@ -47,19 +47,26 @@ type Props = {
   redirectTo?: string;
   /** Where the "Create an account" link points. */
   signupHref?: string;
+  /** Force Google button off — use for TENANT_ADMIN / SYSTEM_OWNER portals. */
+  disableGoogle?: boolean;
 };
 
 function SignInFormInner({
   redirectTo = '/dashboard',
   signupHref = '/auth/signup',
+  disableGoogle = false,
 }: Props) {
   const { context } = useSiteContext();
-  // Google login: show when flag is true, or when context is not loaded (demo / fallback).
-  // Never show for SYSTEM_OWNER context (spec: SO has no Google login).
+  // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
+  //   SYSTEM_OWNER → never show
+  //   TENANT admin portal (disableGoogle=true) → never show
+  //   CUSTOMER portal → show when tenant config allows (customerGoogleLogin)
   const showGoogle =
-    context?.contextType === 'SYSTEM_OWNER'
+    disableGoogle
       ? false
-      : (context?.authentication?.customerGoogleLogin ?? true);
+      : context?.contextType === 'SYSTEM_OWNER'
+        ? false
+        : (context?.authentication?.customerGoogleLogin ?? true);
   const orgName =
     context?.branding?.organizationName ??
     context?.displayName ??
@@ -326,4 +333,9 @@ export function SignInForm(props: Props) {
       <SignInFormInner {...props} />
     </Suspense>
   );
+}
+
+/** Ministry/Tenant-Admin login — identical to SignInForm but Google is always disabled. */
+export function MinistrySignInForm(props: Omit<Props, 'disableGoogle'>) {
+  return <SignInForm {...props} disableGoogle />;
 }

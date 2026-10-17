@@ -1,10 +1,7 @@
-import { SignInForm } from '@/components/auth/sign-in-form';
+import { MinistrySignInForm } from '@/components/auth/sign-in-form';
 
-export default function GroupLeaderLoginPage() {
+export default function MinistryAdminLoginPage() {
   return (
-    <SignInForm
-      redirectTo="/ministry-admin/dashboard"
-      signupHref="/auth/signup"
-    />
+    <MinistrySignInForm redirectTo="/ministry-admin/dashboard" signupHref="/auth/signup" />
   );
 }

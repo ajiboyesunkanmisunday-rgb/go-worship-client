@@ -8,7 +8,7 @@ export default function MinistryPortalLayout({
 }) {
   return (
     <>
-      <IdleTimeout loginPath="/auth/login" />
+      <IdleTimeout loginPath="/ministry/login" />
       <PortalShell>{children}</PortalShell>
     </>
   );
