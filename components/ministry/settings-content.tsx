@@ -21,6 +21,7 @@ import {
   type TenantSubscription,
   type TenantInvoice,
 } from '@/lib/api/tenant';
+import { getProfile, type Profile } from '@/lib/api/auth';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -426,17 +427,19 @@ function SubscriptionTab() {
 
 function ProfileTab() {
   const [branding, setBranding] = useState<TenantBranding>({});
+  const [profile, setProfile] = useState<Profile>({});
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then(setBranding).catch(() => {});
+    getProfile().then(setProfile).catch(() => {});
   }, []);
 
   return (
     <div className="rounded-[14px] bg-white p-6">
       <Field label="Church Name" value={branding.organizationName || 'Celebration Church Int.'} />
-      <Field label="Email" value="admin@celebration.org" />
-      <Field label="Phone number" value="(+62) 821 554 - 5432" />
+      <Field label="Email" value={profile.email || 'admin@celebration.org'} />
+      <Field label="Phone number" value={profile.mobilePhone || '(+62) 821 554 - 5432'} />
       <Field label="Location" value="Ontario, Canada" />
     </div>
   );

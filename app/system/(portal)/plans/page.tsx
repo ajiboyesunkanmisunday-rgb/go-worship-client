@@ -6,6 +6,7 @@ import { Check, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getSystemStats } from '@/lib/api/system';
+import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type Plan = {
@@ -126,6 +127,7 @@ export default function SystemPlansPage() {
   const [tab, setTab] = useState(0);
   const [revenue, setRevenue] = useState('$1300');
   const [overdue, setOverdue] = useState('$150');
+  const [plans, setPlans] = useState<Plan[]>(PLANS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -134,6 +136,42 @@ export default function SystemPlansPage() {
         if (!s) return;
         if (s.givingVolume) setRevenue(s.givingVolume);
         if (s.overduePayments) setOverdue(String(s.overduePayments));
+      })
+      .catch(() => {});
+
+    (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: Plan[] = arr.map((p, i) => {
+          const featureRaw = p['features'] ?? p['featureList'];
+          const features: string[] = Array.isArray(featureRaw)
+            ? (featureRaw as unknown[]).map(String)
+            : typeof featureRaw === 'string'
+              ? featureRaw.split(/\n|,/).map((s) => s.trim()).filter(Boolean)
+              : (PLANS[i % PLANS.length]?.features ?? []);
+          const priceNum = Number(p['price'] ?? p['amount'] ?? p['monthlyPrice'] ?? 0);
+          const price = priceNum
+            ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(priceNum)
+            : String(p['price'] ?? '$0');
+          return {
+            id: Number(p['id'] ?? p['planId'] ?? i + 1),
+            name: String(p['name'] ?? p['planName'] ?? ''),
+            price,
+            cycle: String(p['billingCycle'] ?? p['cycle'] ?? '/monthly'),
+            blurb: String(p['description'] ?? p['blurb'] ?? ''),
+            features,
+            highlight: i === 1,
+          };
+        }).filter((p) => p.name);
+        if (mapped.length > 0) setPlans(mapped);
       })
       .catch(() => {});
   }, []);
@@ -196,7 +234,7 @@ export default function SystemPlansPage() {
 
         {tab === 0 ? (
           <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
-            {PLANS.map((p) => (
+            {plans.map((p) => (
               <PlanCard key={p.id} plan={p} />
             ))}
           </div>
@@ -206,7 +244,7 @@ export default function SystemPlansPage() {
               <thead>
                 <tr className="bg-[#f7f9fc] text-left text-[13px] text-[#333]">
                   <th className="rounded-l-[8px] px-3 py-3 font-medium">Feature</th>
-                  {PLANS.map((p) => (
+                  {plans.map((p) => (
                     <th key={p.id} className="px-3 py-3 text-center font-medium last:rounded-r-[8px]">
                       {p.name}
                     </th>
@@ -214,10 +252,10 @@ export default function SystemPlansPage() {
                 </tr>
               </thead>
               <tbody>
-                {[...new Set(PLANS.flatMap((p) => p.features))].map((f) => (
+                {[...new Set(plans.flatMap((p) => p.features))].map((f) => (
                   <tr key={f} className="border-t border-[#f2f2f2] text-[12px]">
                     <td className="px-3 py-3">{f}</td>
-                    {PLANS.map((p) => (
+                    {plans.map((p) => (
                       <td key={p.id} className="px-3 py-3 text-center">
                         {p.features.includes(f) ? (
                           <Check className="mx-auto size-4 text-[#34a853]" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ResultModal } from '@/components/system/result-modal';
-import { updateSystemTenant } from '@/lib/api/system';
+import { updateSystemTenant, getSystemTenant } from '@/lib/api/system';
+import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
@@ -38,11 +39,59 @@ function Req() {
 
 const H = 'h-[48px]';
 
+type TenantFormData = {
+  name: string; tenantUrl: string; email: string; phone: string;
+  created: string; plan: string; memberCount: string;
+};
+
+const DEFAULT_TENANT: TenantFormData = {
+  name: 'Grace Community Church',
+  tenantUrl: 'grace-community.churchapp.com',
+  email: 'Infor@grace-community.churchapp.com',
+  phone: '+1234567890',
+  created: 'January 1st, 2024',
+  plan: 'Enterprise',
+  memberCount: '450',
+};
+
 export function EditTenantForm({ id }: { id: string }) {
   const router = useRouter();
   const back = `/system/tenants/${id}`;
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [tenantForm, setTenantForm] = useState<TenantFormData>(DEFAULT_TENANT);
+  const [formKey, setFormKey] = useState(0);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getSystemTenant(id)
+      .then((t) => {
+        if (!t) return;
+        const base: TenantFormData = {
+          ...DEFAULT_TENANT,
+          name: t.name || DEFAULT_TENANT.name,
+          tenantUrl: t.domain || DEFAULT_TENANT.tenantUrl,
+          created: t.createdAt || DEFAULT_TENANT.created,
+          plan: t.plan || DEFAULT_TENANT.plan,
+          memberCount: String(t.members || DEFAULT_TENANT.memberCount),
+        };
+        (api.get<unknown>(`/system/tenants/${id}`) as Promise<unknown>)
+          .then((data) => {
+            type R = Record<string, unknown>;
+            const d = data as R;
+            const email = String(d['email'] ?? d['adminEmail'] ?? d['contactEmail'] ?? '');
+            const phone = String(d['phone'] ?? d['contactPhone'] ?? d['adminPhone'] ?? '');
+            setTenantForm({
+              ...base,
+              email: email || base.email,
+              phone: phone || base.phone,
+            });
+          })
+          .catch(() => { setTenantForm(base); })
+          .finally(() => setFormKey((k) => k + 1));
+      })
+      .catch(() => {});
+  }, [id]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -80,20 +129,20 @@ export function EditTenantForm({ id }: { id: string }) {
 
         <h1 className="text-center text-[24px] font-bold">Edit Tenant</h1>
 
-        <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+        <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
           <Field label={<>Tenant Name<Req /></>}>
             <div className="relative">
               <Input
                 name="name"
                 className={`${H} pr-10`}
-                defaultValue="Grace Community Church"
+                defaultValue={tenantForm.name}
               />
               <Pencil className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-brand-gray-400" />
             </div>
           </Field>
 
           <Field label={<>Tenant URL<Req /></>}>
-            <Input name="tenantUrl" className={H} defaultValue="grace-community.churchapp.com" />
+            <Input name="tenantUrl" className={H} defaultValue={tenantForm.tenantUrl} />
           </Field>
 
           <Field label={<>Email<Req /></>}>
@@ -101,20 +150,20 @@ export function EditTenantForm({ id }: { id: string }) {
               name="email"
               type="email"
               className={H}
-              defaultValue="Infor@grace-community.churchapp.com"
+              defaultValue={tenantForm.email}
             />
           </Field>
 
           <Field label={<>Phone<Req /></>}>
-            <Input name="phone" className={H} defaultValue="+1234567890" />
+            <Input name="phone" className={H} defaultValue={tenantForm.phone} />
           </Field>
 
           <Field label={<>Created<Req /></>}>
-            <Input name="created" className={H} defaultValue="January 1st, 2024" />
+            <Input name="created" className={H} defaultValue={tenantForm.created} />
           </Field>
 
           <Field label={<>Current Plan<Req /></>}>
-            <NativeSelect name="plan" className={H} defaultValue="Enterprise">
+            <NativeSelect name="plan" className={H} defaultValue={tenantForm.plan}>
               <NativeSelectOption value="Enterprise">Enterprise</NativeSelectOption>
               <NativeSelectOption value="Growth">Growth</NativeSelectOption>
               <NativeSelectOption value="Starter">Starter</NativeSelectOption>
@@ -122,7 +171,7 @@ export function EditTenantForm({ id }: { id: string }) {
           </Field>
 
           <Field label={<>Church Members<Req /></>}>
-            <Input name="memberCount" type="number" className={H} defaultValue="450" />
+            <Input name="memberCount" type="number" className={H} defaultValue={tenantForm.memberCount} />
           </Field>
 
           <Button size="lg" type="submit" className="mt-1 h-[52px] w-full" disabled={submitting}>

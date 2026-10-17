@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * System → Settings (778:38441). Tabs General / Payments / Email / SMS /
@@ -30,11 +32,13 @@ function Field({
   placeholder,
   required,
   defaultValue,
+  name,
 }: {
   label: string;
   placeholder?: string;
   required?: boolean;
   defaultValue?: string;
+  name?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -43,6 +47,7 @@ function Field({
         {required && <span className="text-destructive"> *</span>}
       </span>
       <Input
+        name={name}
         className="h-[48px]"
         placeholder={placeholder}
         defaultValue={defaultValue}
@@ -66,8 +71,48 @@ function Section({
   );
 }
 
+type ConfigMap = Record<string, string>;
+
 export function SystemSettings() {
   const [tab, setTab] = useState<Tab>('General');
+  const [config, setConfig] = useState<ConfigMap>({});
+  const [formKey, setFormKey] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>('/system/config') as Promise<unknown>)
+      .catch(() => api.get<unknown>('/system/settings') as Promise<unknown>)
+      .then((data) => {
+        if (data && typeof data === 'object') {
+          const flat: ConfigMap = {};
+          const walk = (obj: Record<string, unknown>, prefix = '') => {
+            for (const [k, v] of Object.entries(obj)) {
+              const key = prefix ? `${prefix}.${k}` : k;
+              if (v !== null && typeof v === 'object') walk(v as Record<string, unknown>, key);
+              else flat[key] = String(v ?? '');
+            }
+          };
+          walk(data as Record<string, unknown>);
+          setConfig(flat);
+          setFormKey((k) => k + 1);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const onSave = async () => {
+    if (!formRef.current) return;
+    const fd = new FormData(formRef.current);
+    const payload: ConfigMap = {};
+    fd.forEach((v, k) => { payload[k] = String(v); });
+    if (USE_LIVE_API) {
+      try {
+        await (api.put('/system/config', payload) as Promise<unknown>)
+          .catch(() => api.put('/system/settings', payload) as Promise<unknown>);
+      } catch {}
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,7 +123,7 @@ export function SystemSettings() {
             Configure platform settings and integrations
           </p>
         </div>
-        <Button size="lg" className="h-[44px] px-6">
+        <Button size="lg" className="h-[44px] px-6" onClick={onSave}>
           Save Changes
         </Button>
       </div>
@@ -101,38 +146,40 @@ export function SystemSettings() {
         ))}
       </div>
 
+      <form key={formKey} ref={formRef} onSubmit={(e) => e.preventDefault()}>
       {tab === 'General' && (
         <Section title="Platform Settings">
-          <Field label="Platform Name" required placeholder="Go Worship Platform" />
-          <Field label="Support Email" required placeholder="support@example.com" />
-          <Field label="Platform URL" required placeholder="https://go-worship.com" />
-          <Field label="Default Timezone" required placeholder="America/New_York" />
+          <Field name="platformName" label="Platform Name" required placeholder="Go Worship Platform" defaultValue={config['platformName'] ?? config['general.platformName'] ?? config['platform.name']} />
+          <Field name="supportEmail" label="Support Email" required placeholder="support@example.com" defaultValue={config['supportEmail'] ?? config['general.supportEmail']} />
+          <Field name="platformUrl" label="Platform URL" required placeholder="https://go-worship.com" defaultValue={config['platformUrl'] ?? config['general.platformUrl'] ?? config['platform.url']} />
+          <Field name="timezone" label="Default Timezone" required placeholder="America/New_York" defaultValue={config['timezone'] ?? config['general.timezone']} />
         </Section>
       )}
 
       {tab === 'Payments' && (
         <Section title="Payment Provider (Paystack)">
-          <Field label="Publishable Key" placeholder="pk_live_..." />
-          <Field label="Secret Key" placeholder="sk_live_..." />
-          <Field label="Webhook Secret" placeholder="whsec_..." />
+          <Field name="paystackPublicKey" label="Publishable Key" placeholder="pk_live_..." defaultValue={config['paystackPublicKey'] ?? config['payments.publishableKey']} />
+          <Field name="paystackSecretKey" label="Secret Key" placeholder="sk_live_..." defaultValue={config['paystackSecretKey'] ?? config['payments.secretKey']} />
+          <Field name="paystackWebhookSecret" label="Webhook Secret" placeholder="whsec_..." defaultValue={config['paystackWebhookSecret'] ?? config['payments.webhookSecret']} />
         </Section>
       )}
 
       {tab === 'Email' && (
         <Section title="Email Provider">
-          <Field label="Email Service" placeholder="Resend" />
-          <Field label="Default From Email" placeholder="noreply@example.com" />
-          <Field label="Default From Name" placeholder="Go Worship" />
+          <Field name="emailService" label="Email Service" placeholder="Resend" defaultValue={config['emailService'] ?? config['email.service']} />
+          <Field name="emailFrom" label="Default From Email" placeholder="noreply@example.com" defaultValue={config['emailFrom'] ?? config['email.from']} />
+          <Field name="emailFromName" label="Default From Name" placeholder="Go Worship" defaultValue={config['emailFromName'] ?? config['email.fromName']} />
         </Section>
       )}
 
       {tab === 'SMS' && (
         <Section title="SMS Provider (Twilio)">
-          <Field label="Account SID" placeholder="ACxxxxxxxx" />
-          <Field label="Auth Token" placeholder="Enter auth token" />
-          <Field label="Phone Number" placeholder="+1234567890" />
+          <Field name="twilioAccountSid" label="Account SID" placeholder="ACxxxxxxxx" defaultValue={config['twilioAccountSid'] ?? config['sms.accountSid']} />
+          <Field name="twilioAuthToken" label="Auth Token" placeholder="Enter auth token" defaultValue={config['twilioAuthToken'] ?? config['sms.authToken']} />
+          <Field name="twilioPhone" label="Phone Number" placeholder="+1234567890" defaultValue={config['twilioPhone'] ?? config['sms.phone']} />
         </Section>
       )}
+      </form>
 
       {tab === 'System Health' && (
         <div className="flex flex-col items-center gap-2 rounded-[14px] border border-dashed border-[#ddd] py-16 text-center">

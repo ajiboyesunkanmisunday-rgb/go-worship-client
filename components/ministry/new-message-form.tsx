@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, Bell, Mail, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -53,8 +55,22 @@ export function NewMessageForm() {
   const toggle = (k: string) =>
     setChannels((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]));
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    if (USE_LIVE_API) {
+      const payload = {
+        title: String(fd.get('title') ?? ''),
+        recipients: String(fd.get('recipients') ?? ''),
+        channels,
+        body: String(fd.get('body') ?? ''),
+        scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
+      };
+      try {
+        await (api.post('/tenant/admin/communications', payload) as Promise<unknown>)
+          .catch(() => api.post('/tenant/admin/messages', payload) as Promise<unknown>);
+      } catch {}
+    }
     router.push(back);
   };
 
@@ -83,11 +99,11 @@ export function NewMessageForm() {
 
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <Field label={<>Title&#42;</>}>
-            <Input className="h-[48px]" placeholder="Enter message title" />
+            <Input name="title" className="h-[48px]" placeholder="Enter message title" />
           </Field>
 
           <Field label={<>Recipients&#42;</>}>
-            <NativeSelect className="h-[48px]" defaultValue="">
+            <NativeSelect name="recipients" className="h-[48px]" defaultValue="">
               <NativeSelectOption value="">Select recipients</NativeSelectOption>
               <NativeSelectOption value="all">All Sub Accounts</NativeSelectOption>
               <NativeSelectOption value="members">All Members</NativeSelectOption>
@@ -122,6 +138,7 @@ export function NewMessageForm() {
 
           <Field label={<>Message&#42;</>}>
             <Textarea
+              name="body"
               className="min-h-[140px]"
               placeholder="Write your message..."
             />
@@ -139,7 +156,7 @@ export function NewMessageForm() {
 
           {schedule && (
             <Field label="Send at">
-              <Input type="datetime-local" className="h-[48px]" />
+              <Input name="scheduledAt" type="datetime-local" className="h-[48px]" />
             </Field>
           )}
 

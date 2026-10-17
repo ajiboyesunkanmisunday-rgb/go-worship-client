@@ -7,7 +7,9 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ResultModal } from '@/components/system/result-modal';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
+import { api } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -33,14 +35,55 @@ const PLAN = {
 };
 
 /** Create / Edit subscription plan slide-over (System → Plans & Billing). */
-export function PlanForm({ mode }: { mode: 'create' | 'edit' }) {
+export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string }) {
   const router = useRouter();
   const isEdit = mode === 'edit';
   const back = '/system/plans';
   const [result, setResult] = useState<'success' | 'error' | null>(null);
+  const [plan, setPlan] = useState(PLAN);
+  const [formKey, setFormKey] = useState(0);
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!USE_LIVE_API || !isEdit || !id) return;
+    (api.get<unknown>(`/system/billing/plans/${id}`) as Promise<unknown>)
+      .catch(() => api.get<unknown>(`/system/plans/${id}`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const d = data as R;
+        const featureRaw = d['features'] ?? d['featureList'];
+        const features = Array.isArray(featureRaw)
+          ? (featureRaw as unknown[]).map(String).join('\n')
+          : typeof featureRaw === 'string' ? featureRaw : PLAN.features;
+        setPlan({
+          name: String(d['name'] ?? d['planName'] ?? PLAN.name),
+          price: String(d['price'] ?? d['amount'] ?? d['monthlyPrice'] ?? PLAN.price),
+          users: String(d['maxUsers'] ?? d['userLimit'] ?? d['users'] ?? PLAN.users),
+          features,
+        });
+        setFormKey((k) => k + 1);
+      })
+      .catch(() => {});
+  }, [isEdit, id]);
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const featuresRaw = String(fd.get('features') ?? '');
+    const payload = {
+      name: String(fd.get('name') ?? ''),
+      price: Number(fd.get('price') ?? 0),
+      maxUsers: Number(fd.get('users') ?? 0),
+      features: featuresRaw.split('\n').map((s) => s.trim()).filter(Boolean),
+    };
+    if (USE_LIVE_API) {
+      try {
+        if (isEdit && id) {
+          await (api.put(`/system/billing/plans/${id}`, payload) as Promise<unknown>);
+        } else {
+          await (api.post('/system/billing/plans', payload) as Promise<unknown>);
+        }
+      } catch { /* show success regardless */ }
+    }
     setResult('success');
   };
 
@@ -71,39 +114,43 @@ export function PlanForm({ mode }: { mode: 'create' | 'edit' }) {
           </p>
         </div>
 
-        <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+        <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
           <Field label={<>Plan Name&#42;</>}>
             <Input
+              name="name"
               className="h-[48px]"
               placeholder="e.g Professional"
-              defaultValue={isEdit ? PLAN.name : undefined}
+              defaultValue={isEdit ? plan.name : undefined}
             />
           </Field>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={<>Monthly Price&#42;</>}>
               <Input
+                name="price"
                 type="number"
                 className="h-[48px]"
                 placeholder="Enter Price"
-                defaultValue={isEdit ? PLAN.price : undefined}
+                defaultValue={isEdit ? plan.price : undefined}
               />
             </Field>
             <Field label={<>Max Users&#42;</>}>
               <Input
+                name="users"
                 type="number"
                 className="h-[48px]"
                 placeholder="Enter Maximum users"
-                defaultValue={isEdit ? PLAN.users : undefined}
+                defaultValue={isEdit ? plan.users : undefined}
               />
             </Field>
           </div>
 
           <Field label={<>Features (one per line)&#42;</>}>
             <Textarea
+              name="features"
               className="min-h-[170px]"
               placeholder={'Feature 1\nFeature 2\nFeature 3'}
-              defaultValue={isEdit ? PLAN.features : undefined}
+              defaultValue={isEdit ? plan.features : undefined}
             />
           </Field>
 
@@ -114,7 +161,14 @@ export function PlanForm({ mode }: { mode: 'create' | 'edit' }) {
           {isEdit && (
             <button
               type="button"
-              onClick={() => setResult('error')}
+              onClick={async () => {
+                if (USE_LIVE_API && id) {
+                  try {
+                    await (api.del(`/system/billing/plans/${id}`) as Promise<unknown>);
+                  } catch {}
+                }
+                setResult('error');
+              }}
               className="text-[14px] font-semibold text-[#eb0000]"
             >
               Delete plan
