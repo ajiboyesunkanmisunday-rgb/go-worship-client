@@ -8,6 +8,7 @@ import { TransactionsTable, type Transaction } from './shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
 
 /**
  * Tabs per the Church Admin "Analytics Dashboard" frame (494:22178). The frame's
@@ -45,6 +46,7 @@ export function AnalyticsContent() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Finance');
   const [audience, setAudience] = useState<string | null>(null);
   const [financeTrend, setFinanceTrend] = useState<{ month: string; value: number }[]>([]);
+  const [tabTrend, setTabTrend] = useState<{ month: string; value: number }[]>([]);
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
@@ -72,10 +74,34 @@ export function AnalyticsContent() {
       .catch(() => {});
   }, []);
 
-  // Finance tab uses live trend when available; all other tabs use mock.
-  const chartData = tab === 'Finance' && financeTrend.length > 0
-    ? financeTrend
-    : MOCK_CHART_DATA;
+  useEffect(() => {
+    if (!USE_LIVE_API || tab === 'Finance') return;
+    setTabTrend([]);
+    const slug = tab.toLowerCase();
+    (api.get<unknown>(`/tenant/admin/analytics/${slug}/trend`) as Promise<unknown>)
+      .catch(() => api.get<unknown>(`/tenant/admin/analytics/${slug}`))
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['trend'])
+            ? ((data as R)['trend'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const points = arr.map((p) => ({
+          month: String(p['label'] ?? p['month'] ?? p['period'] ?? p['name'] ?? ''),
+          value: Number(p['value'] ?? p['count'] ?? p['total'] ?? 0),
+        })).filter((p) => p.month);
+        if (points.length > 0) setTabTrend(points);
+      }).catch(() => {});
+  }, [tab]);
+
+  const chartData =
+    tab === 'Finance'
+      ? (financeTrend.length > 0 ? financeTrend : MOCK_CHART_DATA)
+      : (tabTrend.length > 0 ? tabTrend : MOCK_CHART_DATA);
 
   return (
     <div className="flex flex-col gap-5">

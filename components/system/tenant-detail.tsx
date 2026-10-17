@@ -54,9 +54,9 @@ type Tab = (typeof TABS)[number];
 
 function buildStats(t: SystemTenant) {
   return [
-    { label: 'Admin Users', value: '10', bg: 'bg-[#f6f8fb]' },
+    { label: 'Admin Users', value: t.adminUsers != null ? String(t.adminUsers) : '10', bg: 'bg-[#f6f8fb]' },
     { label: 'Church Members', value: String(t.members || 830), bg: 'bg-[#eafaf0]' },
-    { label: 'Total Giving', value: '$125,000', bg: 'bg-[#e9f7f5]' },
+    { label: 'Total Giving', value: t.totalGiving ?? '$125,000', bg: 'bg-[#e9f7f5]' },
     { label: 'Current Plan', value: t.plan || 'Enterprise', bg: 'bg-[#eef2fb]' },
   ];
 }
@@ -207,12 +207,12 @@ export function TenantDetail({ id }: { id: string }) {
           <div className="rounded-[14px] border border-[#eee] p-6">
             <h2 className="text-[18px] font-bold">Contact Information</h2>
             <div className="mt-5 flex flex-col gap-5">
-              <DetailRow icon={Mail} label="Email" value="admin@gracecommunity.org" />
-              <DetailRow icon={Phone} label="Phone" value="+1 555-0101" />
+              <DetailRow icon={Mail} label="Email" value={tenant.email ?? 'admin@gracecommunity.org'} />
+              <DetailRow icon={Phone} label="Phone" value={tenant.phone ?? '+1 555-0101'} />
               <DetailRow
                 icon={Globe}
                 label="Custom Domain"
-                value="gracecommunity.churchapp.com"
+                value={tenant.domain || 'gracecommunity.churchapp.com'}
               />
             </div>
           </div>
@@ -220,16 +220,16 @@ export function TenantDetail({ id }: { id: string }) {
           <div className="rounded-[14px] border border-[#eee] p-6">
             <h2 className="text-[18px] font-bold">Account Details</h2>
             <div className="mt-5 flex flex-col gap-5">
-              <DetailRow icon={Tag} label="Slug" value="grace-community" />
+              <DetailRow icon={Tag} label="Slug" value={tenant.slug ?? tenant.id ?? 'grace-community'} />
               <DetailRow
                 icon={CalendarDays}
                 label="Created"
-                value="January 14, 2023"
+                value={tenant.createdAt || 'January 14, 2023'}
               />
               <DetailRow
                 icon={CalendarDays}
                 label="Last Active"
-                value="January 13, 2024"
+                value={tenant.lastActive ?? 'January 13, 2024'}
               />
             </div>
           </div>

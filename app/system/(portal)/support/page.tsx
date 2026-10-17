@@ -53,6 +53,63 @@ export default function SystemSupportPage() {
   const current = tickets.find((t) => t.id === active) ?? tickets[0]!;
   const [reply, setReply] = useState('');
 
+  const [ticketTitle, setTicketTitle] = useState('Help needed for payment failure');
+  const [ticketBody, setTicketBody] = useState('I need help to process the payment after the checkout. I need to send out this campaign within today. Can you please help ASAP?');
+  const [ticketDate, setTicketDate] = useState('23rd December 4:15pm');
+  const [ticketFiles, setTicketFiles] = useState<string[]>(['Doc.pdf', 'Doc.pdf']);
+  const [visitorEmail, setVisitorEmail] = useState('dean.laptop@gmail.com');
+  const [visitorPhone, setVisitorPhone] = useState('+234 812 345 6789');
+  const [visitorLocation, setVisitorLocation] = useState('Nigeria (View on map)');
+  const [visitorLocalTime, setVisitorLocalTime] = useState('04:30 am / 2:30 pm');
+  const [visitorLanguage, setVisitorLanguage] = useState('English');
+  const [visitorIp, setVisitorIp] = useState('107.116.97.201');
+  const [visitorOs, setVisitorOs] = useState('Windows 10');
+  const [visitorBrowser, setVisitorBrowser] = useState('Mozilla Firefox');
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<Record<string, unknown>>(`/system/support/tickets/${active}`) as Promise<Record<string, unknown>>)
+      .then((d) => {
+        const subject = d['subject'] ?? d['title'] ?? d['summary'];
+        if (subject) setTicketTitle(String(subject));
+        const msgs = d['messages'] ?? d['conversations'] ?? d['replies'];
+        if (Array.isArray(msgs) && msgs.length > 0) {
+          const first = msgs[0] as Record<string, unknown>;
+          const body = first['body'] ?? first['content'] ?? first['message'] ?? first['text'];
+          if (body) setTicketBody(String(body));
+          const at = first['createdAt'] ?? first['sentAt'] ?? first['timestamp'];
+          if (at) {
+            const dt = new Date(String(at));
+            if (!isNaN(dt.getTime())) setTicketDate(dt.toLocaleString('en-US', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
+          }
+        } else {
+          const body = d['body'] ?? d['content'] ?? d['description'] ?? d['message'];
+          if (body) setTicketBody(String(body));
+        }
+        const attachments = d['attachments'] ?? d['files'];
+        if (Array.isArray(attachments) && (attachments as unknown[]).length > 0) {
+          const names = (attachments as Record<string, unknown>[]).map((a) => String(a['name'] ?? a['filename'] ?? a['url'] ?? '')).filter(Boolean);
+          if (names.length > 0) setTicketFiles(names);
+        }
+        const visitor = (d['visitor'] ?? d['requester'] ?? {}) as Record<string, unknown>;
+        const email = visitor['email'] ?? visitor['emailAddress'] ?? d['email'];
+        if (email) setVisitorEmail(String(email));
+        const phone = visitor['phone'] ?? visitor['phoneNumber'] ?? d['phone'];
+        if (phone) setVisitorPhone(String(phone));
+        const location = visitor['location'] ?? visitor['country'] ?? visitor['city'] ?? d['location'] ?? d['country'];
+        if (location) setVisitorLocation(String(location));
+        const lang = visitor['language'] ?? visitor['locale'] ?? d['language'];
+        if (lang) setVisitorLanguage(String(lang));
+        const device = (d['device'] ?? d['deviceInfo'] ?? {}) as Record<string, unknown>;
+        const ip = device['ip'] ?? device['ipAddress'] ?? visitor['ip'] ?? d['ip'] ?? d['ipAddress'];
+        if (ip) setVisitorIp(String(ip));
+        const os = device['os'] ?? device['operatingSystem'] ?? device['platform'] ?? d['os'];
+        if (os) setVisitorOs(String(os));
+        const browser = device['browser'] ?? device['browserName'] ?? device['agent'] ?? d['browser'];
+        if (browser) setVisitorBrowser(String(browser));
+      }).catch(() => {});
+  }, [active]);
+
   useEffect(() => {
     if (!USE_LIVE_API) return;
     (api.get<unknown>('/system/support/tickets') as Promise<unknown>)
@@ -148,22 +205,21 @@ export default function SystemSupportPage() {
 
         {/* ---- Column 2: Conversation ---- */}
         <div className="flex flex-col rounded-[14px] border border-[#eee] p-5">
-          <p className="text-[16px] font-bold">Help needed for payment failure</p>
+          <p className="text-[16px] font-bold">{ticketTitle}</p>
           <p className="text-[12px] text-brand-gray-500">
-            {current.name} · 23rd December 4:15pm
+            {current.name} · {ticketDate}
           </p>
 
           <div className="mt-4 flex-1 rounded-[10px] bg-[#f7f9fc] p-4 text-[13px] text-[#333]">
             <p>Hi,</p>
-            <p className="mt-2">
-              I need help to process the payment after the checkout. I need to
-              send out this campaign within today. Can you please help ASAP?
-            </p>
+            <p className="mt-2">{ticketBody}</p>
             <p className="mt-2">Thanks</p>
-            <div className="mt-3 flex items-center gap-2 rounded-[8px] border border-[#e5e5e5] bg-white p-2 text-[12px]">
-              <FileText className="size-4 text-[#eb0000]" />
-              Doc.pdf
-            </div>
+            {ticketFiles.slice(0, 1).map((f, i) => (
+              <div key={i} className="mt-3 flex items-center gap-2 rounded-[8px] border border-[#e5e5e5] bg-white p-2 text-[12px]">
+                <FileText className="size-4 text-[#eb0000]" />
+                {f}
+              </div>
+            ))}
           </div>
 
           {/* Reply editor */}
@@ -218,27 +274,27 @@ export default function SystemSupportPage() {
               Basic Details
             </p>
             <div className="mt-2 flex flex-col gap-3">
-              <Info label="Email" value="dean.laptop@gmail.com" />
-              <Info label="Phone" value="+234 812 345 6789" />
-              <Info label="Location" value="Nigeria (View on map)" />
-              <Info label="Local time" value="04:30 am / 2:30 pm" />
-              <Info label="Language" value="English" />
+              <Info label="Email" value={visitorEmail} />
+              <Info label="Phone" value={visitorPhone} />
+              <Info label="Location" value={visitorLocation} />
+              <Info label="Local time" value={visitorLocalTime} />
+              <Info label="Language" value={visitorLanguage} />
             </div>
 
             <p className="mt-5 text-[12px] font-semibold text-brand-gray-500">
               Device Details
             </p>
             <div className="mt-2 flex flex-col gap-3">
-              <Info label="IP" value="107.116.97.201" />
-              <Info label="OS" value="Windows 10" />
-              <Info label="Browser" value="Mozilla Firefox" />
+              <Info label="IP" value={visitorIp} />
+              <Info label="OS" value={visitorOs} />
+              <Info label="Browser" value={visitorBrowser} />
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[#eee] p-5">
             <p className="text-[15px] font-bold">Files Shared</p>
             <div className="mt-3 flex flex-col gap-2">
-              {['Doc.pdf', 'Doc.pdf'].map((f, i) => (
+              {ticketFiles.map((f, i) => (
                 <div
                   key={i}
                   className="flex items-center justify-between rounded-[8px] border border-[#e5e5e5] p-2.5 text-[12px]"

@@ -87,6 +87,12 @@ export type SystemTenant = {
   plan: string;
   members: number;
   createdAt: string;
+  email?: string;
+  phone?: string;
+  slug?: string;
+  lastActive?: string;
+  adminUsers?: number;
+  totalGiving?: string;
 };
 
 function mapTenant(row: R): SystemTenant {
@@ -101,7 +107,13 @@ function mapTenant(row: R): SystemTenant {
   const plan = fieldOf(row, ['planName', 'plan', 'subscriptionPlan', 'subscription', 'tier']);
   const members = Number(fieldOf(row, ['memberCount', 'members', 'totalMembers', 'userCount']) || 0);
   const createdAt = fmtDate(fieldOf(row, ['createdAt', 'registeredAt', 'joinedAt', 'createdDate']));
-  return { id, name, domain, status, plan, members, createdAt };
+  const email = fieldOf(row, ['email', 'billingEmail', 'adminEmail', 'contactEmail']) || undefined;
+  const phone = fieldOf(row, ['phone', 'phoneNumber', 'contactPhone']) || undefined;
+  const lastActive = fmtDate(fieldOf(row, ['lastActive', 'lastActiveAt', 'lastSeen', 'updatedAt'])) || undefined;
+  const adminUsers = Number(fieldOf(row, ['adminUsers', 'adminCount', 'adminUserCount'])) || undefined;
+  const rawGiving = fieldOf(row, ['totalGiving', 'givingVolume', 'totalRevenue', 'givingTotal']);
+  const totalGiving = rawGiving ? (rawGiving.startsWith('$') ? rawGiving : `$${Number(rawGiving).toLocaleString()}`) : undefined;
+  return { id, name, domain, status, plan, members, createdAt, email, phone, slug: slug || undefined, lastActive, adminUsers, totalGiving };
 }
 
 export async function getSystemTenants(): Promise<SystemTenant[]> {
