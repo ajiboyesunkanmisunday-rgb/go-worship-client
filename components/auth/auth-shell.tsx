@@ -14,6 +14,8 @@ type AuthShellProps = {
   /** Left church image source. Defaults to the shared auth photo. */
   imgSrc?: string;
   imgAlt?: string;
+  /** Override the left-panel logo (overrides context branding + CCI fallback). */
+  logoSrc?: string;
 };
 
 /**
@@ -29,9 +31,10 @@ export function AuthShell({
   mainClassName,
   imgSrc = '/auth/church.jpg',
   imgAlt = 'Celebration Church',
+  logoSrc,
 }: AuthShellProps) {
   const { context } = useSiteContext();
-  const logoUrl = context?.branding?.logoUrl;
+  const logoUrl = logoSrc ?? context?.branding?.logoUrl;
   const orgName = context?.branding?.organizationName ?? context?.displayName;
 
   return (

@@ -54,6 +54,10 @@ type Props = {
   /** Override the left-panel background image (default: church photo). */
   imgSrc?: string;
   imgAlt?: string;
+  /** Override the left-panel logo (e.g. Leadremit logo for system login). */
+  logoSrc?: string;
+  /** Override the subtitle below "Welcome Back" (defaults to org name from context). */
+  subtitle?: string;
 };
 
 function SignInFormInner({
@@ -63,6 +67,8 @@ function SignInFormInner({
   showRegisterChurch = false,
   imgSrc,
   imgAlt,
+  logoSrc,
+  subtitle,
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -76,6 +82,7 @@ function SignInFormInner({
         ? false
         : (context?.authentication?.customerGoogleLogin ?? true);
   const orgName =
+    subtitle ??
     context?.branding?.organizationName ??
     context?.displayName ??
     'Celebration Church International Go worship Platform';
@@ -175,7 +182,7 @@ function SignInFormInner({
   };
 
   return (
-    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'}>
+    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc}>
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
         <Image
           src="/auth/infinity-blue.svg"

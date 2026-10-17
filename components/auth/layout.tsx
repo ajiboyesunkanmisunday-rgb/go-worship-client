@@ -3,11 +3,11 @@ import { AuthShell } from './auth-shell';
 type AuthLayoutProps = {
   children?: React.ReactNode;
   containerClassName?: string;
-  /** @deprecated the shared church image is used for every auth screen */
   imgSrc?: string;
   imgAlt?: string;
   imgWidth?: number;
   imgHeight?: number;
+  logoSrc?: string;
 };
 
 export function AuthLayout({
@@ -15,9 +15,10 @@ export function AuthLayout({
   containerClassName,
   imgSrc,
   imgAlt,
+  logoSrc,
 }: AuthLayoutProps) {
   return (
-    <AuthShell contentClassName={containerClassName} imgSrc={imgSrc} imgAlt={imgAlt}>
+    <AuthShell contentClassName={containerClassName} imgSrc={imgSrc} imgAlt={imgAlt} logoSrc={logoSrc}>
       {children}
     </AuthShell>
   );

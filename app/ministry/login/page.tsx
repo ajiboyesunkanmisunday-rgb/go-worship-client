@@ -10,7 +10,6 @@ export default function MinistryLoginPage() {
   return (
     <MinistrySignInForm
       redirectTo="/ministry/dashboard"
-      signupHref="/auth/signup"
     />
   );
 }
