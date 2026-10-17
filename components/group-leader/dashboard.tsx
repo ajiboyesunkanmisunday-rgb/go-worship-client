@@ -1,6 +1,11 @@
+'use client';
+
 import { StatCard } from '@/components/ministry/shared';
 import { ClipboardList, Plus, SquareCheckBig } from 'lucide-react';
 import { DataPanel, QuickAccessCard, type TableRow } from './shared';
+import { useState, useEffect } from 'react';
+import { getTenantMembers, getTenantStats, type TenantMember, type TenantStats } from '@/lib/api/tenant';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 const GREEN_ICON =
   'flex size-10 items-center justify-center rounded-full bg-[#22a45d] text-white';
@@ -45,20 +50,39 @@ export function QuickAccess() {
   );
 }
 
-const MEMBERS: TableRow[] = Array.from({ length: 5 }, () => ({
-  cells: ['John Doe', '08035678923', 'john@mail.com', 'Jan 2025'],
+const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, () => ({
+  id: '',
+  name: 'John Doe',
+  phone: '08035678923',
+  email: 'john@mail.com',
   status: 'Active' as const,
+  joinedAt: 'Jan 2025',
+  groups: [],
 }));
 
 export function GroupLeaderDashboard() {
+  const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
+  const [stats, setStats] = useState<TenantStats | null>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantMembers().then(setMembers).catch(() => {});
+    getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+  }, []);
+
+  const rows: TableRow[] = members.slice(0, 5).map((m) => ({
+    cells: [m.name, m.phone || '—', m.email, m.joinedAt || '—'],
+    status: m.status === 'Active' ? 'Active' : ('Inactive' as const),
+  }));
+
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_1.3fr]">
         {/* Hello card */}
         <div className="relative overflow-hidden rounded-[14px] bg-white p-6">
-          <h1 className="text-[28px] font-bold lg:text-[32px]">Hello Mercy 👋</h1>
+          <h1 className="text-[28px] font-bold lg:text-[32px]">Hello 👋</h1>
           <p className="mt-2 max-w-[300px] text-[14px] text-brand-gray-500">
-            Welcome to Celebration Church International Go worship Platform
+            Welcome to Go Worship Platform
           </p>
           <span className="pointer-events-none absolute -right-10 top-8 size-[220px] rounded-full border-[6px] border-[#e7f7ee]" />
           <span className="pointer-events-none absolute right-16 top-24 size-[140px] rounded-full border-[6px] border-[#d4f0df]" />
@@ -68,8 +92,8 @@ export function GroupLeaderDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Groups" value="24" variant="blue" />
-        <StatCard title="Total Member" value="430" variant="white" />
+        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : '24'} variant="blue" />
+        <StatCard title="Total Member" value={stats ? String(stats.totalMembers) : String(members.length)} variant="white" />
         <StatCard title="New Members" value="15" variant="white" />
         <StatCard title="Recent Attendance" value="10" variant="white" />
       </div>
@@ -77,7 +101,7 @@ export function GroupLeaderDashboard() {
       <DataPanel
         title="Member List"
         columns={['Name', 'Phone', 'Email', 'Join Date']}
-        rows={MEMBERS}
+        rows={rows}
       />
     </div>
   );
