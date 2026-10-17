@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Member Giving | Go-Worship</title>
+  <link rel="stylesheet" href="giving.css">
+  <script src="giving.js" defer></script>
+</head>
+<body>
+<main class="shell">
+  <aside class="story" aria-label="Giving message">
+    <div class="story-logo">∞ <span>GO-WORSHIP</span></div>
+    <div><p class="eyebrow">Member giving</p><h1>Grace flows through generosity.</h1><p>Give securely to the work that matters to your church community.</p></div>
+    <small>Payments securely powered by Leadremit</small>
+  </aside>
+  <section class="panel">
+    <header><div class="mark">∞</div><p class="eyebrow">Authenticated member</p><h2>Make a contribution</h2><p id="tenant-name">Loading giving options…</p></header>
+    <ol class="steps" aria-label="Progress"><li class="active">Details</li><li>Amount</li><li>Payment</li><li>Confirmation</li></ol>
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+    <form id="giving-form">
+      <div class="grid two">
+        <label>Campus<select id="campus" required><option value="">Loading…</option></select></label>
+        <label>Giving type<select id="fund" required><option value="">Loading…</option></select></label>
+      </div>
+      <label>Note <span>(optional)</span><textarea id="note" maxlength="500" rows="3" placeholder="Add a short note"></textarea></label>
+      <div class="grid amount-row">
+        <label>Currency<select id="currency" required><option>USD</option></select></label>
+        <label>Amount<input id="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required></label>
+      </div>
+      <fieldset><legend>Payment experience</legend><label class="choice"><input type="radio" name="integration" value="COLLECT_JS" checked><span><b>Pay here securely</b><small>Provider-hosted secure fields</small></span></label><label class="choice"><input type="radio" name="integration" value="COLLECT_CHECKOUT"><span><b>Hosted checkout</b><small>Continue to Leadremit checkout</small></span></label></fieldset>
+      <button id="pay" class="primary" type="submit">Continue to payment</button>
+    </form>
+
+    <section id="confirmation" class="confirmation" hidden>
+      <div class="success">✓</div><p class="eyebrow">Payment confirmation</p><h2 id="result-title">We’re confirming your contribution</h2><p id="result-copy">Please keep this page open while the provider verifies payment.</p>
+      <dl><div><dt>Reference</dt><dd id="payment-reference">—</dd></div><div><dt>Status</dt><dd id="payment-status">—</dd></div><div><dt>Amount</dt><dd id="payment-amount">—</dd></div></dl>
+      <div class="actions"><button id="download-receipt" type="button" hidden>Download receipt</button><button id="send-receipt" type="button" hidden>Email receipt</button><button id="new-gift" type="button">Make another contribution</button></div>
+    </section>
+  </section>
+</main>
+</body>
+</html>

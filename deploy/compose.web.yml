@@ -1,0 +1,33 @@
+# go-worship-web — the Next.js frontend service.
+#
+# IMPORTANT: this frontend is a Next.js NODE server (SSR + a small server-side
+# proxy under /bff/*), NOT a Vite/CRA static build served by nginx. So it runs
+# from the repo's Dockerfile (Node standalone) and listens on port 3000; the
+# public nginx proxies to it. Do not use an nginx-static Dockerfile here.
+#
+# Merge this service into the existing docker/compose.yml, on the SAME network
+# as go-worship-api and the public nginx. Adjust `context` and `networks` to
+# match your compose file.
+
+services:
+  go-worship-web:
+    build:
+      context: ../go-worship-web # this repo, cloned as go-worship-web/
+      # NEXT_PUBLIC_* are compiled into the browser bundle at build time.
+      args:
+        NEXT_PUBLIC_USE_LIVE_API: "true"
+        NEXT_PUBLIC_RECAPTCHA_SITE_KEY: "6LfbSHAsAAAAAFnhtf-lPAKUG83fUiXdFPLsxzMx"
+    environment:
+      # Reach the backend by its compose service name (container-to-container).
+      API_UPSTREAM_URL: "http://go-worship-api:8585"
+      # Server-only secrets — read at runtime, never in the browser. Put the
+      # real values in docker/.env (do NOT commit them).
+      LOGIN_HMAC_SECRET: "${LOGIN_HMAC_SECRET}"
+      API_TENANT_ID: "${API_TENANT_ID}"
+    expose:
+      - "3000"
+    restart: unless-stopped
+    depends_on:
+      - go-worship-api
+    # networks:
+    #   - <same network as go-worship-api and nginx>

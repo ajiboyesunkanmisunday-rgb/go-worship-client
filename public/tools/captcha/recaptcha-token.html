@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        Go-Worship — Classic reCAPTCHA v3 Request Generator
+    </title>
+
+    <!--
+        Classic Google reCAPTCHA v3.
+
+        IMPORTANT:
+        The reCAPTCHA script is loaded dynamically by recaptcha-token.js.
+
+        The public site key is obtained from:
+        GET /api/v1/auth/captcha/site-key
+
+        Never expose the reCAPTCHA secret key in browser-delivered code.
+    -->
+
+    <!-- Google Identity Services -->
+    <script
+            src="https://accounts.google.com/gsi/client"
+            async
+            defer>
+    </script>
+
+    <link
+            rel="stylesheet"
+            href="recaptcha-token.css"
+    >
+</head>
+
+<body>
+
+<main class="container">
+
+    <!-- ================================================================== -->
+    <!-- Page header                                                        -->
+    <!-- ================================================================== -->
+
+    <header class="page-header">
+
+        <h1>
+            Classic reCAPTCHA v3 Request Generator
+        </h1>
+
+        <p class="subtitle">
+            Development utility for Go-Worship authentication,
+            first-login, password recovery, guest OTP, checkout,
+            payment, and Google authentication requests.
+        </p>
+
+    </header>
+
+    <div class="notice">
+        Generate a fresh reCAPTCHA token, timestamp, nonce, and
+        correlation ID for every protected request. Do not reuse a
+        reCAPTCHA token.
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- Request configuration                                              -->
+    <!-- ================================================================== -->
+
+    <section class="card">
+
+        <h2>
+            Request Configuration
+        </h2>
+
+        <div class="grid">
+
+            <!-- Authentication flow -->
+            <div>
+
+                <label for="flow">
+                    Authentication Flow
+                </label>
+
+                <select id="flow">
+
+                    <option
+                            value="custom-login"
+                            selected>
+                        Custom Login
+                    </option>
+
+                    <option value="google-login">
+                        Google Login
+                    </option>
+
+                </select>
+
+                <div class="hint">
+                    Google Login is available only when LOGIN is selected.
+                </div>
+
+            </div>
+
+            <!-- Site key -->
+            <div>
+
+                <label for="siteKey">
+                    Classic reCAPTCHA v3 Site Key
+                </label>
+
+                <input
+                        id="siteKey"
+                        type="text"
+                        placeholder="Loading from backend..."
+                        readonly
+                >
+
+                <div class="hint">
+                    Loaded from /api/v1/auth/captcha/site-key.
+                </div>
+
+            </div>
+
+            <!-- Action -->
+            <div>
+
+                <label for="action">
+                    reCAPTCHA Action
+                </label>
+
+                <select id="action">
+
+                    <option value="LOGIN" selected>
+                        LOGIN
+                    </option>
+
+                    <option value="REGISTER">
+                        REGISTER
+                    </option>
+
+                    <option value="FIRST_LOGIN">
+                        FIRST_LOGIN
+                    </option>
+
+                    <option value="FIRST_LOGIN_PASSWORD">
+                        FIRST_LOGIN_PASSWORD
+                    </option>
+
+                    <option value="PASSWORD_RESET">
+                        PASSWORD_RESET
+                    </option>
+
+                    <option value="OTP_SEND">
+                        OTP_SEND
+                    </option>
+
+                    <option value="OTP_VERIFY">
+                        OTP_VERIFY
+                    </option>
+
+                    <option value="CHECKOUT">
+                        CHECKOUT
+                    </option>
+
+                    <option value="PAYMENT">
+                        PAYMENT
+                    </option>
+
+                </select>
+
+                <div class="hint">
+                    Must match the action expected by CaptchaValidationFilter.
+                </div>
+
+            </div>
+
+            <!-- Servlet path -->
+            <div>
+
+                <label for="path">
+                    Servlet Path
+                </label>
+
+                <input
+                        id="path"
+                        type="text"
+                        value="/api/v1/auth/login"
+                        readonly
+                >
+
+            </div>
+
+            <!-- HTTP method -->
+            <div>
+
+                <label for="method">
+                    HTTP Method
+                </label>
+
+                <input
+                        id="method"
+                        type="text"
+                        value="POST"
+                        readonly
+                >
+
+            </div>
+
+            <!-- Tenant domain -->
+            <div>
+
+                <label for="tenantDomain">
+                    X-Tenant-Domain — Optional
+                </label>
+
+                <input
+                        id="tenantDomain"
+                        type="text"
+                        placeholder="admin.cac.go-worship.com"
+                        autocomplete="off"
+                >
+
+                <div class="hint">
+                    Use for tenant requests sent through the centralized
+                    API domain. Leave empty when the request URL itself
+                    identifies the SYSTEM_OWNER or tenant domain.
+                </div>
+
+            </div>
+
+            <!-- Optional proof -->
+            <div class="full-width">
+
+                <label for="proof">
+                    Proof — Optional
+                </label>
+
+                <input
+                        id="proof"
+                        type="text"
+                        placeholder="OPTIONAL_IF_REQUIRED"
+                        autocomplete="off"
+                >
+
+            </div>
+
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- Custom login                                                   -->
+        <!-- ============================================================= -->
+
+        <section
+                id="loginSection"
+                class="action-section"
+        >
+
+            <h3>
+                Login Credentials
+            </h3>
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="username">
+                        Username or Email
+                    </label>
+
+                    <input
+                            id="username"
+                            type="text"
+                            placeholder="support@go-worship.com"
+                            autocomplete="username"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                            id="password"
+                            type="password"
+                            placeholder="Enter password"
+                            autocomplete="current-password"
+                    >
+
+                </div>
+
+                <div class="checkbox-field">
+
+                    <input
+                            id="rememberMe"
+                            type="checkbox"
+                    >
+
+                    <label for="rememberMe">
+                        Remember Me
+                    </label>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Registration                                                   -->
+        <!-- ============================================================= -->
+
+        <section
+                id="registrationSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                Registration
+            </h3>
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="firstName">
+                        First Name
+                    </label>
+
+                    <input
+                            id="firstName"
+                            type="text"
+                            autocomplete="given-name"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="lastName">
+                        Last Name
+                    </label>
+
+                    <input
+                            id="lastName"
+                            type="text"
+                            autocomplete="family-name"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="registrationEmail">
+                        Email
+                    </label>
+
+                    <input
+                            id="registrationEmail"
+                            type="email"
+                            autocomplete="email"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="confirmPassword">
+                        Confirm Password
+                    </label>
+
+                    <input
+                            id="confirmPassword"
+                            type="password"
+                            autocomplete="new-password"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- First-login link                                               -->
+        <!-- ============================================================= -->
+
+        <section
+                id="firstLoginLinkSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                First-Login Link Consumption
+            </h3>
+
+            <div class="grid">
+
+                <div class="full-width">
+
+                    <label for="firstLoginToken">
+                        First-Login Link Token
+                    </label>
+
+                    <input
+                            id="firstLoginToken"
+                            type="text"
+                            placeholder="Paste the token received by email"
+                            autocomplete="off"
+                    >
+
+                    <div class="hint">
+                        Maps to POST /api/v1/auth/first-login/link/consume.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- First-login password                                          -->
+        <!-- ============================================================= -->
+
+        <section
+                id="firstLoginPasswordSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                First-Login Password Completion
+            </h3>
+
+            <div class="grid">
+
+                <div class="full-width">
+
+                    <label for="challengeToken">
+                        Challenge Token
+                    </label>
+
+                    <input
+                            id="challengeToken"
+                            type="text"
+                            placeholder="Paste first-login challenge token"
+                            autocomplete="off"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="newPassword">
+                        New Password
+                    </label>
+
+                    <input
+                            id="newPassword"
+                            type="password"
+                            autocomplete="new-password"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="confirmNewPassword">
+                        Confirm New Password
+                    </label>
+
+                    <input
+                            id="confirmNewPassword"
+                            type="password"
+                            autocomplete="new-password"
+                    >
+
+                </div>
+
+                <div class="checkbox-field">
+
+                    <input
+                            id="firstLoginRememberMe"
+                            type="checkbox"
+                    >
+
+                    <label for="firstLoginRememberMe">
+                        Remember Me
+                    </label>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Email operation                                                -->
+        <!-- ============================================================= -->
+
+        <section
+                id="emailSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                Email Operation
+            </h3>
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="email">
+                        Email
+                    </label>
+
+                    <input
+                            id="email"
+                            type="email"
+                            placeholder="user@example.com"
+                            autocomplete="email"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Password reset                                                 -->
+        <!-- ============================================================= -->
+
+        <section
+                id="passwordResetSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                Password Reset
+            </h3>
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="passwordResetToken">
+                        Reset Token — Optional
+                    </label>
+
+                    <input
+                            id="passwordResetToken"
+                            type="text"
+                            autocomplete="off"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="passwordResetNewPassword">
+                        New Password — Optional
+                    </label>
+
+                    <input
+                            id="passwordResetNewPassword"
+                            type="password"
+                            autocomplete="new-password"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- OTP                                                            -->
+        <!-- ============================================================= -->
+
+        <section
+                id="otpSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                Guest OTP Verification
+            </h3>
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="otp">
+                        OTP Code
+                    </label>
+
+                    <input
+                            id="otp"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Checkout / Payment                                             -->
+        <!-- ============================================================= -->
+
+        <section
+                id="paymentSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                Checkout / Payment
+            </h3>
+
+            <div class="grid">
+
+                <div>
+
+                    <label for="customerEmail">
+                        Customer Email
+                    </label>
+
+                    <input
+                            id="customerEmail"
+                            type="email"
+                            autocomplete="email"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="amount">
+                        Amount
+                    </label>
+
+                    <input
+                            id="amount"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="100.00"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="currency">
+                        Currency
+                    </label>
+
+                    <input
+                            id="currency"
+                            type="text"
+                            value="USD"
+                            maxlength="3"
+                    >
+
+                </div>
+
+                <div>
+
+                    <label for="reference">
+                        Reference — Optional
+                    </label>
+
+                    <input
+                            id="reference"
+                            type="text"
+                            autocomplete="off"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Google login                                                   -->
+        <!-- ============================================================= -->
+
+        <section
+                id="googleLoginSection"
+                class="action-section hidden"
+        >
+
+            <h3>
+                Google Login
+            </h3>
+
+            <div class="grid">
+
+                <div class="full-width">
+
+                    <label for="googleClientId">
+                        Google OAuth Client ID
+                    </label>
+
+                    <input
+                            id="googleClientId"
+                            type="text"
+                            value="186971327364-m3noha1t0nk7autfia7017c041fb45fa.apps.googleusercontent.com"
+                            autocomplete="off"
+                    >
+
+                </div>
+
+            </div>
+
+            <button
+                    id="initializeGoogleButton"
+                    type="button"
+                    class="secondary-button"
+            >
+                Initialize Google Sign-In
+            </button>
+
+            <div
+                    id="googleButton"
+                    class="google-button-container"
+            ></div>
+
+            <label for="googleIdToken">
+                Google ID Token
+            </label>
+
+            <textarea
+                    id="googleIdToken"
+                    readonly
+            ></textarea>
+
+            <button
+                    id="copyGoogleIdTokenButton"
+                    type="button"
+                    class="secondary-button"
+            >
+                Copy Google ID Token
+            </button>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Generate                                                       -->
+        <!-- ============================================================= -->
+
+        <button
+                id="generateButton"
+                type="button"
+                class="primary-button"
+        >
+            Generate Classic v3 Token + Request
+        </button>
+
+        <div
+                id="status"
+                class="status"
+                aria-live="polite"
+        ></div>
+
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- Token output                                                       -->
+    <!-- ================================================================== -->
+
+    <section class="card">
+
+        <h2>
+            Generated reCAPTCHA Token
+        </h2>
+
+        <textarea
+                id="captchaTokenOutput"
+                placeholder="A single-use token will appear here"
+                readonly
+        ></textarea>
+
+        <button
+                id="copyCaptchaTokenButton"
+                type="button"
+                class="secondary-button"
+        >
+            Copy Token
+        </button>
+
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- Postman helper                                                     -->
+    <!-- ================================================================== -->
+
+    <section class="card">
+
+        <h2>
+            Postman Request Helper
+        </h2>
+
+        <label for="requestUrlOutput">
+            Request
+        </label>
+
+        <input
+                id="requestUrlOutput"
+                type="text"
+                readonly
+        >
+
+        <label for="headersOutput">
+            Headers
+        </label>
+
+        <textarea
+                id="headersOutput"
+                readonly
+        ></textarea>
+
+        <button
+                id="copyHeadersButton"
+                type="button"
+                class="secondary-button"
+        >
+            Copy Headers
+        </button>
+
+        <label for="bodyOutput">
+            JSON Body
+        </label>
+
+        <textarea
+                id="bodyOutput"
+                readonly
+        ></textarea>
+
+        <button
+                id="copyBodyButton"
+                type="button"
+                class="secondary-button"
+        >
+            Copy JSON Body
+        </button>
+
+    </section>
+
+</main>
+
+<script src="recaptcha-token.js?v=20260808_001"></script>
+
+</body>
+</html>

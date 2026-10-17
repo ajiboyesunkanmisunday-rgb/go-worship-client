@@ -1,0 +1,320 @@
+'use client';
+import { z } from 'zod';
+import { AuthLayout } from '@/components/auth/layout';
+import { Button } from '@/components/ui/button';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@/components/ui/input-group';
+import { MessageIcon } from '@/icons/message';
+import Image from 'next/image';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import Link from 'next/link';
+import { GoogleIcon } from '@/icons/socials';
+import { PasswordInput } from '@/components/ui/password-input';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { USE_LIVE_API } from '@/lib/api/config';
+import { portalForRoles } from '@/lib/portal';
+import { executeRecaptcha } from '@/lib/recaptcha';
+import { login, googleLogin } from '@/lib/api/auth';
+import { signInWithGoogle } from '@/lib/google-identity';
+import { useSiteContext } from '@/lib/site-context';
+
+const formSchema = z.object({
+  email: z.email({ message: 'Please enter a valid email address' }),
+  password: z.string().min(8, {
+    message: 'Password must be at least 8 characters',
+  }),
+});
+
+type FormSchema = z.infer<typeof formSchema>;
+
+type Props = {
+  /** Where to go after a successful sign in. */
+  redirectTo?: string;
+  /** Where the "Create an account" link points. */
+  signupHref?: string;
+};
+
+function SignInFormInner({
+  redirectTo = '/dashboard',
+  signupHref = '/auth/signup',
+}: Props) {
+  const { context } = useSiteContext();
+  // Google login: show when flag is true, or when context is not loaded (demo / fallback).
+  // Never show for SYSTEM_OWNER context (spec: SO has no Google login).
+  const showGoogle =
+    context?.contextType === 'SYSTEM_OWNER'
+      ? false
+      : (context?.authentication?.customerGoogleLogin ?? true);
+  const orgName =
+    context?.branding?.organizationName ??
+    context?.displayName ??
+    'Celebration Church International Go worship Platform';
+
+  const form = useForm<FormSchema>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // Set by /first-login after consuming the invitation link.
+  const tenantId = searchParams.get('tenant');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setFormError(null);
+    if (!USE_LIVE_API) {
+      router.push(redirectTo);
+      return;
+    }
+    setGoogleBusy(true);
+    try {
+      const idToken = await signInWithGoogle();
+      const captchaToken = await executeRecaptcha('google_login');
+      if (!captchaToken) {
+        setFormError('Security check failed. Please try again.');
+        return;
+      }
+      const res = await googleLogin({ idToken, captchaToken, rememberMe });
+      if (res.mfaRequired) {
+        const qs = new URLSearchParams({ mfa: res.mfaSessionId ?? '' });
+        if (res.allowedMethods?.length) qs.set('methods', res.allowedMethods.join(','));
+        if (res.primaryFactor) qs.set('primary', res.primaryFactor);
+        router.push(`/auth/verify-otp?${qs.toString()}`);
+        return;
+      }
+      router.push(res.roles?.length ? portalForRoles(res.roles) : redirectTo);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Google sign-in failed');
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
+
+  const onSubmit: SubmitHandler<FormSchema> = async (data) => {
+    setFormError(null);
+
+    // Mock mode: no backend, keep the click-through demo behaviour.
+    if (!USE_LIVE_API) {
+      router.push(redirectTo);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // reCAPTCHA v3: mint a fresh token per submit (no checkbox).
+      const captchaToken = await executeRecaptcha('login');
+      if (!captchaToken) {
+        setFormError('Security check failed. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      const res = await login({ ...data, captchaToken, rememberMe, tenantId });
+
+      // First login on a temporary password — must set a real one now.
+      if (res.passwordChangeRequired && res.challengeToken) {
+        const qs = new URLSearchParams({ challenge: res.challengeToken });
+        if (res.tenantId ?? tenantId) qs.set('tenant', (res.tenantId ?? tenantId)!);
+        router.push(`/first-login/set-password?${qs.toString()}`);
+        return;
+      }
+
+      if (res.mfaRequired) {
+        const qs = new URLSearchParams({ mfa: res.mfaSessionId ?? '' });
+        if (res.allowedMethods?.length) {
+          qs.set('methods', res.allowedMethods.join(','));
+        }
+        if (res.primaryFactor) {
+          qs.set('primary', res.primaryFactor);
+        }
+        router.push(`/auth/verify-otp?${qs.toString()}`);
+        return;
+      }
+      // Route by role (SUPER_SYSTEM_ADMIN → /system, etc.); fall back to the
+      // page's redirectTo when the response carries no roles.
+      router.push(res.roles?.length ? portalForRoles(res.roles) : redirectTo);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Sign in failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <AuthLayout imgAlt="Celebration Church">
+      <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
+        <Image
+          src="/auth/infinity-blue.svg"
+          alt="Go Worship"
+          width={64}
+          height={22}
+          className="h-[22px] w-[64px]"
+        />
+
+        <div className="flex flex-col items-start gap-2 text-left lg:items-center lg:text-center">
+          <h1 className="flex items-center gap-2 text-[28px] font-bold -tracking-[0.03em] lg:text-[40px]">
+            Welcome Back
+            <Image
+              src="/auth/wave.png"
+              alt=""
+              width={32}
+              height={32}
+              className="size-[28px] lg:size-[32px]"
+            />
+          </h1>
+          <p className="max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px]">
+            Welcome to {orgName}
+          </p>
+        </div>
+
+        <Form {...form}>
+          <form
+            className="flex w-full flex-col gap-5"
+            onSubmit={form.handleSubmit(onSubmit)}
+          >
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[15px] font-bold lg:text-[16px]">
+                    Email
+                  </FormLabel>
+                  <FormControl>
+                    <InputGroup className="h-[52px]">
+                      <InputGroupInput
+                        type="email"
+                        placeholder="@ Email address"
+                        {...field}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <MessageIcon className="size-[20px]" />
+                      </InputGroupAddon>
+                    </InputGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[15px] font-bold lg:text-[16px]">
+                    Password
+                  </FormLabel>
+                  <FormControl>
+                    <PasswordInput
+                      placeholder="Password (min. 8 character)"
+                      containerProps={{ className: 'h-[52px]' }}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex w-full items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="remember-me"
+                  checked={rememberMe}
+                  onCheckedChange={(v) => setRememberMe(v === true)}
+                />
+                <Label htmlFor="remember-me" className="text-[15px] font-normal">
+                  Remember me
+                </Label>
+              </div>
+
+              <Link
+                href="/auth/forgot-password"
+                className="text-[15px] font-medium text-brand-blue"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
+            {/* reCAPTCHA v3 is invisible — the token is minted on submit,
+                so there is no widget here. */}
+            {formError && (
+              <p role="alert" className="text-[14px] text-destructive">
+                {formError}
+              </p>
+            )}
+
+            <Button
+              size="lg"
+              className="h-[52px] w-full"
+              type="submit"
+              disabled={submitting}
+            >
+              {submitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+
+            {showGoogle && (
+              <>
+                <div className="flex w-full items-center justify-center gap-4">
+                  <div className="h-px w-full bg-brand-gray-300" />
+                  <span className="text-[15px] text-black">or</span>
+                  <div className="h-px w-full bg-brand-gray-300" />
+                </div>
+
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-[52px] w-full gap-4"
+                  type="button"
+                  disabled={googleBusy || submitting}
+                  onClick={handleGoogleSignIn}
+                >
+                  <GoogleIcon className="size-[24px]" />
+                  <span>{googleBusy ? 'Connecting…' : 'Continue with Google'}</span>
+                </Button>
+              </>
+            )}
+
+            <p className="text-[15px] font-light">
+              Don&apos;t have any?{' '}
+              <Link href={signupHref} className="font-bold text-brand-orange">
+                Create an account
+              </Link>
+            </p>
+          </form>
+        </Form>
+      </div>
+    </AuthLayout>
+  );
+}
+
+/**
+ * Wrapped in Suspense because the inner form reads `?tenant` via
+ * useSearchParams, which otherwise opts every login route out of prerendering.
+ */
+export function SignInForm(props: Props) {
+  return (
+    <Suspense fallback={null}>
+      <SignInFormInner {...props} />
+    </Suspense>
+  );
+}

@@ -1,0 +1,167 @@
+'use client';
+
+import { useMemo } from 'react';
+import { SheetPage } from '../ui/sheet-page';
+import Image from 'next/image';
+import { cn, formatCurrency } from '@/lib/utils';
+import { Button } from '../ui/button';
+
+type Props = {
+  isIntercepted?: boolean;
+  id: string;
+};
+
+export function GivingsDetail({ isIntercepted = false, id }: Props) {
+  const returnUrl = useMemo(
+    () => (isIntercepted ? undefined : '/dashboard/givings'),
+    [isIntercepted]
+  );
+
+  return (
+    <SheetPage className="w-full max-w-[665px]! gap-0" backLink={returnUrl}>
+      <div className="w-full h-full overflow-y-auto flex flex-col justify-between items-center gap-4">
+        <div
+          className={cn(
+            'w-full h-fit flex flex-col justify-between items-center gap-8',
+            'px-6 pt-[50px] md:pt-[80px] md:px-[60px] pb-6'
+          )}
+        >
+          <Image
+            src="/Layer_1.svg"
+            alt="Church Logo"
+            width={174}
+            height={30.72}
+            className="shrink-0 aspect-174/30.72 w-[146px] md:w-[174px]"
+          />
+
+          <div className="w-full flex flex-col justify-start items-start gap-0 leading-[143%] tracking-[0%]">
+            <span className="font-bold">Celebration Church Int.</span>
+            <span>Ontario Canada, Canada City</span>
+            <a
+              href="tel:+127-987-67543"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              +127-987-67543
+            </a>
+            <a
+              href="mailto:info@churchname.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              info@churchname.org
+            </a>
+            <a
+              href="https://www.churchname.org"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              www.churchname.org
+            </a>
+          </div>
+
+          <div className="w-full flex flex-col justify-start items-end">
+            <span className="text-[#243F84] font-bold md:text-[18px]">
+              Donor Information
+            </span>
+            <span>Aderemi Doe</span>
+            <a
+              href="mailto:aderemidoe@email.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              aderemidoe@email.com
+            </a>
+
+            <a
+              href="tel:+2348123456789"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              +234 812 345 6789
+            </a>
+          </div>
+
+          <div className="w-full border-y border-[#8C8C8C] py-2">
+            <span className="font-bold text-[#243F84] md:text-[18px]">
+              Giving Receipt
+            </span>
+          </div>
+
+          <div className="w-full flex flex-col justify-start items-start gap-4">
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Donation Date</span>
+              <span className="text-right">January 12, 2025</span>
+            </div>
+
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Amount Given</span>
+              <span className="text-right">{formatCurrency(25)}</span>
+            </div>
+
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Fund/Campaign</span>
+              <span className="text-right">General Offering</span>
+            </div>
+
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Donation Type</span>
+              <span className="text-right">One-time</span>
+            </div>
+
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Payment Method</span>
+              <span className="text-right">Debit Card (Visa •••• 2920)</span>
+            </div>
+
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Transaction ID</span>
+              <span className="text-right">TXN-02939493</span>
+            </div>
+
+            <div className="w-full flex justify-between items-center gap-4">
+              <span>Status</span>
+              <span className="flex items-center gap-2 text-right">
+                <span className="size-2 rounded-full bg-[#22A45D]" />
+                Successful
+              </span>
+            </div>
+          </div>
+
+          <div className="w-full flex flex-col justify-start items-start gap-4">
+            <div className="bg-[#EDF3FF] w-full h-[41.5px] md:h-[60px] p-4 md:p-6 flex justify-between items-center gap-4">
+              <span className="font-bold text-[#243F84] md:text-[18px] leading-[100%] tracking-[0%]">
+                Subtotal:
+              </span>
+              <span className="font-bold leading-[100%] tracking-[0%] text-[18px]">
+                {formatCurrency(25)}
+              </span>
+            </div>
+
+            <Button
+              className="w-full h-[41.5px] md:h-[60px] font-bold text-[16px]! md:text-[18px]!"
+              size="lg"
+            >
+              Download Receipt
+            </Button>
+          </div>
+
+          <p className="w-full max-w-[339px] text-[14px] text-center font-light leading-[100%] tracking-[0%]">
+            Thank you for your generous giving. Your support helps us continue
+            our mission and outreach.
+          </p>
+        </div>
+
+        <div
+          className={cn(
+            'bg-[#333333] w-full min-h-[60px] py-6',
+            'flex flex-col justify-center items-center text-[12px] font-light text-white'
+          )}
+        >
+          <span>Powered by Go-Worship Giving</span>
+          <span>Thank you for supporting the ministry</span>
+        </div>
+      </div>
+    </SheetPage>
+  );
+}

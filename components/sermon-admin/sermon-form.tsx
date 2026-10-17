@@ -1,0 +1,244 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from '@/components/ui/native-select';
+import { Textarea } from '@/components/ui/textarea';
+import { SheetPage } from '@/components/ui/sheet-page';
+import { ArrowLeft, Music, Pencil, UploadCloud, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { FormEvent, useState } from 'react';
+
+function Field({
+  label,
+  children,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[13px] font-medium text-[#333]">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+/** Input with the small pencil affordance shown in the design. */
+function PencilInput(props: React.ComponentProps<typeof Input>) {
+  return (
+    <div className="relative">
+      <Input {...props} className="h-[48px] pr-9" />
+      <Pencil className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-brand-gray-400" />
+    </div>
+  );
+}
+
+function DropZone({ hint }: { hint: string }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[8px] border border-dashed border-[#cdcdcd] px-3 py-6 text-center">
+      <UploadCloud className="size-5 text-brand-gray-500" />
+      <p className="text-[10px] leading-tight text-brand-gray-500">{hint}</p>
+    </div>
+  );
+}
+
+function AudioChip({ name, onRemove }: { name: string; onRemove(): void }) {
+  return (
+    <div className="relative flex w-[128px] flex-col items-center justify-center gap-2 rounded-[8px] bg-[#ece9ff] px-3 py-5">
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove audio"
+        className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-[#eb0000] text-white"
+      >
+        <X className="size-2.5" />
+      </button>
+      <Music className="size-7 text-[#3f44c0]" />
+      <p className="text-[10px] font-medium text-[#333]">{name}</p>
+    </div>
+  );
+}
+
+function CoverChip({ onRemove }: { onRemove(): void }) {
+  return (
+    <div className="relative w-[128px] overflow-hidden rounded-[8px] bg-[#dbe7f5]">
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove cover image"
+        className="absolute right-1.5 top-1.5 z-10 flex size-4 items-center justify-center rounded-full bg-[#eb0000] text-white"
+      >
+        <X className="size-2.5" />
+      </button>
+      <div className="flex h-[74px] flex-col justify-center px-2">
+        <p className="text-[9px] font-bold leading-tight text-[#123a6b]">
+          EFFECTIVE STEWARDSHIP:
+        </p>
+        <p className="text-[6px] leading-tight text-[#123a6b]">
+          MAXIMIZING RESPONSIBILITY AND INFLUENCE
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const SERMON = {
+  title: 'Walk by Faith and Love',
+  speaker: 'Pastor Christain John',
+  date: '2025-11-20',
+  description:
+    'We walk by faith and not by sight, according to The scriptures that says, we are blessed when we walk by faith Heb 11:1 - end',
+  link: 'https://www.youtube.com/watch?v=1hkEg5ugqD0',
+};
+
+const COPY = {
+  add: { title: 'Add New Sermon', submit: 'Publish Sermon' },
+  edit: { title: 'Edit Sermon', submit: 'Publish Sermon' },
+  upload: { title: 'Upload Sermon', submit: 'Upload Media' },
+} as const;
+
+/**
+ * Sermon slide-over — Add (133:9664), Edit (134:9931) and
+ * Upload Sermon / media (154:14638).
+ */
+export function SermonForm({
+  mode,
+  backTo,
+}: {
+  mode: 'add' | 'edit' | 'upload';
+  backTo?: string;
+}) {
+  const router = useRouter();
+  const isEdit = mode === 'edit';
+  const copy = COPY[mode];
+  const back = backTo ?? '/sermon-admin/sermons';
+  const [hasAudio, setHasAudio] = useState(isEdit);
+  const [hasCover, setHasCover] = useState(isEdit);
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    router.push(back);
+  };
+
+  return (
+    <SheetPage
+      className="w-full max-w-[665px]!"
+      backLink={back}
+      title={copy.title}
+    >
+      <div className="flex h-full w-full flex-col gap-6 overflow-y-auto px-6 pt-[64px] pb-10 md:px-[60px]">
+        <button
+          type="button"
+          onClick={() => router.push(back)}
+          aria-label="Go back"
+          className="text-black transition-opacity hover:opacity-70"
+        >
+          <ArrowLeft className="size-6" />
+        </button>
+
+        <div className="text-center">
+          <h1 className="text-[24px] font-bold">{copy.title}</h1>
+          {mode !== 'upload' && (
+            <p className="mt-1 text-[13px] text-brand-gray-500">
+              Create and update sermon content.
+            </p>
+          )}
+        </div>
+
+        <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+          <Field label={<>Sermon Title&#42;</>}>
+            <PencilInput
+              placeholder="Enter title"
+              defaultValue={isEdit ? SERMON.title : undefined}
+            />
+          </Field>
+
+          <Field label={<>Speaker name&#42;</>}>
+            <PencilInput
+              placeholder="Enter speaker name"
+              defaultValue={isEdit ? SERMON.speaker : undefined}
+            />
+          </Field>
+
+          <Field label="Sermon Date">
+            <Input
+              type="date"
+              className="h-[48px]"
+              defaultValue={isEdit ? SERMON.date : undefined}
+            />
+          </Field>
+
+          <Field label="Description / Summary">
+            <div className="relative">
+              <Textarea
+                className="min-h-[110px] pr-9"
+                placeholder="Enter brief description"
+                defaultValue={isEdit ? SERMON.description : undefined}
+              />
+              <Pencil className="pointer-events-none absolute right-3 bottom-3 size-3.5 text-brand-gray-400" />
+            </div>
+          </Field>
+
+          <Field label="Assign Series">
+            <NativeSelect className="h-[48px]" defaultValue="">
+              <NativeSelectOption value="">Faith at work</NativeSelectOption>
+              <NativeSelectOption value="reform">
+                Frequently reform
+              </NativeSelectOption>
+              <NativeSelectOption value="christ">
+                Sermons in Christ
+              </NativeSelectOption>
+              <NativeSelectOption value="power">
+                Power to break yeal
+              </NativeSelectOption>
+            </NativeSelect>
+          </Field>
+
+          <Field label="Upload Audio">
+            <div className="flex items-stretch gap-3">
+              {hasAudio && (
+                <AudioChip name="Walk by Faith. MP3" onRemove={() => setHasAudio(false)} />
+              )}
+              <DropZone hint="Drag or drop Audio Recommended size: 50mb" />
+            </div>
+          </Field>
+
+          <Field label="Upload cover image">
+            <div className="flex items-stretch gap-3">
+              {hasCover && <CoverChip onRemove={() => setHasCover(false)} />}
+              <DropZone hint="Drag or drop image commended size: 20mb" />
+            </div>
+            <p className="mt-1 text-right text-[10px] text-[#22a45d]">
+              ⊙ Recommended size: 20mb
+            </p>
+          </Field>
+
+          <Field label="Attach YouTube/Vimeo link">
+            <PencilInput
+              placeholder="Enter Sermon Youtube link"
+              defaultValue={isEdit ? SERMON.link : undefined}
+            />
+          </Field>
+
+          <label className="flex items-center gap-2 text-[13px]">
+            <input type="radio" className="size-3.5 accent-brand-blue" />
+            Schedule Publish Date
+          </label>
+
+          <Button size="lg" type="submit" className="mt-1 h-[52px] w-full">
+            {copy.submit}
+          </Button>
+          <Button asChild size="lg" variant="outline" className="h-[52px] w-full">
+            <button type="button" onClick={() => router.push(back)}>
+              Save as Draft
+            </button>
+          </Button>
+        </form>
+      </div>
+    </SheetPage>
+  );
+}

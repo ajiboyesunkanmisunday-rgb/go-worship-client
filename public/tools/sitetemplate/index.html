@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Site Templates | Go Worship</title>
+    <link rel="stylesheet" href="site-template.css">
+    <script src="site-template.js" defer></script>
+</head>
+<body>
+<header><a href="/tools/dashboard/">Go Worship</a>
+    <div><strong>Site Template Studio</strong><small id="host"></small></div>
+    <label>Controller<select id="scope">
+        <option value="tenant">TENANT</option>
+        <option value="system">SYSTEM_OWNER</option>
+    </select></label>
+    <button id="reload">Refresh</button>
+</header>
+<main>
+    <section class="hero">
+        <div><p>DOMAIN-RESOLVED PRESENTATION</p>
+            <h1>Site templates</h1><span>Manage metadata and object-storage-backed content without accepting a tenant ID.</span>
+        </div>
+        <b id="mode">TENANT</b></section>
+    <div id="status" role="status" aria-live="polite"></div>
+    <section class="toolbar"><label>Template type<select id="type">
+        <option>WEB</option>
+        <option>MOBILE</option>
+        <option>HYBRID</option>
+    </select></label>
+        <button id="resolve">Resolve effective template</button>
+        <button id="new">New draft</button>
+    </section>
+    <section class="layout">
+        <aside><h2>Templates</h2>
+            <div id="templates"></div>
+        </aside>
+        <article class="editor">
+            <div class="editor-head">
+                <div><h2 id="editor-title">Template editor</h2><small id="endpoint"></small></div>
+                <div>
+                    <button id="publish">Publish</button>
+                    <button id="deactivate" class="danger">Deactivate</button>
+                </div>
+            </div>
+            <form id="template-form"><input id="template-id" type="hidden"><label>Metadata JSON<textarea id="metadata"
+                                                                                                         spellcheck="false">{}</textarea></label><label>Template
+                content JSON<textarea id="content" spellcheck="false">{}</textarea></label>
+                <button type="submit">Save draft</button>
+            </form>
+        </article>
+    </section>
+    <dialog id="publish-dialog">
+        <form method="dialog"><h2>Publish template</h2>
+            <p>Supply the exact JSON accepted by <code>SiteTemplatePublishRequest</code>.</p><textarea
+                    id="publish-json">{}</textarea>
+            <div>
+                <button value="cancel" class="secondary">Cancel</button>
+                <button id="confirm-publish" value="default">Publish</button>
+            </div>
+        </form>
+    </dialog>
+</main>
+<footer>When tenant assignment resolution fails, the backend—not this page—returns the SYSTEM_OWNER default template.
+</footer>
+</body>
+</html>
