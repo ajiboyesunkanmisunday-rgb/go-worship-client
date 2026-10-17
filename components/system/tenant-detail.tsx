@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSystemTenant, type SystemTenant } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   ArrowLeft,
@@ -51,12 +52,14 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number];
 
-const STATS = [
-  { label: 'Admin Users', value: '10', bg: 'bg-[#f6f8fb]' },
-  { label: 'Church Members', value: '830', bg: 'bg-[#eafaf0]' },
-  { label: 'Total Giving', value: '$125,000', bg: 'bg-[#e9f7f5]' },
-  { label: 'Current Plan', value: 'Enterprise', bg: 'bg-[#eef2fb]' },
-];
+function buildStats(t: SystemTenant) {
+  return [
+    { label: 'Admin Users', value: '10', bg: 'bg-[#f6f8fb]' },
+    { label: 'Church Members', value: String(t.members || 830), bg: 'bg-[#eafaf0]' },
+    { label: 'Total Giving', value: '$125,000', bg: 'bg-[#e9f7f5]' },
+    { label: 'Current Plan', value: t.plan || 'Enterprise', bg: 'bg-[#eef2fb]' },
+  ];
+}
 
 const MOCK_TENANT: SystemTenant = {
   id: 'mock',
@@ -75,6 +78,7 @@ export function TenantDetail({ id }: { id: string }) {
   const [menu, setMenu] = useState(false);
   const [del, setDel] = useState(false);
   const [tenant, setTenant] = useState<SystemTenant>(MOCK_TENANT);
+  const stats = buildStats(tenant);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -162,7 +166,7 @@ export function TenantDetail({ id }: { id: string }) {
 
       {/* Stat cards */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {STATS.map((s) => (
+        {stats.map((s) => (
           <div
             key={s.label}
             className={cn('flex flex-col gap-3 rounded-[14px] p-5', s.bg)}
@@ -231,15 +235,15 @@ export function TenantDetail({ id }: { id: string }) {
           </div>
         </div>
       ) : tab === 'Members' ? (
-        <MembersTab />
+        <MembersTab id={id} />
       ) : tab === 'Giving' ? (
-        <GivingTab />
+        <GivingTab id={id} />
       ) : tab === 'Groups' ? (
-        <GroupsTab />
+        <GroupsTab id={id} />
       ) : tab === 'Events' ? (
-        <EventsTab />
+        <EventsTab id={id} />
       ) : tab === 'Billing' ? (
-        <BillingTab />
+        <BillingTab id={id} />
       ) : (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-[14px] border border-dashed border-[#ddd] py-16 text-center">
           <Slash className="size-6 text-brand-gray-400" />
@@ -269,7 +273,9 @@ export function TenantDetail({ id }: { id: string }) {
  * "Group Member" detail slide-over the View action opens is not built yet —
  * tracked as a follow-up; see docs/design-audit.md.
  */
-const MEMBERS = [
+type MemberRow = { name: string; phone: string; email: string; joined: string; status: string };
+
+const MEMBERS: MemberRow[] = [
   { name: 'John Doe', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
   { name: 'Mercy O.Don', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
   { name: 'Child Moses', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
@@ -277,15 +283,47 @@ const MEMBERS = [
   { name: 'Kingsi Andsam', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
   { name: 'John Doe', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
   { name: 'Micheal paul', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
-] as const;
+];
 
-function MembersTab() {
-  const [sub, setSub] = useState<'All Member' | 'Active' | 'Inactive'>(
-    'All Member'
-  );
+function MembersTab({ id }: { id: string }) {
+  const [members, setMembers] = useState<MemberRow[]>(MEMBERS);
+  const [sub, setSub] = useState<'All Member' | 'Active' | 'Inactive'>('All Member');
   const [openMember, setOpenMember] = useState<string | null>(null);
-  const rows =
-    sub === 'All Member' ? MEMBERS : MEMBERS.filter((m) => m.status === sub);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>(`/system/tenants/${id}/members`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: MemberRow[] = arr.map((m) => {
+          const rawStatus = String(m['status'] ?? 'Active');
+          const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
+          const rawDate = String(m['joinedAt'] ?? m['createdAt'] ?? m['joinDate'] ?? '');
+          const joined = rawDate
+            ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            : '';
+          return {
+            name: String(m['name'] ?? m['fullName'] ?? m['displayName'] ?? ''),
+            phone: String(m['phone'] ?? m['phoneNumber'] ?? m['mobile'] ?? ''),
+            email: String(m['email'] ?? m['emailAddress'] ?? ''),
+            joined,
+            status,
+          };
+        }).filter((m) => m.name);
+        if (mapped.length > 0) setMembers(mapped);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  const rows = sub === 'All Member' ? members : members.filter((m) => m.status === sub);
 
   return (
     <div className="mt-6 rounded-[14px] bg-[#f7f9fc] p-6">
@@ -479,14 +517,16 @@ function GroupMemberSheet({
  * Giving Receipt slide-over (with Refund on failed rows) — not built yet,
  * tracked as a follow-up; see docs/design-audit.md.
  */
-const TRANSACTIONS = [
+type TxnRow = { status: string; amount: string; type: string; name?: string; date?: string; method?: string };
+
+const TRANSACTIONS: TxnRow[] = [
   { status: 'Pending', amount: '$1000', type: 'General Offering' },
   { status: 'Success', amount: '$3000', type: 'Tithe Offering' },
   { status: 'Failed', amount: '$2000', type: 'Offering' },
   { status: 'Success', amount: '$3000', type: 'Thanksgiving' },
   { status: 'Failed', amount: '$2000', type: 'General Offering' },
   { status: 'Pending', amount: '$3000', type: 'Building Project' },
-] as const;
+];
 
 const TXN_STATUS: Record<string, string> = {
   Pending: 'text-[#ff8d28]',
@@ -494,9 +534,46 @@ const TXN_STATUS: Record<string, string> = {
   Failed: 'text-[#eb0000]',
 };
 
-function GivingTab() {
+function GivingTab({ id }: { id: string }) {
+  const [transactions, setTransactions] = useState<TxnRow[]>(TRANSACTIONS);
   const [sub, setSub] = useState<'Non Member' | 'Member'>('Non Member');
   const [receipt, setReceipt] = useState<{ failed: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>(`/system/tenants/${id}/transactions`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: TxnRow[] = arr.map((t) => {
+          const rawStatus = String(t['status'] ?? 'Pending');
+          const s = rawStatus.toUpperCase();
+          const status = s.includes('SUCCESS') || s.includes('COMPLET') ? 'Success'
+            : s.includes('FAIL') || s.includes('ERROR') ? 'Failed' : 'Pending';
+          const rawAmt = Number(t['amount'] ?? t['amountPaid'] ?? t['value'] ?? 0);
+          const currency = String(t['currency'] ?? 'USD');
+          const amount = rawAmt ? `${currency === 'USD' ? '$' : currency}${rawAmt.toLocaleString()}` : '$0';
+          const rawDate = String(t['createdAt'] ?? t['paidAt'] ?? t['date'] ?? '');
+          return {
+            status,
+            amount,
+            type: String(t['fundName'] ?? t['offeringType'] ?? t['type'] ?? 'Giving'),
+            name: String(t['donorName'] ?? t['memberName'] ?? t['name'] ?? 'Anonymous'),
+            date: rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            method: String(t['paymentMethod'] ?? t['method'] ?? 'Bank transfer'),
+          };
+        });
+        if (mapped.length > 0) setTransactions(mapped);
+      })
+      .catch(() => {});
+  }, [id]);
 
   return (
     <div className="mt-6 rounded-[14px] bg-[#f7f9fc] p-6">
@@ -543,18 +620,18 @@ function GivingTab() {
             </tr>
           </thead>
           <tbody>
-            {TRANSACTIONS.map((t, i) => (
+            {transactions.map((t, i) => (
               <tr
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
               >
-                <td className="py-4 font-medium">John Christain</td>
-                <td className={cn('py-4 font-medium', TXN_STATUS[t.status])}>
+                <td className="py-4 font-medium">{t.name ?? 'John Christain'}</td>
+                <td className={cn('py-4 font-medium', TXN_STATUS[t.status] ?? 'text-[#ff8d28]')}>
                   {t.status}
                 </td>
-                <td className="py-4">June 12, 2025</td>
+                <td className="py-4">{t.date ?? 'June 12, 2025'}</td>
                 <td className="py-4">{t.amount}</td>
-                <td className="py-4">Bank transfer</td>
+                <td className="py-4">{t.method ?? 'Bank transfer'}</td>
                 <td className="py-4">{t.type}</td>
                 <td className="py-4">
                   <button
@@ -693,16 +770,47 @@ function ReceiptRow({
  * Groups tab — the "Recent Groups" table from the design (Group Name /
  * Category / Leader / Meeting Day & Time / Members / Status + View).
  */
-const GROUPS = [
+type GroupRow = { name: string; cat: string; leader: string; status: string };
+
+const GROUPS: GroupRow[] = [
   { name: 'Faith Builders Fellowship', cat: 'Small Group', leader: 'John Samuel', status: 'Active' },
   { name: 'Faith Builders Fellowship', cat: 'Small Group', leader: 'John Samuel', status: 'Active' },
   { name: 'Faith Builders Community', cat: 'Discussion Group', leader: 'Michael Thompson', status: 'Inactive' },
   { name: 'Faith Builders Community', cat: 'Discussion Group', leader: 'Michael Thompson', status: 'Active' },
   { name: 'Faith Builders Community', cat: 'Discussion Group', leader: 'Michael Thompson', status: 'Active' },
-] as const;
+];
 
-function GroupsTab() {
+function GroupsTab({ id }: { id: string }) {
+  const [groups, setGroups] = useState<GroupRow[]>(GROUPS);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>(`/system/tenants/${id}/groups`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: GroupRow[] = arr.map((g) => {
+          const rawStatus = String(g['status'] ?? 'Active');
+          const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
+          return {
+            name: String(g['name'] ?? g['groupName'] ?? ''),
+            cat: String(g['category'] ?? g['type'] ?? g['groupType'] ?? 'Small Group'),
+            leader: String(g['leaderName'] ?? g['leader'] ?? g['createdBy'] ?? ''),
+            status,
+          };
+        }).filter((g) => g.name);
+        if (mapped.length > 0) setGroups(mapped);
+      })
+      .catch(() => {});
+  }, [id]);
   return (
     <div className="mt-6 rounded-[14px] bg-[#f7f9fc] p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -736,7 +844,7 @@ function GroupsTab() {
             </tr>
           </thead>
           <tbody>
-            {GROUPS.map((g, i) => (
+            {groups.map((g, i) => (
               <tr
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
@@ -861,13 +969,15 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
  * Date & Time / Location / Registrations / Status + View). Same shape as the
  * Ministry events table.
  */
-const EVENTS = [
+type EventRow = { name: string; date: string; loc: string; reg: string; status: string };
+
+const EVENTS: EventRow[] = [
   { name: 'Midweek Recharge', date: 'Feb 21, 2025 • 6PM', loc: 'Main Hall', reg: '125', status: 'Upcoming' },
   { name: 'Weekend Workshop', date: 'Feb 25, 2025 • 10AM', loc: 'Conference Room A', reg: '75', status: 'Completed' },
   { name: 'Team Building Retreat', date: 'Mar 10, 2025 • 8AM', loc: 'Offsite Location', reg: '50', status: 'Ongoing' },
   { name: 'Monthly Check-in', date: 'Mar 15, 2025 • 3PM', loc: 'Zoom', reg: 'Unlimited', status: 'Cancelled' },
   { name: 'Spring Networking Event', date: 'Apr 5, 2025 • 5PM', loc: 'Rooftop Garden', reg: '150', status: 'Upcoming' },
-] as const;
+];
 
 const EVENT_STATUS: Record<string, string> = {
   Upcoming: 'text-brand-blue',
@@ -876,8 +986,44 @@ const EVENT_STATUS: Record<string, string> = {
   Cancelled: 'text-[#eb0000]',
 };
 
-function EventsTab() {
+function EventsTab({ id }: { id: string }) {
+  const [events, setEvents] = useState<EventRow[]>(EVENTS);
   const [openEvent, setOpenEvent] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>(`/system/tenants/${id}/events`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: EventRow[] = arr.map((e) => {
+          const rawDate = String(e['startDate'] ?? e['eventDate'] ?? e['date'] ?? '');
+          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const rawStatus = String(e['status'] ?? 'Upcoming');
+          const s = rawStatus.toUpperCase();
+          const status = s.includes('COMPLET') ? 'Completed'
+            : s.includes('CANCEL') ? 'Cancelled'
+            : s.includes('ONGOING') || s.includes('ACTIVE') ? 'Ongoing'
+            : 'Upcoming';
+          return {
+            name: String(e['name'] ?? e['title'] ?? e['eventName'] ?? ''),
+            date,
+            loc: String(e['location'] ?? e['venue'] ?? e['address'] ?? ''),
+            reg: String(e['registrations'] ?? e['registrationCount'] ?? e['attendees'] ?? ''),
+            status,
+          };
+        }).filter((e) => e.name);
+        if (mapped.length > 0) setEvents(mapped);
+      })
+      .catch(() => {});
+  }, [id]);
   return (
     <div className="mt-6 rounded-[14px] bg-[#f7f9fc] p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -910,7 +1056,7 @@ function EventsTab() {
             </tr>
           </thead>
           <tbody>
-            {EVENTS.map((e, i) => (
+            {events.map((e, i) => (
               <tr
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
@@ -1020,15 +1166,55 @@ function EventDetailSheet({
  * Amount / Payment Method / Status / Start Date / End Date / Auto-Renew +
  * View). View opens a Billing Payment Receipt slide-over — follow-up.
  */
-const INVOICES = [
+type InvoiceRow = { status: string; renew: string; id?: string; plan?: string; amount?: string; method?: string; start?: string; end?: string };
+
+const INVOICES: InvoiceRow[] = [
   { status: 'Paid', renew: 'On' },
   { status: 'Failed', renew: 'Off' },
   { status: 'Paid', renew: 'On' },
   { status: 'Paid', renew: 'On' },
-] as const;
+];
 
-function BillingTab() {
+function BillingTab({ id }: { id: string }) {
+  const [invoices, setInvoices] = useState<InvoiceRow[]>(INVOICES);
   const [openReceipt, setOpenReceipt] = useState(false);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<unknown>(`/system/tenants/${id}/billing/invoices`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        if (arr.length === 0) return;
+        const mapped: InvoiceRow[] = arr.map((inv) => {
+          const rawStatus = String(inv['status'] ?? 'Paid');
+          const s = rawStatus.toUpperCase();
+          const status = s.includes('FAIL') || s.includes('UNPAID') ? 'Failed' : 'Paid';
+          const autoRenew = inv['autoRenew'] ?? inv['autoRenewal'] ?? inv['recurring'];
+          const renew = autoRenew === false || String(autoRenew).toUpperCase() === 'FALSE' || String(autoRenew).toUpperCase() === 'OFF' ? 'Off' : 'On';
+          const rawAmt = Number(inv['amount'] ?? inv['totalAmount'] ?? 0);
+          const fmtDate = (raw: string) => raw ? new Date(raw).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          return {
+            status,
+            renew,
+            id: String(inv['invoiceId'] ?? inv['id'] ?? 'RN-13234'),
+            plan: String(inv['planName'] ?? inv['plan'] ?? 'Growth (Monthly)'),
+            amount: rawAmt ? `$${rawAmt.toLocaleString()}` : '$600',
+            method: String(inv['paymentMethod'] ?? inv['method'] ?? 'Card (Visa •••• 4832)'),
+            start: fmtDate(String(inv['startDate'] ?? inv['billingStart'] ?? '')),
+            end: fmtDate(String(inv['endDate'] ?? inv['billingEnd'] ?? '')),
+          };
+        });
+        if (mapped.length > 0) setInvoices(mapped);
+      })
+      .catch(() => {});
+  }, [id]);
   return (
     <div className="mt-6 rounded-[14px] bg-[#f7f9fc] p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1064,15 +1250,15 @@ function BillingTab() {
             </tr>
           </thead>
           <tbody>
-            {INVOICES.map((inv, i) => (
+            {invoices.map((inv, i) => (
               <tr
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
               >
-                <td className="py-4 font-medium">RN-13234</td>
-                <td className="py-4">Growth (Monthly)</td>
-                <td className="py-4">$600</td>
-                <td className="py-4">Card (Visa •••• 4832)</td>
+                <td className="py-4 font-medium">{inv.id ?? 'RN-13234'}</td>
+                <td className="py-4">{inv.plan ?? 'Growth (Monthly)'}</td>
+                <td className="py-4">{inv.amount ?? '$600'}</td>
+                <td className="py-4">{inv.method ?? 'Card (Visa •••• 4832)'}</td>
                 <td
                   className={cn(
                     'py-4 font-medium',
@@ -1081,8 +1267,8 @@ function BillingTab() {
                 >
                   {inv.status}
                 </td>
-                <td className="py-4">Aug 31, 2025</td>
-                <td className="py-4">Aug 31, 2025</td>
+                <td className="py-4">{inv.start ?? 'Aug 31, 2025'}</td>
+                <td className="py-4">{inv.end ?? 'Aug 31, 2025'}</td>
                 <td className="py-4">{inv.renew}</td>
                 <td className="py-4">
                   <button
