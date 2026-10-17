@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 /** Edit | Delete row actions with the 😉 confirm on delete (Figma 154:13998). */
-export function EditDeleteActions({ editHref }: { editHref: string }) {
+export function EditDeleteActions({ editHref, onDelete }: { editHref: string; onDelete?: () => void }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -23,7 +23,7 @@ export function EditDeleteActions({ editHref }: { editHref: string }) {
       <ConfirmModal
         open={open}
         onOpenChange={setOpen}
-        onConfirm={() => setOpen(false)}
+        onConfirm={() => { setOpen(false); onDelete?.(); }}
       />
     </span>
   );

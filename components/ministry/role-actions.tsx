@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 /** Edit / Delete / View actions for the Admin Management roles table. */
-export function RoleActions({ id = 1 }: { id?: number }) {
+export function RoleActions({ id = '', onDelete }: { id?: number | string; onDelete?: () => void }) {
   const router = useRouter();
   const [del, setDel] = useState(false);
 
@@ -37,7 +37,11 @@ export function RoleActions({ id = 1 }: { id?: number }) {
         onOpenChange={setDel}
         onConfirm={() => {
           setDel(false);
-          router.refresh();
+          if (onDelete) {
+            onDelete();
+          } else {
+            router.refresh();
+          }
         }}
       />
     </>

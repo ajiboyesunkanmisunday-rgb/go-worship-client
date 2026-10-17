@@ -11,6 +11,7 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 type Role = {
   id: string;
+  apiId: string;
   role: string;
   desc: string;
   users: number;
@@ -20,17 +21,25 @@ type Role = {
 };
 
 const ROLES: Role[] = [
-  { id: 'CUS-1001', role: 'Group Leader', desc: 'Full platform control (for ministry groups).', users: 45, status: 'Active', by: 'Mary', updated: 'USA' },
-  { id: 'CUS-1002', role: 'Sermon Admin', desc: 'Manage sermons uploads, media, and reports but limited settings.', users: 2, status: 'Active', by: 'Mary', updated: 'Nigeria' },
-  { id: 'CUS-1003', role: 'Finance Admin', desc: 'Can manage giving, exports, accounts statement', users: 7, status: 'Inactive', by: 'Mary', updated: 'Nigeria' },
-  { id: 'CUS-1004', role: 'Event Admin', desc: 'Manage events, checkin and management of events and activities', users: 10, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
-  { id: 'CUS-1005', role: 'Support Agent', desc: 'Handles tickets, support requests, customer communication.', users: 30, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
-  { id: 'CUS-1006', role: 'Finance Manager', desc: 'Can view transactions, invoices, payouts, refunds.', users: 8, status: 'Inactive', by: 'Mercy', updated: 'Nigeria' },
-  { id: 'CUS-1006', role: 'Finance Manager', desc: 'Can view transactions, invoices, payouts, refunds.', users: 8, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
+  { id: 'CUS-1001', apiId: '', role: 'Group Leader', desc: 'Full platform control (for ministry groups).', users: 45, status: 'Active', by: 'Mary', updated: 'USA' },
+  { id: 'CUS-1002', apiId: '', role: 'Sermon Admin', desc: 'Manage sermons uploads, media, and reports but limited settings.', users: 2, status: 'Active', by: 'Mary', updated: 'Nigeria' },
+  { id: 'CUS-1003', apiId: '', role: 'Finance Admin', desc: 'Can manage giving, exports, accounts statement', users: 7, status: 'Inactive', by: 'Mary', updated: 'Nigeria' },
+  { id: 'CUS-1004', apiId: '', role: 'Event Admin', desc: 'Manage events, checkin and management of events and activities', users: 10, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
+  { id: 'CUS-1005', apiId: '', role: 'Support Agent', desc: 'Handles tickets, support requests, customer communication.', users: 30, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
+  { id: 'CUS-1006', apiId: '', role: 'Finance Manager', desc: 'Can view transactions, invoices, payouts, refunds.', users: 8, status: 'Inactive', by: 'Mercy', updated: 'Nigeria' },
+  { id: 'CUS-1006', apiId: '', role: 'Finance Manager', desc: 'Can view transactions, invoices, payouts, refunds.', users: 8, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
 ];
 
 export default function MinistryAdminManagementPage() {
   const [roles, setRoles] = useState<Role[]>(ROLES);
+
+  const deleteRole = (apiId: string) => {
+    if (!USE_LIVE_API || !apiId) return;
+    (api.del(`/tenant/admin/roles/${apiId}`) as Promise<unknown>)
+      .catch(() => api.del(`/tenant/admin/sub-admins/${apiId}`) as Promise<unknown>)
+      .then(() => setRoles((prev) => prev.filter((r) => r.apiId !== apiId)))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -49,8 +58,10 @@ export default function MinistryAdminManagementPage() {
           const rawStatus = String(r['status'] ?? r['roleStatus'] ?? 'Active');
           const status = rawStatus.toUpperCase() === 'INACTIVE' || rawStatus.toUpperCase() === 'DISABLED'
             ? 'Inactive' : 'Active';
+          const apiId = String(r['id'] ?? r['roleId'] ?? r['uuid'] ?? '');
           return {
-            id: String(r['id'] ?? r['roleId'] ?? r['code'] ?? ''),
+            id: String(r['code'] ?? r['roleCode'] ?? apiId),
+            apiId,
             role: String(r['name'] ?? r['roleName'] ?? r['displayName'] ?? ''),
             desc: String(r['description'] ?? r['desc'] ?? ''),
             users: Number(r['assignedUsers'] ?? r['userCount'] ?? r['members'] ?? 0),
@@ -114,7 +125,7 @@ export default function MinistryAdminManagementPage() {
                   <td className="px-4 py-4">{r.updated}</td>
                   <td className="px-4 py-4">
                     <span className="flex items-center gap-3 text-[12px] font-medium">
-                      <RoleActions id={i + 1} />
+                      <RoleActions id={r.apiId || r.id} onDelete={() => deleteRole(r.apiId)} />
                     </span>
                   </td>
                 </tr>

@@ -7,18 +7,25 @@ import { Music } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-type UploadRow = { name: string; type: string; size: string; used: string; date: string };
+type UploadRow = { id: string; name: string; type: string; size: string; used: string; date: string };
 
 const UPLOADS: UploadRow[] = [
-  { name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { name: 'Walking in Faith', type: 'MP4 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
+  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
+  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
+  { id: '', name: 'Walking in Faith', type: 'MP4 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
+  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
 ];
 
 /** Church Admin → Uploaded Media (Figma 530:26345). */
 export default function MinistryUploadedMediaPage() {
   const [uploads, setUploads] = useState<UploadRow[]>(UPLOADS);
+
+  const deleteUpload = (id: string) => {
+    if (!USE_LIVE_API || !id) return;
+    (api.del(`/tenant/admin/media/${id}`) as Promise<unknown>)
+      .then(() => setUploads((prev) => prev.filter((u) => u.id !== id)))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -41,6 +48,7 @@ export default function MinistryUploadedMediaPage() {
           const mime = String(m['mimeType'] ?? m['fileType'] ?? m['type'] ?? '');
           const type = mime.includes('video') || mime.toUpperCase().includes('MP4') ? 'MP4 File' : 'MP3 File';
           return {
+            id: String(m['id'] ?? m['mediaId'] ?? m['uuid'] ?? ''),
             name: String(m['name'] ?? m['title'] ?? m['fileName'] ?? ''),
             type, size,
             used: String(m['seriesName'] ?? m['linkedSeries'] ?? m['usedIn'] ?? ''),
@@ -66,7 +74,7 @@ export default function MinistryUploadedMediaPage() {
       m.size,
       m.used,
       m.date,
-      <EditDeleteActions key="a" editHref={`/sermon-admin/media/${i + 1}/edit`} />,
+      <EditDeleteActions key="a" editHref={`/sermon-admin/media/${m.id || i + 1}/edit`} onDelete={() => deleteUpload(m.id)} />,
     ],
   }));
 

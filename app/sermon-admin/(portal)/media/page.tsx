@@ -10,13 +10,13 @@ import Link from 'next/link';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-type MediaFile = { name: string; type: string; size: string; used: string; date: string };
+type MediaFile = { id: string; name: string; type: string; size: string; used: string; date: string };
 
 const MEDIA: MediaFile[] = [
-  { name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { name: 'Hope in Motion', type: 'MP3 File', size: '18mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { name: 'Unity in Diversity', type: 'MP4 File', size: '52mb', used: 'Love in Action series', date: 'Jan 3, 2025' },
-  { name: 'Love as a Verb', type: 'MP3 File', size: '20mb', used: 'Love in Action series', date: 'Jan 4, 2025' },
+  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
+  { id: '', name: 'Hope in Motion', type: 'MP3 File', size: '18mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
+  { id: '', name: 'Unity in Diversity', type: 'MP4 File', size: '52mb', used: 'Love in Action series', date: 'Jan 3, 2025' },
+  { id: '', name: 'Love as a Verb', type: 'MP3 File', size: '20mb', used: 'Love in Action series', date: 'Jan 4, 2025' },
 ];
 
 function UploadMediaCard() {
@@ -42,6 +42,13 @@ function UploadMediaCard() {
 export default function SermonAdminMediaPage() {
   const [media, setMedia] = useState<MediaFile[]>(MEDIA);
 
+  const deleteMedia = (id: string) => {
+    if (!USE_LIVE_API || !id) return;
+    (api.del(`/tenant/admin/media/${id}`) as Promise<unknown>)
+      .then(() => setMedia((prev) => prev.filter((m) => m.id !== id)))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     if (!USE_LIVE_API) return;
     (api.get<unknown>('/tenant/admin/media') as Promise<unknown>)
@@ -63,6 +70,7 @@ export default function SermonAdminMediaPage() {
           const mimeType = String(m['mimeType'] ?? m['fileType'] ?? m['type'] ?? '');
           const type = mimeType.includes('video') || mimeType.toUpperCase().includes('MP4') ? 'MP4 File' : 'MP3 File';
           return {
+            id: String(m['id'] ?? m['mediaId'] ?? m['uuid'] ?? ''),
             name: String(m['name'] ?? m['title'] ?? m['fileName'] ?? ''),
             type,
             size,
@@ -89,7 +97,7 @@ export default function SermonAdminMediaPage() {
       m.size,
       m.used,
       m.date,
-      <EditDeleteActions key="a" editHref={`/sermon-admin/media/${i + 1}/edit`} />,
+      <EditDeleteActions key="a" editHref={`/sermon-admin/media/${m.id || i + 1}/edit`} onDelete={() => deleteMedia(m.id)} />,
     ],
   }));
 

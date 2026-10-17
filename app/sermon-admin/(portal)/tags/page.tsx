@@ -14,13 +14,13 @@ import Link from 'next/link';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-type Tag = { name: string; count: string; status: string; date: string };
+type Tag = { id: string; name: string; count: string; status: string; date: string };
 
 const TAGS: Tag[] = [
-  { name: 'Walking in Faith', count: '23', status: 'Inactive', date: 'Jan 2, 2025' },
-  { name: 'Embracing Change', count: '45', status: 'Active', date: 'Jan 3, 2025' },
-  { name: 'Pursuing Dreams', count: '30', status: 'Inactive', date: 'Jan 4, 2025' },
-  { name: 'Cultivating Gratitude', count: '12', status: 'Active', date: 'Jan 5, 2025' },
+  { id: '', name: 'Walking in Faith', count: '23', status: 'Inactive', date: 'Jan 2, 2025' },
+  { id: '', name: 'Embracing Change', count: '45', status: 'Active', date: 'Jan 3, 2025' },
+  { id: '', name: 'Pursuing Dreams', count: '30', status: 'Inactive', date: 'Jan 4, 2025' },
+  { id: '', name: 'Cultivating Gratitude', count: '12', status: 'Active', date: 'Jan 5, 2025' },
 ];
 
 function AddTagCard() {
@@ -46,6 +46,13 @@ function AddTagCard() {
 export default function SermonAdminTagsPage() {
   const [tags, setTags] = useState<Tag[]>(TAGS);
 
+  const deleteTag = (id: string) => {
+    if (!USE_LIVE_API || !id) return;
+    (api.del(`/tenant/admin/sermon/tags/${id}`) as Promise<unknown>)
+      .then(() => setTags((prev) => prev.filter((t) => t.id !== id)))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     if (!USE_LIVE_API) return;
     (api.get<unknown>('/tenant/admin/sermon/tags') as Promise<unknown>)
@@ -65,6 +72,7 @@ export default function SermonAdminTagsPage() {
           const rawStatus = String(t['status'] ?? 'Active');
           const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
           return {
+            id: String(t['id'] ?? t['tagId'] ?? t['uuid'] ?? ''),
             name: String(t['name'] ?? t['tagName'] ?? t['label'] ?? ''),
             count: String(t['sermonCount'] ?? t['usageCount'] ?? t['count'] ?? '0'),
             status,
@@ -84,7 +92,7 @@ export default function SermonAdminTagsPage() {
       t.count,
       <StatusText key="s" value={t.status} />,
       t.date,
-      <EditDeleteActions key="a" editHref={`/sermon-admin/tags/${i + 1}/edit`} />,
+      <EditDeleteActions key="a" editHref={`/sermon-admin/tags/${t.id || i + 1}/edit`} onDelete={() => deleteTag(t.id)} />,
     ],
   }));
 
