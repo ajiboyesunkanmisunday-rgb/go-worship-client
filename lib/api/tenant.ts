@@ -243,3 +243,147 @@ export async function getSelfGroups(): Promise<TenantGroup[]> {
   const data = await api.get<unknown>('/self/groups');
   return findTableRows(data, 'group').map(mapGroup).filter((g) => g.name);
 }
+
+/* -------- Tenant Branding (confirmed: brand.js + auth-endpoints memory) ---- */
+
+export type TenantBranding = {
+  organizationName?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  fontFamily?: string;
+  tagline?: string;
+  description?: string;
+  status?: string;
+};
+
+export type BrandingAsset = {
+  id: string;
+  category: string;
+  fileName: string;
+  url: string;
+  contentType: string;
+  contentLength: number;
+};
+
+/** GET /tenant/branding */
+export async function getTenantBranding(): Promise<TenantBranding> {
+  const data = await api.get<R>('/tenant/branding');
+  const d = ((data as R)?.['data'] ?? data) as R;
+  return {
+    organizationName: fieldOf(d, ['organizationName', 'name', 'churchName']),
+    logoUrl:          fieldOf(d, ['logoUrl', 'logo']),
+    faviconUrl:       fieldOf(d, ['faviconUrl', 'favicon']),
+    primaryColor:     fieldOf(d, ['primaryColor', 'primary']),
+    secondaryColor:   fieldOf(d, ['secondaryColor', 'secondary']),
+    accentColor:      fieldOf(d, ['accentColor', 'accent']),
+    fontFamily:       fieldOf(d, ['fontFamily', 'font']),
+    tagline:          fieldOf(d, ['tagline', 'slogan']),
+    description:      fieldOf(d, ['description', 'about']),
+    status:           fieldOf(d, ['status', 'brandStatus']),
+  };
+}
+
+/** PUT /tenant/branding */
+export async function updateTenantBranding(payload: Partial<TenantBranding>): Promise<void> {
+  await api.put('/tenant/branding', payload);
+}
+
+/** PATCH /tenant/branding/activate */
+export async function activateTenantBranding(): Promise<void> {
+  await api.patch('/tenant/branding/activate', {});
+}
+
+/** GET /tenant/branding/assets */
+export async function getTenantBrandingAssets(): Promise<BrandingAsset[]> {
+  const data = await api.get<unknown>('/tenant/branding/assets');
+  return (findTableRows(data, 'asset') as R[]).map((a) => ({
+    id:            fieldOf(a, ['id', 'assetId']),
+    category:      fieldOf(a, ['category']),
+    fileName:      fieldOf(a, ['fileName', 'name']),
+    url:           fieldOf(a, ['url', 'assetUrl']),
+    contentType:   fieldOf(a, ['contentType', 'mimeType']),
+    contentLength: Number(fieldOf(a, ['contentLength', 'size']) || 0),
+  }));
+}
+
+/** POST /tenant/branding/assets/{category} (multipart) */
+export async function uploadBrandingAsset(category: string, file: File): Promise<void> {
+  const fd = new FormData();
+  fd.append('file', file);
+  await fetch(`/bff/gw/tenant/branding/assets/${encodeURIComponent(category)}`, {
+    method: 'POST',
+    body: fd,
+    credentials: 'include',
+  }).then(async (r) => {
+    if (!r.ok) {
+      const body = await r.json().catch(() => null);
+      throw new Error((body as R)?.message as string || `Upload failed (${r.status})`);
+    }
+  });
+}
+
+/** DELETE /tenant/branding/assets/{id} */
+export async function deleteBrandingAsset(id: string): Promise<void> {
+  await api.del(`/tenant/branding/assets/${encodeURIComponent(id)}`);
+}
+
+/* -------- Tenant Billing / Subscription (confirmed: auth-endpoints memory) -- */
+
+export type TenantSubscription = {
+  planName: string;
+  status: string;
+  billingCycle: string;
+  nextBillingDate: string;
+  amount: string;
+  currency: string;
+  maxUsers: number | null;
+  maxCampuses: number | null;
+};
+
+export type TenantInvoice = {
+  id: string;
+  reference: string;
+  amount: string;
+  currency: string;
+  status: string;
+  createdAt: string;
+  paidAt: string;
+};
+
+/** GET /tenant/billing/subscription */
+export async function getTenantSubscription(): Promise<TenantSubscription | null> {
+  try {
+    const data = await api.get<R>('/tenant/billing/subscription');
+    const d = ((data as R)?.['data'] ?? data) as R;
+    const plan = (d['plan'] ?? d) as R;
+    return {
+      planName:        fieldOf(d, ['planName', 'name']) || fieldOf(plan, ['name', 'planName']),
+      status:          fieldOf(d, ['status', 'subscriptionStatus']),
+      billingCycle:    fieldOf(d, ['billingCycle', 'cycle']) || fieldOf(plan, ['billingCycle']),
+      nextBillingDate: fmtDate(fieldOf(d, ['nextBillingDate', 'renewalDate', 'nextRenewal'])),
+      amount:          fieldOf(d, ['amount', 'price']) || fieldOf(plan, ['price', 'amount']),
+      currency:        fieldOf(d, ['currency']) || fieldOf(plan, ['currency']),
+      maxUsers:        Number(fieldOf(plan, ['maxUsers'])) || null,
+      maxCampuses:     Number(fieldOf(plan, ['maxCampuses'])) || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** GET /tenant/billing/invoices */
+export async function getTenantInvoices(): Promise<TenantInvoice[]> {
+  const data = await api.get<unknown>('/tenant/billing/invoices');
+  return (findTableRows(data, 'invoice') as R[]).map((row) => ({
+    id:        fieldOf(row, ['id', 'invoiceId']),
+    reference: fieldOf(row, ['reference', 'invoiceNumber', 'paymentReference']),
+    amount:    fieldOf(row, ['amount', 'total', 'totalAmount']),
+    currency:  fieldOf(row, ['currency']),
+    status:    fieldOf(row, ['status', 'paymentStatus']),
+    createdAt: fmtDate(fieldOf(row, ['createdAt', 'invoiceDate'])),
+    paidAt:    fmtDate(fieldOf(row, ['paidAt', 'paymentDate'])),
+  }));
+}
