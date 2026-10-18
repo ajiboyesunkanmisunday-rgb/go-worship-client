@@ -22,6 +22,8 @@ export type SiteRegistration = {
   tenantRegistration?: boolean;
 };
 
+export type SubscriptionAccess = 'FULL_ACCESS' | 'MINIMAL_ACCESS' | 'NO_ACCESS';
+
 export type SiteContext = {
   contextType: 'SYSTEM_OWNER' | 'TENANT' | 'UNKNOWN';
   tenantId?: string;
@@ -30,6 +32,7 @@ export type SiteContext = {
   branding?: SiteBranding;
   authentication?: SiteAuthentication;
   registration?: SiteRegistration;
+  subscriptionAccess?: SubscriptionAccess;
 };
 
 type R = Record<string, unknown>;
@@ -73,11 +76,18 @@ export async function fetchSiteContext(
     const contextType: SiteContext['contextType'] =
       ctxRaw === 'SYSTEM_OWNER' || ctxRaw === 'TENANT' ? ctxRaw : 'UNKNOWN';
 
+    const subAccRaw = str(d.subscriptionAccess ?? d.accessLevel ?? d.access);
+    const subscriptionAccess: SubscriptionAccess | undefined =
+      subAccRaw === 'FULL_ACCESS' || subAccRaw === 'MINIMAL_ACCESS' || subAccRaw === 'NO_ACCESS'
+        ? subAccRaw
+        : undefined;
+
     return {
       contextType,
       tenantId: str(d.tenantId),
       tenantSlug: str(d.tenantSlug ?? d.slug),
       displayName: str(d.displayName ?? d.name),
+      subscriptionAccess,
       branding: {
         logoUrl: str(raw.logoUrl ?? raw.logo),
         faviconUrl: str(raw.faviconUrl ?? raw.favicon),
