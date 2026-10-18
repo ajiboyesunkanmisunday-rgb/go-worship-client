@@ -39,7 +39,7 @@ const AUTH_PAGES = [
   '/ministry-admin/login',
 ];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Always pass BFF calls, static files, and Next internals.
