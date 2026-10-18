@@ -78,10 +78,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const nextAction: string =
+    data?.nextAction ??
+    (data?.code === 'ACCOUNT_ACTIVATION_REQUIRED'
+      ? 'ACCOUNT_ACTIVATION_REQUIRED'
+      : 'NONE');
+
   const accessToken = data?.accessToken;
 
-  // MFA required — no session created yet.
-  if (!accessToken) {
+  if (nextAction === 'ACCOUNT_ACTIVATION_REQUIRED') {
+    return NextResponse.json({
+      nextAction: 'ACCOUNT_ACTIVATION_REQUIRED',
+      activationRequired: true,
+      message: data?.message ?? 'Your account requires activation. Check your email.',
+    });
+  }
+
+  if (nextAction === 'MFA_ENROLLMENT_REQUIRED') {
+    return NextResponse.json({
+      nextAction: 'MFA_ENROLLMENT_REQUIRED',
+      mfaEnrollmentRequired: true,
+      mfaSessionId: data?.mfaSessionId ?? null,
+      eligibleMethods: data?.eligibleMethods ?? data?.availableFactors ?? [],
+      message: data?.message ?? 'You must set up two-factor authentication before continuing.',
+    });
+  }
+
+  if (nextAction === 'MFA_REQUIRED' || !accessToken) {
     const allowedMethods: string[] =
       data?.availableFactors ??
       data?.allowedMethods ??
@@ -92,6 +115,7 @@ export async function POST(req: NextRequest) {
       data?.primaryFactor ?? data?.preferredMethod ?? null;
 
     return NextResponse.json({
+      nextAction: 'MFA_REQUIRED',
       mfaRequired: true,
       mfaSessionId: data?.mfaSessionId ?? null,
       allowedMethods,
@@ -101,6 +125,7 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({
     ok: true,
+    nextAction: 'NONE',
     userType: data?.claims?.userType ?? null,
     roles: data?.claims?.roles ?? [],
     authLevel: data?.authLevel ?? null,
