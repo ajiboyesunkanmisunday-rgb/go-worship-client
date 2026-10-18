@@ -129,6 +129,21 @@ function SignInFormInner({
         return;
       }
       const res = await googleLogin({ idToken, captchaToken, rememberMe });
+      if (res.activationRequired) {
+        setFormError(
+          res.message ??
+            'Your account requires activation. Please check your email for a verification link.'
+        );
+        return;
+      }
+      if (res.mfaEnrollmentRequired) {
+        const qs = new URLSearchParams({ enroll: '1' });
+        if (res.mfaSessionId) qs.set('mfa', res.mfaSessionId);
+        if (res.eligibleMethods?.length) qs.set('methods', res.eligibleMethods.join(','));
+        if (nextPath) qs.set('next', nextPath);
+        router.push(`/auth/mfa-enroll?${qs.toString()}`);
+        return;
+      }
       if (res.mfaRequired) {
         const qs = new URLSearchParams({ mfa: res.mfaSessionId ?? '' });
         if (res.allowedMethods?.length) qs.set('methods', res.allowedMethods.join(','));
@@ -171,6 +186,25 @@ function SignInFormInner({
         const qs = new URLSearchParams({ challenge: res.challengeToken });
         if (res.tenantId ?? tenantId) qs.set('tenant', (res.tenantId ?? tenantId)!);
         router.push(`/first-login/set-password?${qs.toString()}`);
+        return;
+      }
+
+      // Account needs activation before it can log in.
+      if (res.activationRequired) {
+        setFormError(
+          res.message ??
+            'Your account requires activation. Please check your email for a verification link.'
+        );
+        return;
+      }
+
+      // Must enroll in MFA before continuing.
+      if (res.mfaEnrollmentRequired) {
+        const qs = new URLSearchParams({ enroll: '1' });
+        if (res.mfaSessionId) qs.set('mfa', res.mfaSessionId);
+        if (res.eligibleMethods?.length) qs.set('methods', res.eligibleMethods.join(','));
+        if (nextPath) qs.set('next', nextPath);
+        router.push(`/auth/mfa-enroll?${qs.toString()}`);
         return;
       }
 

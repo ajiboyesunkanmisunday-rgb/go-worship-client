@@ -92,9 +92,20 @@ export async function POST(req: NextRequest) {
 
   const data = await readJson(upstream);
 
-  // 428 first-login / PASSWORD_CHANGE_REQUIRED
-  if (upstream.status === 428 || data?.code === 'PASSWORD_CHANGE_REQUIRED') {
+  // Normalise the nextAction field — backend may send it as `nextAction` or
+  // encode the same intent as a status code / code field.
+  const nextAction: string =
+    data?.nextAction ??
+    (upstream.status === 428 || data?.code === 'PASSWORD_CHANGE_REQUIRED'
+      ? 'PASSWORD_CHANGE_REQUIRED'
+      : data?.code === 'ACCOUNT_ACTIVATION_REQUIRED'
+        ? 'ACCOUNT_ACTIVATION_REQUIRED'
+        : 'NONE');
+
+  // 428 / PASSWORD_CHANGE_REQUIRED → first login, must set a real password.
+  if (nextAction === 'PASSWORD_CHANGE_REQUIRED') {
     return NextResponse.json({
+      nextAction: 'PASSWORD_CHANGE_REQUIRED',
       passwordChangeRequired: true,
       challengeToken: data?.challengeToken ?? null,
       expiresInSeconds: data?.expiresInSeconds ?? null,
@@ -117,11 +128,8 @@ export async function POST(req: NextRequest) {
 
   const accessToken = data?.accessToken;
 
-  // MFA required — no session created yet.
-  if (!accessToken) {
-    // Read the method list and preferred method resiliently from any field name
-    // the backend might use (confirmed fields from live HAR: availableFactors,
-    // primaryFactor — but we also handle the spec variants).
+  // MFA_REQUIRED — login gated behind a second factor, no session yet.
+  if (nextAction === 'MFA_REQUIRED' || !accessToken) {
     const allowedMethods: string[] =
       data?.availableFactors ??
       data?.allowedMethods ??
@@ -133,6 +141,7 @@ export async function POST(req: NextRequest) {
       data?.primaryFactor ?? data?.preferredMethod ?? null;
 
     return NextResponse.json({
+      nextAction: 'MFA_REQUIRED',
       mfaRequired: true,
       mfaSessionId: data?.mfaSessionId ?? null,
       allowedMethods,
@@ -140,8 +149,30 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // MFA_ENROLLMENT_REQUIRED — account has no factor yet; must enroll first.
+  if (nextAction === 'MFA_ENROLLMENT_REQUIRED') {
+    return NextResponse.json({
+      nextAction: 'MFA_ENROLLMENT_REQUIRED',
+      mfaEnrollmentRequired: true,
+      mfaSessionId: data?.mfaSessionId ?? null,
+      eligibleMethods: data?.eligibleMethods ?? data?.availableFactors ?? [],
+      message: data?.message ?? 'You must set up two-factor authentication before continuing.',
+    });
+  }
+
+  // ACCOUNT_ACTIVATION_REQUIRED — account exists but is not yet activated.
+  if (nextAction === 'ACCOUNT_ACTIVATION_REQUIRED') {
+    return NextResponse.json({
+      nextAction: 'ACCOUNT_ACTIVATION_REQUIRED',
+      activationRequired: true,
+      message: data?.message ?? 'Your account requires activation. Check your email.',
+    });
+  }
+
+  // NONE / default — successful login, issue session.
   const res = NextResponse.json({
     ok: true,
+    nextAction: 'NONE',
     userType: data?.claims?.userType ?? null,
     roles: data?.claims?.roles ?? [],
     authLevel: data?.authLevel ?? null,

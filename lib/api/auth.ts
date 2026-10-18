@@ -20,20 +20,29 @@ export type CompleteFirstLoginRequest = {
 
 export type LoginResponse = {
   ok?: boolean;
+  nextAction?: 'NONE' | 'MFA_REQUIRED' | 'MFA_ENROLLMENT_REQUIRED' | 'PASSWORD_CHANGE_REQUIRED' | 'ACCOUNT_ACTIVATION_REQUIRED' | 'INVALID';
+  // PASSWORD_CHANGE_REQUIRED
   passwordChangeRequired?: boolean;
   challengeToken?: string | null;
   expiresInSeconds?: number | null;
   tenantId?: string | null;
   username?: string;
   message?: string;
+  // Success
   userType?: string | null;
   roles?: string[];
   authLevel?: string | null;
   mfa?: { enabled?: boolean; optionalSetup?: boolean } | null;
+  // MFA_REQUIRED
   mfaRequired?: boolean;
   mfaSessionId?: string | null;
   allowedMethods?: string[];
   primaryFactor?: string | null;
+  // MFA_ENROLLMENT_REQUIRED
+  mfaEnrollmentRequired?: boolean;
+  eligibleMethods?: string[];
+  // ACCOUNT_ACTIVATION_REQUIRED
+  activationRequired?: boolean;
 };
 
 async function authRoute<T>(path: string, body?: unknown): Promise<T> {
