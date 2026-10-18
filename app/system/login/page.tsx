@@ -6,6 +6,7 @@ export default function SystemLoginPage() {
       redirectTo="/system/dashboard"
       imgSrc="/auth/system-bg.svg"
       imgAlt="Go-Worship platform"
+      imgClassName="object-cover opacity-[0.12]"
       logoSrc="/leadremit-logo-white.svg"
       subtitle="Go-Worship church administration and giving platform."
       disableGoogle

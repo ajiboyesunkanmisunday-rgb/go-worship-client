@@ -16,6 +16,8 @@ type AuthShellProps = {
   imgAlt?: string;
   /** Override the left-panel logo (overrides context branding + CCI fallback). */
   logoSrc?: string;
+  /** CSS classes for the left-panel <Image>. Defaults to 'object-cover mix-blend-hard-light'. */
+  imgClassName?: string;
 };
 
 /**
@@ -32,6 +34,7 @@ export function AuthShell({
   imgSrc = '/auth/church.jpg',
   imgAlt = 'Celebration Church',
   logoSrc,
+  imgClassName = 'object-cover mix-blend-hard-light',
 }: AuthShellProps) {
   const { context } = useSiteContext();
   const logoUrl = logoSrc ?? context?.branding?.logoUrl;
@@ -52,7 +55,7 @@ export function AuthShell({
           fill
           priority
           sizes="47vw"
-          className="object-cover mix-blend-hard-light"
+          className={imgClassName}
         />
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

@@ -55,7 +55,9 @@ type Props = {
   /** Override the left-panel background image (default: church photo). */
   imgSrc?: string;
   imgAlt?: string;
-  /** Override the left-panel logo (e.g. Leadremit logo for system login). */
+  /** CSS classes for the left-panel image. Defaults to 'object-cover mix-blend-hard-light'. */
+  imgClassName?: string;
+  /** Override the left-panel logo only (e.g. Leadremit logo for system login). Does not affect the form area logo. */
   logoSrc?: string;
   /** Override the subtitle below "Welcome Back" (defaults to org name from context). */
   subtitle?: string;
@@ -68,6 +70,7 @@ function SignInFormInner({
   showRegisterChurch = false,
   imgSrc,
   imgAlt,
+  imgClassName,
   logoSrc,
   subtitle,
 }: Props) {
@@ -231,7 +234,7 @@ function SignInFormInner({
   };
 
   return (
-    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc}>
+    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc} imgClassName={imgClassName}>
       {sessionBanner && (
         <div className="mb-4 flex items-start gap-3 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
           <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-500" />
@@ -239,22 +242,13 @@ function SignInFormInner({
         </div>
       )}
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
-        {logoSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logoSrc}
-            alt="Logo"
-            className="h-[22px] w-auto object-contain"
-          />
-        ) : (
-          <Image
-            src="/auth/infinity-blue.svg"
-            alt="Go Worship"
-            width={64}
-            height={22}
-            className="h-[22px] w-[64px]"
-          />
-        )}
+        <Image
+          src="/auth/infinity-blue.svg"
+          alt="Go Worship"
+          width={64}
+          height={22}
+          className="h-[22px] w-[64px]"
+        />
 
         <div className="flex flex-col items-start gap-2 text-left lg:items-center lg:text-center">
           <h1 className="flex items-center gap-2 text-[28px] font-bold -tracking-[0.03em] lg:text-[40px]">
