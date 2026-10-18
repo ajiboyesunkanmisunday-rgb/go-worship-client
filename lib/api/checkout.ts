@@ -44,6 +44,7 @@ export type CreateDonationRequest = {
   donorName?: string;
   donorEmail: string;
   note?: string;
+  donorType?: 'member' | 'guest';
 };
 
 export type DonationResponse = {

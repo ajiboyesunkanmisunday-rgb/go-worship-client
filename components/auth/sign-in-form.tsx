@@ -98,7 +98,7 @@ function SignInFormInner({
   // Set by /first-login after consuming the invitation link.
   const tenantId = searchParams.get('tenant');
   // Set by the route proxy when an unauthenticated user is bounced to login.
-  const nextPath = searchParams.get('next');
+  const nextPath = searchParams.get('next') ?? searchParams.get('from');
   const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

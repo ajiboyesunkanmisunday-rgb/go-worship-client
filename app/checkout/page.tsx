@@ -72,6 +72,7 @@ export default function CheckoutGivingPage() {
     }
 
     const fd = new FormData(e.currentTarget);
+    const donorType = String(fd.get('donorType') ?? 'guest') as 'member' | 'guest';
     const donorName = String(fd.get('donorName') ?? '');
     const donorEmail = String(fd.get('donorEmail') ?? '');
     const currency = String(fd.get('currency') ?? 'USD');
@@ -91,6 +92,7 @@ export default function CheckoutGivingPage() {
         currency,
         amount,
         fundId,
+        donorType,
       });
 
       const integration = chooseIntegration(config);
@@ -158,6 +160,13 @@ export default function CheckoutGivingPage() {
         </div>
 
         <form ref={formRef} className="flex w-full flex-col gap-4" onSubmit={onSubmit}>
+          <Field label="Donor Details">
+            <NativeSelect name="donorType" className={INPUT_CLASS} defaultValue="member">
+              <NativeSelectOption value="member">Member</NativeSelectOption>
+              <NativeSelectOption value="guest">Guest</NativeSelectOption>
+            </NativeSelect>
+          </Field>
+
           <Field label="Full Name">
             <Input name="donorName" className={INPUT_CLASS} placeholder="Enter full name" />
           </Field>
