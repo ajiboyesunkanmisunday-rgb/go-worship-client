@@ -46,10 +46,12 @@ function LoginMfaPage({
   mfaSessionId,
   allowedMethods,
   primaryFactor,
+  nextPath,
 }: {
   mfaSessionId: string;
   allowedMethods: string[];
   primaryFactor: string | null;
+  nextPath?: string | null;
 }) {
   const router = useRouter();
 
@@ -103,7 +105,7 @@ function LoginMfaPage({
         tokenId,
       });
       router.replace(
-        res.roles?.length ? portalForRoles(res.roles) : '/dashboard'
+        nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : '/dashboard')
       );
     } catch (e) {
       throw e; // let OtpForm surface it
@@ -217,6 +219,7 @@ function VerifyOtpPageInner() {
   const mfaSessionId = params.get('mfa');
   const rawMethods = params.get('methods') ?? '';
   const primaryFactor = params.get('primary') ?? null;
+  const nextPath = params.get('next');
 
   if (mfaSessionId) {
     const allowedMethods = rawMethods
@@ -228,6 +231,7 @@ function VerifyOtpPageInner() {
         mfaSessionId={mfaSessionId}
         allowedMethods={allowedMethods}
         primaryFactor={primaryFactor || null}
+        nextPath={nextPath}
       />
     );
   }
