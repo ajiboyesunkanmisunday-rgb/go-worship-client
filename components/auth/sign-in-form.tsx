@@ -97,6 +97,8 @@ function SignInFormInner({
   const searchParams = useSearchParams();
   // Set by /first-login after consuming the invitation link.
   const tenantId = searchParams.get('tenant');
+  // Set by the route proxy when an unauthenticated user is bounced to login.
+  const nextPath = searchParams.get('next');
   const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -131,10 +133,11 @@ function SignInFormInner({
         const qs = new URLSearchParams({ mfa: res.mfaSessionId ?? '' });
         if (res.allowedMethods?.length) qs.set('methods', res.allowedMethods.join(','));
         if (res.primaryFactor) qs.set('primary', res.primaryFactor);
+        if (nextPath) qs.set('next', nextPath);
         router.push(`/auth/verify-otp?${qs.toString()}`);
         return;
       }
-      router.push(res.roles?.length ? portalForRoles(res.roles) : redirectTo);
+      router.push(nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : redirectTo));
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Google sign-in failed');
     } finally {
@@ -179,12 +182,13 @@ function SignInFormInner({
         if (res.primaryFactor) {
           qs.set('primary', res.primaryFactor);
         }
+        if (nextPath) qs.set('next', nextPath);
         router.push(`/auth/verify-otp?${qs.toString()}`);
         return;
       }
-      // Route by role (SUPER_SYSTEM_ADMIN → /system, etc.); fall back to the
-      // page's redirectTo when the response carries no roles.
-      router.push(res.roles?.length ? portalForRoles(res.roles) : redirectTo);
+      // Honour ?next= from the route proxy, then role-based routing, then
+      // the page's own redirectTo default.
+      router.push(nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : redirectTo));
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Sign in failed');
     } finally {
