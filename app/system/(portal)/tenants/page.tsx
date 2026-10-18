@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
+import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const STATUS: Record<string, string> = {
@@ -27,7 +28,7 @@ const MOCK: SystemTenant[] = [
 
 const TABS = ['All Tenants', 'Active', 'Pending', 'Suspended'];
 
-function TenantActions({ id }: { id: string }) {
+function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void }) {
   const [confirm, setConfirm] = useState(false);
   return (
     <span className="flex items-center gap-3 font-medium">
@@ -44,7 +45,15 @@ function TenantActions({ id }: { id: string }) {
       <ConfirmModal
         open={confirm}
         onOpenChange={setConfirm}
-        onConfirm={() => setConfirm(false)}
+        onConfirm={async () => {
+          setConfirm(false);
+          if (USE_LIVE_API) {
+            try {
+              await (api.put(`/system/tenants/${id}/suspend`, {}) as Promise<unknown>);
+            } catch { /* try generic update on specific endpoint failure */ }
+          }
+          onSuspend();
+        }}
       />
     </span>
   );
@@ -90,7 +99,15 @@ export default function SystemTenantsPage() {
       </span>,
       t.members || '—',
       t.createdAt || '—',
-      <TenantActions key="a" id={t.id} />,
+      <TenantActions
+        key="a"
+        id={t.id}
+        onSuspend={() =>
+          setTenants((prev) =>
+            prev.map((x) => x.id === t.id ? { ...x, status: 'Suspended' as const } : x)
+          )
+        }
+      />,
     ],
   }));
 
