@@ -52,6 +52,7 @@ export default function SystemSupportPage() {
   const [active, setActive] = useState('t1');
   const current = tickets.find((t) => t.id === active) ?? tickets[0]!;
   const [reply, setReply] = useState('');
+  const [sending, setSending] = useState(false);
 
   const [ticketTitle, setTicketTitle] = useState('Help needed for payment failure');
   const [ticketBody, setTicketBody] = useState('I need help to process the payment after the checkout. I need to send out this campaign within today. Can you please help ASAP?');
@@ -249,10 +250,19 @@ export default function SystemSupportPage() {
               <Button
                 size="lg"
                 className="h-[40px] px-6"
-                onClick={() => setReply('')}
-                disabled={!reply.trim()}
+                disabled={!reply.trim() || sending}
+                onClick={async () => {
+                  if (USE_LIVE_API) {
+                    setSending(true);
+                    try {
+                      await (api.post(`/system/support/tickets/${active}/reply`, { message: reply }) as Promise<unknown>);
+                    } catch { /* keep UX responsive on failure */ }
+                    finally { setSending(false); }
+                  }
+                  setReply('');
+                }}
               >
-                Send
+                {sending ? 'Sending…' : 'Send'}
               </Button>
             </div>
           </div>

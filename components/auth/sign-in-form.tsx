@@ -82,11 +82,11 @@ function SignInFormInner({
       : context?.contextType === 'SYSTEM_OWNER'
         ? false
         : (context?.authentication?.customerGoogleLogin ?? true);
-  const orgName =
-    subtitle ??
+  const orgContextName =
     context?.branding?.organizationName ??
     context?.displayName ??
-    'Celebration Church International Go worship Platform';
+    'Celebration Church International';
+  const subtitleText = subtitle ?? `Welcome to ${orgContextName}`;
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -268,7 +268,7 @@ function SignInFormInner({
             />
           </h1>
           <p className="max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px]">
-            Welcome to {orgName}
+            {subtitleText}
           </p>
         </div>
 
