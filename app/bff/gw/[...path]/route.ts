@@ -124,6 +124,30 @@ async function proxy(req: NextRequest, path: string[]) {
   }
 
   const text = await upstream.text();
+
+  // If still 401 after refresh attempt (or no refresh token was present),
+  // check whether the backend sent IDLE_TIMEOUT so the client can surface the
+  // right reason on the login page.
+  if (upstream.status === 401) {
+    let bodyCode: string | null = null;
+    try {
+      const parsed = JSON.parse(text);
+      bodyCode = parsed?.code ?? null;
+    } catch { /* ignore */ }
+
+    const res = NextResponse.json(
+      {
+        message: bodyCode === 'IDLE_TIMEOUT'
+          ? 'Session expired due to inactivity.'
+          : 'Unauthorized',
+        code: bodyCode ?? 'UNAUTHORIZED',
+      },
+      { status: 401 }
+    );
+    clearSessionCookies(res);
+    return res;
+  }
+
   const res = new NextResponse(text || null, {
     status: upstream.status,
     headers: {
@@ -134,8 +158,6 @@ async function proxy(req: NextRequest, path: string[]) {
 
   if (renewed) {
     setSessionCookies(res, renewed.accessToken, renewed.refreshToken);
-  } else if (upstream.status === 401 && refreshTok) {
-    clearSessionCookies(res);
   }
 
   return res;

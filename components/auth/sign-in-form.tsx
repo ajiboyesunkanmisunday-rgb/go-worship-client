@@ -25,7 +25,8 @@ import Link from 'next/link';
 import { GoogleIcon } from '@/icons/socials';
 import { PasswordInput } from '@/components/ui/password-input';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { portalForRoles } from '@/lib/portal';
 import { executeRecaptcha } from '@/lib/recaptcha';
@@ -100,6 +101,16 @@ function SignInFormInner({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [sessionBanner, setSessionBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'idle') {
+      setSessionBanner('You were signed out due to inactivity. Please sign in again.');
+    } else if (reason === 'unauthorized') {
+      setSessionBanner('Your session has expired. Please sign in again.');
+    }
+  }, [searchParams]);
 
   const handleGoogleSignIn = async () => {
     setFormError(null);
@@ -183,6 +194,12 @@ function SignInFormInner({
 
   return (
     <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc}>
+      {sessionBanner && (
+        <div className="mb-4 flex items-start gap-3 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-500" />
+          <span>{sessionBanner}</span>
+        </div>
+      )}
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
         <Image
           src="/auth/infinity-blue.svg"

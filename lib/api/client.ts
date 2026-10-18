@@ -51,6 +51,28 @@ export async function apiFetch<T = unknown>(
       (errBody && typeof errBody === 'object' && 'message' in errBody
         ? String((errBody as { message: unknown }).message)
         : null) ?? `Request failed (${res.status})`;
+
+    // Session expired — redirect to login with the appropriate reason flag so
+    // the login page can show the right banner.
+    if (res.status === 401 && typeof window !== 'undefined') {
+      const code =
+        errBody && typeof errBody === 'object' && 'code' in errBody
+          ? String((errBody as { code: unknown }).code)
+          : null;
+      const reason = code === 'IDLE_TIMEOUT' ? 'idle' : 'unauthorized';
+      // Derive the portal login path from the current URL pathname.
+      const { pathname } = window.location;
+      let loginPath = '/auth/login';
+      if (pathname.startsWith('/system'))         loginPath = '/system/login';
+      else if (pathname.startsWith('/ministry-admin')) loginPath = '/ministry-admin/login';
+      else if (pathname.startsWith('/ministry'))  loginPath = '/ministry/login';
+      else if (pathname.startsWith('/sermon-admin')) loginPath = '/sermon-admin/login';
+      else if (pathname.startsWith('/group-leader')) loginPath = '/group-leader/login';
+      window.location.replace(`${loginPath}?reason=${reason}`);
+      // Throw so the caller's error boundary handles the in-flight state.
+      throw new ApiError(message, res.status, errBody);
+    }
+
     throw new ApiError(message, res.status, errBody);
   }
 
