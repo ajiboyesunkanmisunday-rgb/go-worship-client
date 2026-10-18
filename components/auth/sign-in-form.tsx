@@ -239,13 +239,22 @@ function SignInFormInner({
         </div>
       )}
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
-        <Image
-          src="/auth/infinity-blue.svg"
-          alt="Go Worship"
-          width={64}
-          height={22}
-          className="h-[22px] w-[64px]"
-        />
+        {logoSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoSrc}
+            alt="Logo"
+            className="h-[22px] w-auto object-contain"
+          />
+        ) : (
+          <Image
+            src="/auth/infinity-blue.svg"
+            alt="Go Worship"
+            width={64}
+            height={22}
+            className="h-[22px] w-[64px]"
+          />
+        )}
 
         <div className="flex flex-col items-start gap-2 text-left lg:items-center lg:text-center">
           <h1 className="flex items-center gap-2 text-[28px] font-bold -tracking-[0.03em] lg:text-[40px]">

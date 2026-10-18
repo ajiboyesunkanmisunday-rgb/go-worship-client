@@ -9,7 +9,6 @@ import {
   ReceiptText,
   LayoutGrid,
   ScrollText,
-  Search,
   Settings,
   LifeBuoy,
   ShieldCheck,
@@ -80,13 +79,6 @@ function Topbar() {
       <TopbarSearch tone="dark" />
 
       <div className="flex items-center gap-4">
-        <Link
-          href="/system/settings"
-          aria-label="Settings"
-          className="text-white/70 transition-colors hover:text-white"
-        >
-          <Settings className="size-5" />
-        </Link>
         <NotificationsBell tone="dark" />
         <AdminProfileMenu
           profileHref="/system/settings"
