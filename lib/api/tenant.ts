@@ -363,6 +363,20 @@ export async function getSelfGroups(): Promise<TenantGroup[]> {
   return findTableRows(data, 'group').map(mapGroup).filter((g) => g.name);
 }
 
+/** [VERIFY PATH] GET /self/groups/activities — all group activities for the member */
+export async function getSelfGroupActivities(): Promise<import('@/types/groups').GroupActivity[]> {
+  const data = await api.get<unknown>('/self/groups/activities');
+  return (findTableRows(data, 'activity') as R[]).map((row) => ({
+    id:        fieldOf(row, ['id', 'activityId']) || String(Math.random()),
+    date:      fieldOf(row, ['date', 'activityDate', 'eventDate']) || '',
+    time:      fieldOf(row, ['time', 'activityTime', 'eventTime', 'startTime']) || '',
+    location:  fieldOf(row, ['location', 'venue', 'place']) || '',
+    topic:     fieldOf(row, ['topic', 'title', 'subject', 'name']) || undefined,
+    status:    fieldOf(row, ['status', 'activityStatus']) || 'Upcoming',
+    createdAt: fieldOf(row, ['createdAt', 'created_at']) || '',
+  }));
+}
+
 /* -------- Tenant Branding (confirmed: brand.js + auth-endpoints memory) ---- */
 
 export type TenantBranding = {
