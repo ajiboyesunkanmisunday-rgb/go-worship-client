@@ -5,15 +5,13 @@
  * `api.js?render=<siteKey>` then `grecaptcha.execute(siteKey, {action})`.
  * There is no checkbox; a token is minted per submit.
  *
- * Site key: the correct 40-char key from the backend tool. The public
- * `GET /auth/captcha/site-key` endpoint currently returns the same key plus a
- * spurious `ff` (42 chars) — a backend typo — so we do NOT use that endpoint's
- * value. Override via NEXT_PUBLIC_RECAPTCHA_SITE_KEY once the backend is fixed.
+ * Site key sourced from GET /api/v1/auth/captcha/site-key.
+ * Override via NEXT_PUBLIC_RECAPTCHA_SITE_KEY env var if needed.
  */
 
 export const RECAPTCHA_SITE_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ??
-  '6LfbSHAsAAAAAFnhtf-lPAKUG83fUiXdFPLsxzMx';
+  '6Ld-gSssAAAAAJf4I6RFembg-ljQkh8TEng1ToJ4';
 
 declare global {
   interface Window {
