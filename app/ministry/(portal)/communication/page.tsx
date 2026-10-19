@@ -9,7 +9,7 @@ import { Bell, Mail, Plus } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number };
+type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number; channels?: string[] };
 
 const MESSAGES: Message[] = [
   { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
@@ -44,6 +44,7 @@ export default function MinistryCommunicationPage() {
           rate: Number(m['readRate'] ?? m['openRate'] ?? m['deliveryRate'] ?? 0),
           date: String(m['sentAt'] ?? m['scheduledAt'] ?? m['createdAt'] ?? ''),
           recipientCount: m['recipientCount'] != null ? Number(m['recipientCount']) : m['totalRecipients'] != null ? Number(m['totalRecipients']) : undefined,
+          channels: Array.isArray(m['channels']) ? (m['channels'] as string[]).map(String) : Array.isArray(m['deliveryChannels']) ? (m['deliveryChannels'] as string[]).map(String) : undefined,
         })).filter((m) => m.title);
         if (mapped.length > 0) setMessages(mapped);
       })
@@ -65,10 +66,10 @@ export default function MinistryCommunicationPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Communication</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Messages" value={String(messages.length || 6)} variant="white" subtitle="12% from last week" />
+        <StatCard title="Total Messages" value={String(messages.length)} variant="white" subtitle="12% from last week" />
         <StatCard title="Active Recipients" value={activeRecipients} variant="green" subtitle="5% from last week" />
-        <StatCard title="Sent Messages" value={String(sentCount || 5)} variant="white" subtitle="Click here to create group" />
-        <StatCard title="Scheduled" value={String(scheduledCount || 4)} variant="white" subtitle="Click here to create group" />
+        <StatCard title="Sent Messages" value={String(sentCount)} variant="white" subtitle="Click here to create group" />
+        <StatCard title="Scheduled" value={String(scheduledCount)} variant="white" subtitle="Click here to create group" />
         <ActionCard
           variant="blue"
           href="/ministry/communication/new"
@@ -105,8 +106,8 @@ export default function MinistryCommunicationPage() {
                   </td>
                   <td className="py-4">
                     <span className="flex items-center gap-2 text-brand-blue">
-                      <Bell className="size-4" />
-                      <Mail className="size-4" />
+                      {(!m.channels || m.channels.some((c) => /push|notif|bell/i.test(c))) && <Bell className="size-4" />}
+                      {(!m.channels || m.channels.some((c) => /email|mail/i.test(c))) && <Mail className="size-4" />}
                     </span>
                   </td>
                   <td className="py-4">
@@ -121,7 +122,7 @@ export default function MinistryCommunicationPage() {
                       {m.status}
                     </span>
                   </td>
-                  <td className="py-4">{m.date ? new Date(m.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Jan 13, 2026'}</td>
+                  <td className="py-4">{m.date ? new Date(m.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
                   <td className="py-4">
                     <span className="flex items-center gap-2">
                       <span className="h-1.5 w-[70px] rounded-full bg-[#eaeaea]">

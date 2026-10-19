@@ -17,16 +17,16 @@ const STATUS_COLORS: Record<string, string> = {
   Draft: 'text-[#eb0000]',
 };
 
-type Series = { name: string; desc: string; sermons: number; status: string; date: string };
+type Series = { id: string; name: string; desc: string; sermons: number; status: string; date: string };
 
 const SERIES: Series[] = [
-  { name: 'Faith in Action', desc: 'Weekly faith teaching', sermons: 12, status: 'Published', date: 'Jan 10, 2025' },
-  { name: 'Hope in Motion', desc: 'Monthly outreach program', sermons: 30, status: 'Uploading', date: 'Feb 15, 2025' },
-  { name: 'Unity in Diversity', desc: 'Quarterly community gathering', sermons: 50, status: 'Published', date: 'Mar 20, 2025' },
-  { name: 'Love as a Verb', desc: 'Annual charity event', sermons: 100, status: 'Scheduled', date: 'Apr 25, 2025' },
-  { name: 'Service Above Self', desc: 'Weekly volunteer opportunity', sermons: 20, status: 'Draft', date: 'May 30, 2025' },
-  { name: 'Service Above Self', desc: 'Weekly volunteer opportunity', sermons: 20, status: 'Draft', date: 'May 30, 2025' },
-  { name: 'Love as a Verb', desc: 'Annual charity event', sermons: 100, status: 'Scheduled', date: 'Apr 25, 2025' },
+  { id: '', name: 'Faith in Action', desc: 'Weekly faith teaching', sermons: 12, status: 'Published', date: 'Jan 10, 2025' },
+  { id: '', name: 'Hope in Motion', desc: 'Monthly outreach program', sermons: 30, status: 'Uploading', date: 'Feb 15, 2025' },
+  { id: '', name: 'Unity in Diversity', desc: 'Quarterly community gathering', sermons: 50, status: 'Published', date: 'Mar 20, 2025' },
+  { id: '', name: 'Love as a Verb', desc: 'Annual charity event', sermons: 100, status: 'Scheduled', date: 'Apr 25, 2025' },
+  { id: '', name: 'Service Above Self', desc: 'Weekly volunteer opportunity', sermons: 20, status: 'Draft', date: 'May 30, 2025' },
+  { id: '', name: 'Service Above Self', desc: 'Weekly volunteer opportunity', sermons: 20, status: 'Draft', date: 'May 30, 2025' },
+  { id: '', name: 'Love as a Verb', desc: 'Annual charity event', sermons: 100, status: 'Scheduled', date: 'Apr 25, 2025' },
 ];
 
 function normalizeSeriesStatus(raw: string): string {
@@ -66,6 +66,7 @@ export default function MinistryMediaPage() {
             ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             : '';
           return {
+            id: String(s['id'] ?? s['seriesId'] ?? s['uuid'] ?? ''),
             name: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
             desc: String(s['description'] ?? s['desc'] ?? ''),
             sermons: Number(s['sermonCount'] ?? s['totalSermons'] ?? s['count'] ?? 0),
@@ -86,11 +87,11 @@ export default function MinistryMediaPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Media</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Series" value={String(series.length || 120)} variant="blue" />
-        <StatCard title="Total Sermon" value={String(totalSermons || 530)} variant="green" />
-        <StatCard title="Draft Sermons" value={String(draftCount || 60)} variant="green" />
-        <ActionCard title="Add New Sermon" subtitle="Click here to add sermons" icon={folderIcon} />
-        <ActionCard title="Create new series" subtitle="Click here to check in events" icon={folderIcon} />
+        <StatCard title="Total Series" value={String(series.length)} variant="blue" />
+        <StatCard title="Total Sermon" value={String(totalSermons)} variant="green" />
+        <StatCard title="Draft Sermons" value={String(draftCount)} variant="green" />
+        <ActionCard href="/ministry/media/new" title="Add New Sermon" subtitle="Click here to add sermons" icon={folderIcon} />
+        <ActionCard href="/ministry/media/series/new" title="Create new series" subtitle="Click here to create a series" icon={folderIcon} />
       </div>
 
       <TableCard
@@ -118,8 +119,8 @@ export default function MinistryMediaPage() {
                   <td className="py-4">
                     <Link
                       href={s.status === 'Published'
-                        ? `/ministry/media/${i + 1}`
-                        : `/ministry/media/${i + 1}/edit`}
+                        ? `/ministry/media/${s.id || i + 1}`
+                        : `/ministry/media/${s.id || i + 1}/edit`}
                       className={cn(
                         'flex h-8 w-[52px] items-center justify-center rounded-full text-[11px] text-white no-underline',
                         s.status === 'Published' ? 'bg-brand-blue' : 'bg-brand-gray-300'

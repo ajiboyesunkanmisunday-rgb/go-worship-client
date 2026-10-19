@@ -6,7 +6,7 @@ import {
   StatCard,
   type EventRow,
 } from '@/components/ministry-admin/shared';
-import { getTenantMembers } from '@/lib/api/tenant';
+import { getTenantEvents } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 
@@ -23,26 +23,32 @@ export default function MinistryAdminRegistrationsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getTenantMembers().then((members) => {
-      const mapped: EventRow[] = members.map((m) => ({
-        name: m.name || m.email,
-        date: m.joinedAt,
-        location: m.groups.join(', ') || '—',
-        registrations: m.status,
-        status: m.status,
-      }));
+    getTenantEvents().then((events) => {
+      const mapped: EventRow[] = events.map((e) => {
+        let date = e.eventDate
+          ? new Date(e.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '—';
+        if (e.eventTime) date += ` • ${e.eventTime}`;
+        return {
+          name: e.name,
+          date,
+          location: e.location || '—',
+          registrations: String(e.registrations),
+          status: e.status,
+        };
+      });
       setRows(mapped);
       setTotal(mapped.length);
     }).catch(() => {});
   }, []);
 
-  const active = rows.filter((r) => r.status.toLowerCase() === 'active').length;
+  const active = rows.filter((r) => /upcoming|ongoing|active/i.test(r.status)).length;
 
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
         <StatCard title="Total Registrations" value={String(total)} variant="purple" />
-        <StatCard title="Active Members" value={String(active)} />
+        <StatCard title="Upcoming Events" value={String(active)} />
         <div className="lg:col-span-2">
           <QuickAccessCard />
         </div>

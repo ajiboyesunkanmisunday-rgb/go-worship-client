@@ -74,7 +74,7 @@ export default function MinistryUploadedMediaPage() {
       m.size,
       m.used,
       m.date,
-      <EditDeleteActions key="a" editHref={`/sermon-admin/media/${m.id || i + 1}/edit`} onDelete={() => deleteUpload(m.id)} />,
+      <EditDeleteActions key="a" editHref={`/ministry/media/${m.id || i + 1}/edit`} onDelete={() => deleteUpload(m.id)} />,
     ],
   }));
 

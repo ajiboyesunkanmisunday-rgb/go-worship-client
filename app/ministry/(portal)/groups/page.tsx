@@ -9,12 +9,12 @@ import { getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 
-type GroupRow = { name: string; category: string; leader: string; members: number; status: string; schedule: string };
+type GroupRow = { id: string; name: string; category: string; leader: string; members: number; status: string; schedule: string };
 
 const MOCK_GROUPS: GroupRow[] = [
-  { name: 'Faith Builders Fellowship', category: 'Small Group', leader: 'John Samuel', members: 22, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
-  { name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Inactive', schedule: 'Tuesdays at 6:00 PM' },
-  { name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
+  { id: '', name: 'Faith Builders Fellowship', category: 'Small Group', leader: 'John Samuel', members: 22, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
+  { id: '', name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Inactive', schedule: 'Tuesdays at 6:00 PM' },
+  { id: '', name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
 ];
 
 function toGroupRow(g: TenantGroup): GroupRow {
@@ -22,6 +22,7 @@ function toGroupRow(g: TenantGroup): GroupRow {
   const time = g.meetingTime ?? '';
   const schedule = [days, time].filter(Boolean).join(' at ') || g.meetingFrequency || 'Tuesdays at 6:00 PM';
   return {
+    id: g.id,
     name: g.name,
     category: g.description || 'Group',
     leader: g.leaderName || '—',
@@ -62,7 +63,7 @@ export default function MinistryGroupsPage() {
       </span>,
       <Link
         key="a"
-        href={`/ministry/groups/${i + 1}`}
+        href={`/ministry/groups/${g.id || i + 1}`}
         className={cn(
           'flex h-8 w-[52px] items-center justify-center rounded-full text-[11px] text-white no-underline',
           i === 0 ? 'bg-brand-blue' : 'bg-brand-gray-300'
@@ -78,7 +79,7 @@ export default function MinistryGroupsPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Group</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Group" value={String(active)} variant="blue" />
+        <StatCard title="Total Group" value={String(groups.length)} variant="blue" />
         <StatCard title="Total Members" value={String(totalMembers)} variant="white" />
         <StatCard title="Total Leader" value={String(leaders)} variant="green" />
         <ActionCard
