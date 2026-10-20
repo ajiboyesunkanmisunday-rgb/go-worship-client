@@ -119,18 +119,17 @@ export function OtpForm({
           {submitting ? 'Verifying…' : verifyLabel}
         </Button>
 
-        {onResend !== undefined && (
-          <div className="flex w-full items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={onResend}
-              className="text-[15px] font-medium text-brand-blue hover:underline"
-            >
-              Resend code
-            </button>
-            <span className="text-[15px] text-brand-gray-500">01:00</span>
-          </div>
-        )}
+        <div className="flex w-full items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={!onResend}
+            className={`text-[15px] font-medium text-brand-blue ${onResend ? 'hover:underline' : 'cursor-default opacity-50'}`}
+          >
+            Resend code
+          </button>
+          <span className="text-[15px] text-brand-gray-500">01:00</span>
+        </div>
 
         {footer === undefined ? (
           <p className="text-[15px] font-light">

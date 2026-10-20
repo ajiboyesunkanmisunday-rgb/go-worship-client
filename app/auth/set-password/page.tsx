@@ -178,15 +178,12 @@ function SetPasswordInner() {
               {submitting ? 'Saving…' : 'Reset Password'}
             </Button>
 
-            <div className="w-full flex justify-center items-center gap-2">
-              <p className="text-[14px] lg:text-[17px]">Remember your password?</p>
-              <Link
-                href="/auth/login"
-                className="text-[14px] lg:text-[17px] text-brand-orange font-bold"
-              >
-                Sign in
+            <p className="text-[14px] lg:text-[17px] font-light">
+              Don&apos;t have any?{' '}
+              <Link href="/auth/signup" className="font-bold text-brand-orange">
+                Create an account
               </Link>
-            </div>
+            </p>
           </form>
         </Form>
       </div>
