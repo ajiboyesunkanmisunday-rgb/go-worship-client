@@ -10,6 +10,7 @@ export default function SystemLoginPage() {
       logoSrc="/leadremit-logo-white.svg"
       subtitle="Go-Worship church administration and giving platform."
       disableGoogle
+      hideBrandLogo
       mfaBasePath="/system"
     />
   );

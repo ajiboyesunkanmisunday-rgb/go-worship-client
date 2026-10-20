@@ -63,6 +63,8 @@ type Props = {
   subtitle?: string;
   /** Base path for MFA redirect, e.g. '/system'. Defaults to '/auth'. */
   mfaBasePath?: string;
+  /** Hide the GoWorship brand logo above the form — use for SYSTEM_OWNER portals. */
+  hideBrandLogo?: boolean;
 };
 
 function SignInFormInner({
@@ -76,6 +78,7 @@ function SignInFormInner({
   logoSrc,
   subtitle,
   mfaBasePath = '/auth',
+  hideBrandLogo = false,
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -245,13 +248,15 @@ function SignInFormInner({
         </div>
       )}
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
-        <Image
-          src="/auth/infinity-blue.svg"
-          alt="Go Worship"
-          width={64}
-          height={22}
-          className="h-[22px] w-[64px]"
-        />
+        {!hideBrandLogo && (
+          <Image
+            src="/auth/infinity-blue.svg"
+            alt="Go Worship"
+            width={64}
+            height={22}
+            className="h-[22px] w-[64px]"
+          />
+        )}
 
         <div className="flex flex-col items-start gap-2 text-left lg:items-center lg:text-center">
           <h1 className="flex items-center gap-2 text-[28px] font-bold -tracking-[0.03em] lg:text-[40px]">

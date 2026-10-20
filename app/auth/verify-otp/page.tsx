@@ -42,16 +42,25 @@ type Phase =
   | 'enter_code'   // OTP or TOTP code input
   | 'done';
 
+type ShellProps = {
+  imgSrc?: string;
+  imgAlt?: string;
+  imgClassName?: string;
+  logoSrc?: string;
+};
+
 function LoginMfaPage({
   mfaSessionId,
   allowedMethods,
   primaryFactor,
   nextPath,
+  shellProps,
 }: {
   mfaSessionId: string;
   allowedMethods: string[];
   primaryFactor: string | null;
   nextPath?: string | null;
+  shellProps?: ShellProps;
 }) {
   const router = useRouter();
 
@@ -113,7 +122,12 @@ function LoginMfaPage({
   };
 
   return (
-    <AuthLayout imgAlt="Celebration Church">
+    <AuthLayout
+      imgSrc={shellProps?.imgSrc ?? '/auth/church.jpg'}
+      imgAlt={shellProps?.imgAlt ?? 'Celebration Church'}
+      imgClassName={shellProps?.imgClassName}
+      logoSrc={shellProps?.logoSrc}
+    >
       <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
         <h1 className="text-[28px] font-bold -tracking-[0.03em] lg:text-[36px]">
           Two-step verification
@@ -197,7 +211,7 @@ function LoginMfaPage({
 function ForgotPasswordOtpPage() {
   const router = useRouter();
   return (
-    <AuthLayout imgAlt="Celebration Church">
+    <AuthLayout imgSrc="/auth/church.jpg" imgAlt="Celebration Church">
       <OtpForm
         onVerify={(otp) => router.push(`/auth/set-password?token=${encodeURIComponent(otp)}`)}
         header={<ResetProgress step={2} />}
@@ -214,7 +228,7 @@ function ForgotPasswordOtpPage() {
   );
 }
 
-function VerifyOtpPageInner() {
+function VerifyOtpPageInner({ shellProps }: { shellProps?: ShellProps }) {
   const params = useSearchParams();
   const mfaSessionId = params.get('mfa');
   const rawMethods = params.get('methods') ?? '';
@@ -232,6 +246,7 @@ function VerifyOtpPageInner() {
         allowedMethods={allowedMethods}
         primaryFactor={primaryFactor || null}
         nextPath={nextPath}
+        shellProps={shellProps}
       />
     );
   }
@@ -239,10 +254,10 @@ function VerifyOtpPageInner() {
   return <ForgotPasswordOtpPage />;
 }
 
-export default function VerifyOTPPage() {
+export default function VerifyOTPPage({ shellProps }: { shellProps?: ShellProps } = {}) {
   return (
     <Suspense fallback={null}>
-      <VerifyOtpPageInner />
+      <VerifyOtpPageInner shellProps={shellProps} />
     </Suspense>
   );
 }

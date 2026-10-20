@@ -22,7 +22,14 @@ const METHOD_LABELS: Record<string, string> = {
 
 type Phase = 'choose' | 'totp_scan' | 'enter_code' | 'done';
 
-function MfaEnrollInner() {
+type ShellProps = {
+  imgSrc?: string;
+  imgAlt?: string;
+  imgClassName?: string;
+  logoSrc?: string;
+};
+
+function MfaEnrollInner({ shellProps }: { shellProps?: ShellProps }) {
   const router = useRouter();
   const params = useSearchParams();
   const rawMethods = params.get('methods') ?? 'OTP_EMAIL,TOTP';
@@ -101,7 +108,12 @@ function MfaEnrollInner() {
   };
 
   return (
-    <AuthLayout imgAlt="Go Worship">
+    <AuthLayout
+      imgSrc={shellProps?.imgSrc ?? '/auth/church.jpg'}
+      imgAlt={shellProps?.imgAlt ?? 'Go Worship'}
+      imgClassName={shellProps?.imgClassName}
+      logoSrc={shellProps?.logoSrc}
+    >
       <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
         <h1 className="text-[28px] font-bold -tracking-[0.03em] lg:text-[36px]">
           Set up two-factor authentication
@@ -226,10 +238,10 @@ function MfaEnrollInner() {
   );
 }
 
-export default function MfaEnrollPage() {
+export default function MfaEnrollPage({ shellProps }: { shellProps?: ShellProps } = {}) {
   return (
     <Suspense fallback={null}>
-      <MfaEnrollInner />
+      <MfaEnrollInner shellProps={shellProps} />
     </Suspense>
   );
 }
