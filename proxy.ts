@@ -39,6 +39,25 @@ const AUTH_PAGES = [
   '/ministry-admin/login',
 ];
 
+/**
+ * Mid-login pages that must be reachable without a session cookie.
+ * MFA completion happens after the first factor but before the session is set.
+ */
+const MFA_ROUTES = [
+  '/auth/verify-otp',
+  '/auth/mfa-enroll',
+  '/system/verify-otp',
+  '/system/mfa-enroll',
+  '/ministry/verify-otp',
+  '/ministry/mfa-enroll',
+  '/sermon-admin/verify-otp',
+  '/sermon-admin/mfa-enroll',
+  '/group-leader/verify-otp',
+  '/group-leader/mfa-enroll',
+  '/ministry-admin/verify-otp',
+  '/ministry-admin/mfa-enroll',
+];
+
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -49,6 +68,11 @@ export default function proxy(req: NextRequest) {
     pathname.startsWith('/api/') ||
     pathname.includes('.') // static assets
   ) {
+    return NextResponse.next();
+  }
+
+  // MFA completion pages are part of the login flow — allow regardless of session.
+  if (MFA_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
     return NextResponse.next();
   }
 

@@ -82,15 +82,12 @@ function SignInFormInner({
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
-  //   SYSTEM_OWNER → never show
-  //   TENANT admin portal (disableGoogle=true) → never show
+  //   TENANT admin portal (disableGoogle=true) → never show (system/ministry portals pass this)
   //   CUSTOMER portal → show when tenant config allows (customerGoogleLogin)
   const showGoogle =
     disableGoogle
       ? false
-      : context?.contextType === 'SYSTEM_OWNER'
-        ? false
-        : (context?.authentication?.customerGoogleLogin ?? true);
+      : (context?.authentication?.customerGoogleLogin ?? true);
   const orgContextName =
     context?.branding?.organizationName ??
     context?.displayName ??
