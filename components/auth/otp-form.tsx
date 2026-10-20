@@ -20,6 +20,8 @@ type OtpFormProps = {
   digits?: number;
   /** Description shown above the OTP slots. */
   label?: ReactNode;
+  /** Heading rendered as h1 after the logo, replacing the default fallback. */
+  title?: string;
   /** Optional node rendered above the logo (e.g. reset-flow progress bar). */
   header?: ReactNode | null;
   /** Footer row under the resend/timer line. Defaults to the sign-up link. */
@@ -36,6 +38,7 @@ export function OtpForm({
   verifyLabel = 'Verify Code',
   digits = 5,
   label,
+  title,
   header,
   footer,
 }: OtpFormProps) {
@@ -74,7 +77,9 @@ export function OtpForm({
         className="h-[22px] w-[64px]"
       />
 
-      {label ? (
+      {title ? (
+        <h1 className="text-[28px] font-bold -tracking-[0.03em] lg:text-[36px]">{title}</h1>
+      ) : label ? (
         <p className="text-[16px] font-medium">{label}</p>
       ) : (
         <h1 className="text-[24px] font-bold -tracking-[0.02em] lg:text-[30px]">

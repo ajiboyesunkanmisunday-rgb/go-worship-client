@@ -3,11 +3,11 @@
 import { AuthLayout } from '@/components/auth/layout';
 import { OtpForm } from '@/components/auth/otp-form';
 import { ResetProgress } from '@/components/auth/reset-progress';
-import { Button } from '@/components/ui/button';
 import { beginLoginMfa, verifyLoginMfa } from '@/lib/api/auth';
+import { USE_LIVE_API } from '@/lib/api/config';
 import { portalForRoles } from '@/lib/portal';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 
 /** Display order for MFA methods: most secure first. */
@@ -21,26 +21,27 @@ const METHOD_RANK: Record<string, number> = {
 
 function methodLabel(m: string) {
   switch (m) {
-    case 'TOTP':
-      return 'Authenticator app';
-    case 'OTP_EMAIL':
-      return 'Email code';
-    case 'OTP_SMS':
-      return 'SMS code';
-    case 'PASSKEY':
-      return 'Passkey';
-    case 'PUSH_FCM':
-      return 'Push notification';
-    default:
-      return m;
+    case 'TOTP':      return 'Authenticator app';
+    case 'OTP_EMAIL': return 'Email code';
+    case 'OTP_SMS':   return 'SMS code';
+    case 'PASSKEY':   return 'Passkey';
+    case 'PUSH_FCM':  return 'Push notification';
+    default:          return m;
   }
 }
 
-type Phase =
-  | 'choose'       // pick which factor to use
-  | 'waiting'      // calling begin
-  | 'enter_code'   // OTP or TOTP code input
-  | 'done';
+function methodDescription(m: string) {
+  switch (m) {
+    case 'TOTP':
+      return 'Enter the 6-digit code from your authenticator app (Google Authenticator, Authy, 1Password).';
+    case 'OTP_EMAIL':
+      return 'Enter the verification code sent to your email address.';
+    case 'OTP_SMS':
+      return 'Enter the verification code sent to your phone number.';
+    default:
+      return `Enter the code for ${methodLabel(m)}.`;
+  }
+}
 
 type ShellProps = {
   imgSrc?: string;
@@ -63,8 +64,8 @@ function LoginMfaPage({
   shellProps?: ShellProps;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Sort methods: preferred first, then by security rank.
   const sorted = [...allowedMethods].sort((a, b) => {
     if (a === primaryFactor) return -1;
     if (b === primaryFactor) return 1;
@@ -72,40 +73,55 @@ function LoginMfaPage({
   });
 
   const [selectedMethod, setSelectedMethod] = useState(sorted[0] ?? 'TOTP');
-  const [phase, setPhase] = useState<Phase>(sorted.length <= 1 ? 'waiting' : 'choose');
   const [tokenId, setTokenId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [phase, setPhase] = useState<'waiting' | 'enter_code'>('waiting');
+  const [beginError, setBeginError] = useState<string | null>(null);
+
+  const loginHref =
+    pathname.startsWith('/system')         ? '/system/login'
+    : pathname.startsWith('/ministry-admin') ? '/ministry-admin/login'
+    : pathname.startsWith('/ministry')       ? '/ministry/login'
+    : pathname.startsWith('/sermon-admin')   ? '/sermon-admin/login'
+    : pathname.startsWith('/group-leader')   ? '/group-leader/login'
+    : '/auth/login';
 
   const begin = useCallback(
     async (method: string) => {
-      setError(null);
+      setBeginError(null);
       setPhase('waiting');
+      if (!USE_LIVE_API) {
+        setPhase('enter_code');
+        return;
+      }
       try {
         const res = await beginLoginMfa({ mfaSessionId, method });
-        // OTP_EMAIL/SMS: backend sends the code + returns tokenId
-        const tid =
-          res.tokenId ??
-          (res.payloadJson?.tokenId ?? null);
+        const tid = res.tokenId ?? (res.payloadJson?.tokenId ?? null);
         setTokenId(tid ?? null);
         setPhase('enter_code');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to start challenge');
-        setPhase('choose');
+        setBeginError(e instanceof Error ? e.message : 'Failed to start verification');
+        setPhase('enter_code');
       }
     },
     [mfaSessionId]
   );
 
-  // Auto-start when there's only one method (no chooser needed).
   useEffect(() => {
-    if (sorted.length <= 1 && selectedMethod) {
-      begin(selectedMethod);
-    }
+    begin(sorted[0] ?? 'TOTP');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleTabChange = (method: string) => {
+    setSelectedMethod(method);
+    setTokenId(null);
+    begin(method);
+  };
+
   const handleVerify = async (code: string) => {
-    setError(null);
+    if (!USE_LIVE_API) {
+      router.replace(nextPath ?? '/dashboard');
+      return;
+    }
     try {
       const res = await verifyLoginMfa({
         mfaSessionId,
@@ -121,6 +137,42 @@ function LoginMfaPage({
     }
   };
 
+  const methodTabsHeader =
+    sorted.length > 1 || beginError ? (
+      <div className="flex flex-col gap-3">
+        {sorted.length > 1 && (
+          <>
+            <p className="text-[13px] font-medium text-[#888]">Verify with</p>
+            <div className="flex flex-wrap gap-2">
+              {sorted.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={phase === 'waiting'}
+                  onClick={() => handleTabChange(m)}
+                  className={`rounded-full border px-4 py-1.5 text-[14px] font-medium transition-colors ${
+                    selectedMethod === m
+                      ? 'border-brand-blue bg-brand-blue text-white'
+                      : 'border-[#ddd] bg-white text-[#333] hover:border-brand-blue'
+                  }`}
+                >
+                  {methodLabel(m)}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        <p className="text-[14px] text-[#666]">{methodDescription(selectedMethod)}</p>
+        {beginError && (
+          <p role="alert" className="text-[14px] text-destructive">
+            {beginError}
+          </p>
+        )}
+      </div>
+    ) : (
+      <p className="text-[14px] text-[#666]">{methodDescription(selectedMethod)}</p>
+    );
+
   return (
     <AuthLayout
       imgSrc={shellProps?.imgSrc ?? '/auth/church.jpg'}
@@ -128,82 +180,27 @@ function LoginMfaPage({
       imgClassName={shellProps?.imgClassName}
       logoSrc={shellProps?.logoSrc}
     >
-      <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
-        <h1 className="text-[28px] font-bold -tracking-[0.03em] lg:text-[36px]">
-          Two-step verification
-        </h1>
-
-        {phase === 'choose' && sorted.length > 1 && (
-          <>
+      {phase === 'waiting' ? (
+        <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
+          {methodTabsHeader}
+          <p className="text-[15px] text-[#888]">Starting verification…</p>
+        </div>
+      ) : (
+        <OtpForm
+          digits={6}
+          onVerify={handleVerify}
+          header={methodTabsHeader}
+          title="Two-step verification"
+          footer={
             <p className="text-[15px] font-light">
-              Choose how you&apos;d like to verify your identity.
+              Remember your password?{' '}
+              <Link href={loginHref} className="font-bold text-brand-orange">
+                Sign in
+              </Link>
             </p>
-            <div className="flex flex-col gap-3">
-              {sorted.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setSelectedMethod(m)}
-                  className={`flex items-center gap-3 rounded-[10px] border px-4 py-3 text-left transition-colors ${
-                    selectedMethod === m
-                      ? 'border-brand-blue bg-brand-blue/5'
-                      : 'border-[#e0e0e0]'
-                  }`}
-                >
-                  <span className="text-[15px] font-medium">{methodLabel(m)}</span>
-                  {m === primaryFactor && (
-                    <span className="ml-auto text-[12px] text-brand-blue">
-                      Preferred
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-            {error && (
-              <p role="alert" className="text-[14px] text-destructive">
-                {error}
-              </p>
-            )}
-            <Button
-              size="lg"
-              className="h-[52px] w-full"
-              onClick={() => begin(selectedMethod)}
-            >
-              Continue with {methodLabel(selectedMethod)}
-            </Button>
-          </>
-        )}
-
-        {phase === 'waiting' && (
-          <p className="text-[15px] text-[#555]">
-            Starting verification…
-          </p>
-        )}
-
-        {phase === 'enter_code' && (
-          <OtpForm
-            digits={6}
-            onVerify={handleVerify}
-            header={null}
-            label={
-              selectedMethod === 'TOTP'
-                ? 'Enter the 6-digit code from your authenticator app'
-                : `Enter the code sent to your ${selectedMethod === 'OTP_SMS' ? 'phone' : 'email'}`
-            }
-            footer={
-              sorted.length > 1 ? (
-                <button
-                  type="button"
-                  className="text-[14px] text-brand-blue"
-                  onClick={() => setPhase('choose')}
-                >
-                  Try a different method
-                </button>
-              ) : null
-            }
-          />
-        )}
-      </div>
+          }
+        />
+      )}
     </AuthLayout>
   );
 }
