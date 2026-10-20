@@ -27,6 +27,13 @@ const METHOD_LABELS: Record<string, string> = {
   OTP_SMS: 'Text message (SMS)',
 };
 
+const METHOD_DESCRIPTIONS: Record<string, string> = {
+  TOTP: 'Use Google Authenticator, Authy, or 1Password. Most secure.',
+  OTP_EMAIL: 'Receive a one-time code by email each time you sign in.',
+  PASSKEY: 'Use a passkey stored on your device or password manager.',
+  PUSH_FCM: 'Approve sign-ins via push notification on your mobile app.',
+};
+
 function MethodIcon({ method, enrolled }: { method: string; enrolled: boolean }) {
   const bg = enrolled ? 'bg-[#22c55e]' : 'bg-[#9ca3af]';
   const icon =
@@ -221,17 +228,22 @@ export function MfaManager() {
                     className="flex items-center gap-3 rounded-[10px] border border-[#e5e7eb] px-4 py-3"
                   >
                     <MethodIcon method={m} enrolled />
-                    <div className="flex flex-1 flex-wrap items-center gap-2">
-                      <span className="text-[14px] font-semibold">
-                        {METHOD_LABELS[m] ?? m}
-                      </span>
-                      <span className="flex items-center gap-1 rounded-full bg-[#dcfce7] px-2 py-0.5 text-[11px] font-semibold text-[#16a34a]">
-                        ✓ Enrolled
-                      </span>
-                      {isPreferred && (
-                        <span className="rounded-full bg-[#fef9c3] px-2 py-0.5 text-[11px] font-semibold text-[#854d0e]">
-                          Preferred
+                    <div className="flex flex-1 flex-col gap-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[14px] font-semibold">
+                          {METHOD_LABELS[m] ?? m}
                         </span>
+                        <span className="flex items-center gap-1 rounded-full bg-[#dcfce7] px-2 py-0.5 text-[11px] font-semibold text-[#16a34a]">
+                          ✓ Enrolled
+                        </span>
+                        {isPreferred && (
+                          <span className="rounded-full bg-[#fef9c3] px-2 py-0.5 text-[11px] font-semibold text-[#854d0e]">
+                            Preferred
+                          </span>
+                        )}
+                      </div>
+                      {METHOD_DESCRIPTIONS[m] && (
+                        <p className="text-[12px] text-[#888]">{METHOD_DESCRIPTIONS[m]}</p>
                       )}
                     </div>
                     <button
