@@ -237,7 +237,7 @@ export function MfaManager() {
                           ✓ Enrolled
                         </span>
                         {isPreferred && (
-                          <span className="rounded-full bg-[#fef9c3] px-2 py-0.5 text-[11px] font-semibold text-[#854d0e]">
+                          <span className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-[11px] font-semibold text-[#1e40af]">
                             Preferred
                           </span>
                         )}
@@ -250,7 +250,7 @@ export function MfaManager() {
                       type="button"
                       disabled={busy}
                       onClick={() => handleDisable(m)}
-                      className="shrink-0 rounded-[6px] border border-destructive px-3 py-1 text-[12px] font-medium text-destructive transition-colors hover:bg-destructive/5 disabled:opacity-50"
+                      className="shrink-0 rounded-[6px] border border-[#ef4444] px-3 py-1 text-[12px] font-medium text-[#ef4444] transition-colors hover:bg-[#fef2f2] disabled:opacity-50"
                     >
                       Remove
                     </button>
@@ -279,7 +279,7 @@ export function MfaManager() {
             </Button>
           )}
 
-          {/* SMS Coming soon — always shown */}
+          {/* SMS Coming soon — always shown at idle */}
           {step === 'idle' && (
             <div className="flex items-start gap-3 rounded-[10px] border border-[#e5e7eb] px-4 py-3">
               <MethodIcon method="OTP_SMS" enrolled={false} />
