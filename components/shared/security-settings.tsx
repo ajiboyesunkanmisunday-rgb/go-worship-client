@@ -17,6 +17,7 @@ import {
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 import { changePassword } from '@/lib/api/auth';
+import { USE_LIVE_API } from '@/lib/api/config';
 import { MfaManager } from './mfa-manager';
 
 const pwSchema = z
@@ -41,6 +42,11 @@ export function SecuritySettings() {
   });
 
   const onSubmit: SubmitHandler<PwForm> = async (data) => {
+    if (!USE_LIVE_API) {
+      toast.success('Password changed successfully');
+      form.reset();
+      return;
+    }
     setPwBusy(true);
     try {
       await changePassword(data.currentPassword, data.newPassword, data.confirmPassword);
