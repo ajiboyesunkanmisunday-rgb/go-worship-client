@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../ui/button';
+import { logout as apiLogout } from '@/lib/api/auth';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 function ConfirmModal({
   open,
@@ -80,8 +82,11 @@ export function ProfileActions() {
       <ConfirmModal
         open={logoutOpen}
         onOpenChange={setLogoutOpen}
-        onConfirm={() => {
+        onConfirm={async () => {
           setLogoutOpen(false);
+          if (USE_LIVE_API) {
+            try { await apiLogout(); } catch { /* fall through */ }
+          }
           router.push('/auth/login');
         }}
       />

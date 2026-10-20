@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { getProfile } from '@/lib/api/auth';
+import { getProfile, logout as apiLogout } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
@@ -151,8 +151,11 @@ export function ProfileMenu({
       <ConfirmModal
         open={logout}
         onOpenChange={setLogout}
-        onConfirm={() => {
+        onConfirm={async () => {
           setLogout(false);
+          if (USE_LIVE_API) {
+            try { await apiLogout(); } catch { /* fall through */ }
+          }
           router.push('/auth/login');
         }}
       />
