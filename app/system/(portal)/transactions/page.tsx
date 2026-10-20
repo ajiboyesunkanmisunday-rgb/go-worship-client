@@ -57,7 +57,7 @@ export default function SystemTransactionsPage() {
   const [tab, setTab] = useState(0);
   const [txns, setTxns] = useState<SysTxn[]>(TXNS);
   const [totalGiving, setTotalGiving] = useState('$60500');
-  const [totalCount, setTotalCount] = useState(20);
+  const [failedCount, setFailedCount] = useState(20);
   const [offlineGiving, setOfflineGiving] = useState('$87,730');
   const [recurringGivers, setRecurringGivers] = useState('130');
 
@@ -100,7 +100,7 @@ export default function SystemTransactionsPage() {
           channel: String(p['channel'] ?? 'Online'),
         }));
         setTxns(mapped);
-        setTotalCount(mapped.length);
+        setFailedCount(mapped.filter((t) => t.status === 'Failed').length);
       })
       .catch(() => {});
     getUnifiedDashboard()
@@ -160,7 +160,7 @@ export default function SystemTransactionsPage() {
         <StatCard title="Total Giving" value={totalGiving} variant="blue" />
         <StatCard title="Offline Giving" value={offlineGiving} variant="white" />
         <StatCard title="Recurring Givers" value={recurringGivers} variant="green" />
-        <StatCard title="Total Transactions" value={String(totalCount)} variant="white" />
+        <StatCard title="Failed Transactions" value={String(failedCount)} variant="white" />
         <ActionCard
           href="/system/transactions"
           title="Giving List"

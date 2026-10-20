@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { SecuritySettings } from '@/components/shared/security-settings';
 import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock } from 'lucide-react';
 
 /**
@@ -22,11 +21,9 @@ import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock } from 'lucide-rea
  */
 const TABS = [
   'General',
-  'Branding',
   'Payments',
   'Email',
   'SMS',
-  'Security',
   'System Health',
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -301,7 +298,7 @@ export function SystemSettings() {
             Configure platform settings and integrations
           </p>
         </div>
-        {tab !== 'Security' && tab !== 'System Health' && (
+        {tab !== 'System Health' && (
           <Button size="lg" className="h-[44px] px-6" onClick={onSave}>
             Save Changes
           </Button>
@@ -336,17 +333,6 @@ export function SystemSettings() {
         </Section>
       )}
 
-      {tab === 'Branding' && (
-        <Section title="Platform Branding">
-          <Field name="brandName" label="Brand Name" placeholder="Leadremit" defaultValue={config['brandName'] ?? config['branding.name']} />
-          <Field name="brandLogoUrl" label="Logo URL" placeholder="https://cdn.example.com/logo.svg" defaultValue={config['brandLogoUrl'] ?? config['branding.logoUrl']} />
-          <Field name="brandPrimaryColor" label="Primary Color" placeholder="#152242" defaultValue={config['brandPrimaryColor'] ?? config['branding.primaryColor']} />
-          <Field name="brandAccentColor" label="Accent Color" placeholder="#FAA220" defaultValue={config['brandAccentColor'] ?? config['branding.accentColor']} />
-          <Field name="brandFaviconUrl" label="Favicon URL" placeholder="https://cdn.example.com/favicon.ico" defaultValue={config['brandFaviconUrl'] ?? config['branding.faviconUrl']} />
-          <Field name="brandSupportUrl" label="Support / Help URL" placeholder="https://help.example.com" defaultValue={config['brandSupportUrl'] ?? config['branding.supportUrl']} />
-        </Section>
-      )}
-
       {tab === 'Payments' && (
         <Section title="Payment Provider (Paystack)">
           <Field name="paystackPublicKey" label="Publishable Key" placeholder="pk_live_..." defaultValue={config['paystackPublicKey'] ?? config['payments.publishableKey']} />
@@ -371,12 +357,6 @@ export function SystemSettings() {
         </Section>
       )}
       </form>
-
-      {tab === 'Security' && (
-        <div className="rounded-[14px] border border-[#eee] p-6">
-          <SecuritySettings />
-        </div>
-      )}
 
       {tab === 'System Health' && <SystemHealthPanel />}
     </div>

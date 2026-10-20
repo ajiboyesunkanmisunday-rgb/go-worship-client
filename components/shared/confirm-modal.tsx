@@ -4,7 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-/** Shared 😉 "Are you sure?" confirmation (Figma: Delete Tag 154:13998, profile deactivate/logout). */
+/** Shared "Are you sure?" confirmation (Figma: Delete Tag 154:13998, profile deactivate/logout). */
 export function ConfirmModal({
   open,
   onOpenChange,
@@ -23,12 +23,12 @@ export function ConfirmModal({
             <X className="size-5" />
             <span className="sr-only">Close</span>
           </Dialog.Close>
-          <span className="text-[56px] leading-none">😉</span>
+          <span className="text-[56px] leading-none">🥺</span>
           <Dialog.Title className="text-[24px] font-bold">
             Are you sure?
           </Dialog.Title>
-          <Dialog.Description className="sr-only">
-            Please confirm this action.
+          <Dialog.Description className="text-[14px] text-brand-gray-500">
+            This action cannot be Undone.
           </Dialog.Description>
           <div className="flex items-center gap-4">
             <Button onClick={onConfirm} size="lg" className="min-w-[100px]">

@@ -16,17 +16,15 @@ import { api } from '@/lib/api/client';
 /**
  * System → Analytics (778:38441). Distinct from the Ministry AnalyticsContent
  * the page used to (wrongly) reuse: the System design's tabs are
- * Finance / Tenants / Events / Subscriptions (Ministry's are Finance / Groups /
+ * Finances / Tenants / Users / Subscription (Ministry's are Finance / Groups /
  * Events / Media / Members), the subtitle is "Monitor your multi-tenant church
  * platform", and each tab is an "<X> Overview" area chart above a table.
  *
- * Finance (Recent Transactions) and Tenants (Recent Tenants) columns are from
- * the design. Events + Subscriptions follow the same chart+table pattern; their
- * exact columns weren't captured, so they use the events/subscription shapes
- * already used elsewhere in the app — flagged in docs/design-audit.md.
+ * Finances (Recent Transactions) and Tenants (Recent Tenants) columns are from
+ * the design. Users + Subscription follow the same chart+table pattern.
  */
 
-const TABS = ['Finance', 'Tenants', 'Events', 'Subscriptions'] as const;
+const TABS = ['Finances', 'Tenants', 'Users', 'Subscription'] as const;
 type Tab = (typeof TABS)[number];
 
 const trend = [
@@ -59,10 +57,10 @@ function Badge({ value }: { value: string }) {
 }
 
 const OVERVIEW: Record<Tab, string> = {
-  Finance: 'Financial Overview',
+  Finances: 'Financial Overview',
   Tenants: 'Tenants Overview',
-  Events: 'Events Overview',
-  Subscriptions: 'Subscriptions Overview',
+  Users: 'Users Overview',
+  Subscription: 'Subscription Overview',
 };
 
 /* ---- per-tab table data ---- */
@@ -81,10 +79,11 @@ const TENANTS = [
   { tenant: 'Impact Church', status: 'Active', plan: 'Growth', users: '6', members: '410', giving: '$54,000' },
 ];
 
-const EVENTS = [
-  { name: 'Midweek Recharge', date: 'Feb 21, 2025 • 6PM', loc: 'Main Hall', reg: '125', status: 'Active' },
-  { name: 'Weekend Workshop', date: 'Feb 25, 2025 • 10AM', loc: 'Conference Room A', reg: '75', status: 'Active' },
-  { name: 'Team Building Retreat', date: 'Mar 10, 2025 • 8AM', loc: 'Offsite Location', reg: '50', status: 'Pending' },
+const USERS = [
+  { name: 'John Adeyemi', email: 'john@mail.com', role: 'Admin', status: 'Active', joined: 'Jan 12, 2025' },
+  { name: 'Grace Community', email: 'grace@mail.com', role: 'Member', status: 'Active', joined: 'Feb 3, 2025' },
+  { name: 'Mercy Paul', email: 'mercy@mail.com', role: 'Member', status: 'Inactive', joined: 'Mar 18, 2025' },
+  { name: 'Celebration Church', email: 'celebration@mail.com', role: 'Admin', status: 'Active', joined: 'Apr 5, 2025' },
 ];
 
 const SUBSCRIPTIONS = [
@@ -110,22 +109,22 @@ function tableFor(tab: Tab): { title: string; headers: string[]; rows: SmartRow[
       })),
     };
   }
-  if (tab === 'Events') {
+  if (tab === 'Users') {
     return {
-      title: 'Recent Events',
-      headers: ['Event Name', 'Date & Time', 'Location', 'Registrations', 'Status', 'Action'],
-      rows: EVENTS.map((e) => ({
-        group: e.status,
-        text: [e.name, e.date, e.loc, e.reg, e.status],
+      title: 'Recent Users',
+      headers: ['Name', 'Email', 'Role', 'Status', 'Joined', 'Action'],
+      rows: USERS.map((u) => ({
+        group: u.status,
+        text: [u.name, u.email, u.role, u.status, u.joined],
         cells: [
-          <span key="n" className="font-medium">{e.name}</span>,
-          e.date, e.loc, e.reg, <Badge key="s" value={e.status} />,
+          <span key="n" className="font-medium">{u.name}</span>,
+          u.email, u.role, <Badge key="s" value={u.status} />, u.joined,
           <span key="a" className="text-brand-gray-500">•••</span>,
         ],
       })),
     };
   }
-  if (tab === 'Subscriptions') {
+  if (tab === 'Subscription') {
     return {
       title: 'Recent Subscriptions',
       headers: ['Tenant', 'Plan', 'Status', 'Amount', 'Renewal', 'Action'],
@@ -140,7 +139,7 @@ function tableFor(tab: Tab): { title: string; headers: string[]; rows: SmartRow[
       })),
     };
   }
-  // Finance
+  // Finances
   return {
     title: 'Recent Transactions',
     headers: ['Name/Email', 'Status', 'Date', 'Amount', 'Method', 'Type', 'Action'],
@@ -157,15 +156,15 @@ function tableFor(tab: Tab): { title: string; headers: string[]; rows: SmartRow[
 }
 
 type LiveTxn = { name: string; status: string; amount: string; type: string };
-type LiveEvent = { name: string; date: string; loc: string; reg: string; status: string };
+type LiveUser = { name: string; email: string; role: string; status: string; joined: string };
 type LiveSub = { tenant: string; plan: string; status: string; amount: string; renewal: string };
 
 export function SystemAnalyticsContent() {
-  const [tab, setTab] = useState<Tab>('Finance');
+  const [tab, setTab] = useState<Tab>('Finances');
   const [liveTenants, setLiveTenants] = useState<SystemTenant[] | null>(null);
   const [financeTrend, setFinanceTrend] = useState<{ month: string; value: number }[]>([]);
   const [liveTxns, setLiveTxns] = useState<LiveTxn[] | null>(null);
-  const [liveEvents, setLiveEvents] = useState<LiveEvent[] | null>(null);
+  const [liveUsers, setLiveUsers] = useState<LiveUser[] | null>(null);
   const [liveSubs, setLiveSubs] = useState<LiveSub[] | null>(null);
 
   useEffect(() => {
@@ -213,13 +212,13 @@ export function SystemAnalyticsContent() {
       })
       .catch(() => {});
 
-    const loadEvents = async () => {
-      for (const p of ['/system/dashboard/admin/events?page=0&size=10', '/system/events?page=0&size=10']) {
+    const loadUsers = async () => {
+      for (const p of ['/system/dashboard/admin/users?page=0&size=10', '/system/users?page=0&size=10']) {
         try { return await (api.get<unknown>(p) as Promise<unknown>); } catch { /* try next */ }
       }
       return null;
     };
-    loadEvents()
+    loadUsers()
       .then((data) => {
         if (!data) return;
         type R = Record<string, unknown>;
@@ -229,24 +228,23 @@ export function SystemAnalyticsContent() {
             ? ((data as R)['content'] as R[])
             : [];
         if (arr.length === 0) return;
-        const mapped: LiveEvent[] = arr.map((e) => {
-          const rawDate = String(e['eventDate'] ?? e['date'] ?? e['startDate'] ?? '');
-          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          const raw = String(e['status'] ?? '').toUpperCase();
-          const status = raw.includes('CANCEL') ? 'Inactive' : raw.includes('COMPLET') ? 'Inactive' : 'Active';
+        const mapped: LiveUser[] = arr.map((u) => {
+          const rawDate = String(u['createdAt'] ?? u['joinedAt'] ?? u['registeredAt'] ?? '');
+          const joined = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const raw = String(u['status'] ?? '').toUpperCase();
+          const status = raw.includes('INACTIV') || raw.includes('BLOCK') ? 'Inactive' : 'Active';
           return {
-            name: String(e['name'] ?? e['title'] ?? e['eventName'] ?? ''),
-            date, loc: String(e['location'] ?? e['venue'] ?? ''),
-            reg: String(e['registrations'] ?? e['registrationCount'] ?? e['attendees'] ?? '0'),
-            status,
+            name: String(u['fullName'] ?? u['name'] ?? u['firstName'] ?? ''),
+            email: String(u['email'] ?? ''),
+            role: String(u['role'] ?? u['userType'] ?? 'Member'),
+            status, joined,
           };
-        }).filter((e) => e.name);
-        if (mapped.length > 0) setLiveEvents(mapped);
+        }).filter((u) => u.name);
+        if (mapped.length > 0) setLiveUsers(mapped);
       })
       .catch(() => {});
 
-    (api.get<unknown>('/system/billing/subscriptions?page=0&size=10') as Promise<unknown>)
-      .then((data) => {
+    (api.get<unknown>('/system/billing/subscriptions?page=0&size=10') as Promise<unknown>)      .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
@@ -272,7 +270,7 @@ export function SystemAnalyticsContent() {
       .catch(() => {});
   }, []);
 
-  const chartData = tab === 'Finance' && financeTrend.length > 0 ? financeTrend : trend;
+  const chartData = tab === 'Finances' && financeTrend.length > 0 ? financeTrend : trend;
 
   const table = (() => {
     if (tab === 'Tenants' && liveTenants) {
@@ -291,7 +289,7 @@ export function SystemAnalyticsContent() {
         })),
       };
     }
-    if (tab === 'Finance' && liveTxns) {
+    if (tab === 'Finances' && liveTxns) {
       return {
         title: 'Recent Transactions',
         headers: ['Name/Email', 'Status', 'Date', 'Amount', 'Method', 'Type', 'Action'],
@@ -306,22 +304,22 @@ export function SystemAnalyticsContent() {
         })),
       };
     }
-    if (tab === 'Events' && liveEvents) {
+    if (tab === 'Users' && liveUsers) {
       return {
-        title: 'Recent Events',
-        headers: ['Event Name', 'Date & Time', 'Location', 'Registrations', 'Status', 'Action'],
-        rows: liveEvents.map((e) => ({
-          group: e.status,
-          text: [e.name, e.date, e.loc, e.reg, e.status],
+        title: 'Recent Users',
+        headers: ['Name', 'Email', 'Role', 'Status', 'Joined', 'Action'],
+        rows: liveUsers.map((u) => ({
+          group: u.status,
+          text: [u.name, u.email, u.role, u.status, u.joined],
           cells: [
-            <span key="n" className="font-medium">{e.name}</span>,
-            e.date, e.loc, e.reg, <Badge key="s" value={e.status} />,
+            <span key="n" className="font-medium">{u.name}</span>,
+            u.email, u.role, <Badge key="s" value={u.status} />, u.joined,
             <span key="a" className="text-brand-gray-500">•••</span>,
           ],
         })),
       };
     }
-    if (tab === 'Subscriptions' && liveSubs) {
+    if (tab === 'Subscription' && liveSubs) {
       return {
         title: 'Recent Subscriptions',
         headers: ['Tenant', 'Plan', 'Status', 'Amount', 'Renewal', 'Action'],
