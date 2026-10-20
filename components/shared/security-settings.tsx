@@ -121,7 +121,7 @@ export function SecuritySettings() {
             </div>
             <Button
               type="submit"
-              className="self-start"
+              className="self-start min-w-[180px]"
               disabled={pwBusy}
             >
               {pwBusy ? 'Saving…' : 'Update password'}

@@ -204,7 +204,7 @@ export function MfaManager() {
                 value={settings.preferredMethod ?? settings.enrolledMethods[0]}
                 onChange={(e) => handleSetPreferred(e.target.value)}
                 disabled={busy}
-                className="w-[160px] text-[13px]"
+                className="w-[210px] text-[13px] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#d1d5db]"
               >
                 {settings.enrolledMethods.map((m) => (
                   <NativeSelectOption key={m} value={m}>
@@ -284,12 +284,7 @@ export function MfaManager() {
             <div className="flex items-start gap-3 rounded-[10px] border border-[#e5e7eb] px-4 py-3">
               <MethodIcon method="OTP_SMS" enrolled={false} />
               <div className="flex flex-1 flex-col gap-0.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[14px] font-semibold">Text message (SMS)</span>
-                  <span className="rounded-full bg-[#ffedd5] px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
-                    Coming soon
-                  </span>
-                </div>
+                <span className="text-[14px] font-semibold">Text message (SMS)</span>
                 <p className="text-[12px] text-[#888]">
                   Receive a one-time code by text message to your phone.
                 </p>
@@ -298,6 +293,9 @@ export function MfaManager() {
                   method now and switch when SMS is available.
                 </p>
               </div>
+              <span className="shrink-0 rounded-full bg-[#ffedd5] px-2.5 py-1 text-[11px] font-semibold text-[#c2410c]">
+                Coming soon
+              </span>
             </div>
           )}
 
