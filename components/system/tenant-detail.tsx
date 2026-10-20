@@ -285,6 +285,21 @@ const MEMBERS: MemberRow[] = [
   { name: 'Micheal paul', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
 ];
 
+async function tryGetTenantResource(id: string, sub: string): Promise<unknown> {
+  const paths = [
+    `/system/dashboard/admin/tenants/${id}/${sub}`,
+    `/system/tenants/${id}/${sub}`,
+  ];
+  for (const path of paths) {
+    try {
+      return await (api.get<unknown>(path) as Promise<unknown>);
+    } catch {
+      // try next path
+    }
+  }
+  return null;
+}
+
 function MembersTab({ id }: { id: string }) {
   const [members, setMembers] = useState<MemberRow[]>(MEMBERS);
   const [sub, setSub] = useState<'All Member' | 'Active' | 'Inactive'>('All Member');
@@ -292,8 +307,9 @@ function MembersTab({ id }: { id: string }) {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>(`/system/tenants/${id}/members`) as Promise<unknown>)
+    tryGetTenantResource(id, 'members')
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
@@ -541,8 +557,9 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>(`/system/tenants/${id}/transactions`) as Promise<unknown>)
+    tryGetTenantResource(id, 'transactions')
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
@@ -789,8 +806,9 @@ function GroupsTab({ id }: { id: string }) {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>(`/system/tenants/${id}/groups`) as Promise<unknown>)
+    tryGetTenantResource(id, 'groups')
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
@@ -995,8 +1013,9 @@ function EventsTab({ id }: { id: string }) {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>(`/system/tenants/${id}/events`) as Promise<unknown>)
+    tryGetTenantResource(id, 'events')
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
@@ -1184,8 +1203,9 @@ function BillingTab({ id }: { id: string }) {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>(`/system/tenants/${id}/billing/invoices`) as Promise<unknown>)
+    tryGetTenantResource(id, 'billing/invoices')
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])

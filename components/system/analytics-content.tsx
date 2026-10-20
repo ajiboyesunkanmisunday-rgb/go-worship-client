@@ -179,8 +179,15 @@ export function SystemAnalyticsContent() {
       })
       .catch(() => {});
 
-    (api.get<unknown>('/system/transactions?page=0&size=10') as Promise<unknown>)
+    const loadTxns = async () => {
+      for (const p of ['/system/dashboard/admin/transactions?page=0&size=10', '/system/transactions?page=0&size=10']) {
+        try { return await (api.get<unknown>(p) as Promise<unknown>); } catch { /* try next */ }
+      }
+      return null;
+    };
+    loadTxns()
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
@@ -206,8 +213,15 @@ export function SystemAnalyticsContent() {
       })
       .catch(() => {});
 
-    (api.get<unknown>('/system/events?page=0&size=10') as Promise<unknown>)
+    const loadEvents = async () => {
+      for (const p of ['/system/dashboard/admin/events?page=0&size=10', '/system/events?page=0&size=10']) {
+        try { return await (api.get<unknown>(p) as Promise<unknown>); } catch { /* try next */ }
+      }
+      return null;
+    };
+    loadEvents()
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])

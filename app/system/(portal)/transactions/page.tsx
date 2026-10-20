@@ -63,9 +63,23 @@ export default function SystemTransactionsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    // Try platform-level payment list — follows same admin dashboard pattern
-    (api.get<unknown>('/system/dashboard/admin/payments') as Promise<unknown>)
+    const txnPaths = [
+      '/system/dashboard/admin/payments',
+      '/system/dashboard/admin/transactions',
+      '/system/transactions',
+    ];
+    const tryTxn = async () => {
+      for (const path of txnPaths) {
+        try {
+          const d = await (api.get<unknown>(path) as Promise<unknown>);
+          return d;
+        } catch { /* try next */ }
+      }
+      return null;
+    };
+    tryTxn()
       .then((data) => {
+        if (!data) return;
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
           ? (data as R[])
