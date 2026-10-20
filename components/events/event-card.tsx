@@ -68,8 +68,10 @@ export function EventCard({ event, isPast }: Props) {
         )}
         {!isPast && !event.registered && (
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="h-[40px] w-fit! px-6">
-              Attend
+            <Button variant="outline" asChild className="h-[40px] w-fit! px-6">
+              <Link href={`/dashboard/events/${event.id}`} className="no-underline">
+                Attend
+              </Link>
             </Button>
             <Button asChild className="h-[40px] w-fit! px-6">
               <Link

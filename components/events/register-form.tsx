@@ -22,6 +22,8 @@ import { Button } from '../ui/button';
 import { fetchEvent } from '@/data/events';
 import { getSelfEvent } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { api } from '@/lib/api/client';
+import { toast } from 'sonner';
 import type { Event } from '@/types/event';
 
 const schema = z.object({
@@ -64,8 +66,21 @@ export function RegisterForm() {
     defaultValues: { fullName: '', email: '', phone: '', joinMethod: 'online' },
   });
 
-  const onSubmit: SubmitHandler<Schema> = (data) => {
-    console.log(data);
+  const onSubmit: SubmitHandler<Schema> = async (data) => {
+    if (USE_LIVE_API) {
+      try {
+        await api.post(`/self/events/${params.id}/register`, {
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone || undefined,
+          joinMethod: data.joinMethod || 'ONLINE',
+        });
+        toast.success('You have been registered for this event');
+      } catch {
+        toast.error('Could not register for this event');
+        return;
+      }
+    }
     router.push('/dashboard/events');
   };
 
