@@ -67,11 +67,11 @@ function LoginMfaPage({
   const router = useRouter();
   const pathname = usePathname();
 
-  const sorted = [...allowedMethods].sort((a, b) => {
-    if (a === primaryFactor) return -1;
-    if (b === primaryFactor) return 1;
-    return (METHOD_RANK[a] ?? 99) - (METHOD_RANK[b] ?? 99);
-  });
+  // TOTP (authenticator) is always the default — sort purely by security rank,
+  // ignoring backend primaryFactor so email never becomes the default.
+  const sorted = [...allowedMethods].sort(
+    (a, b) => (METHOD_RANK[a] ?? 99) - (METHOD_RANK[b] ?? 99)
+  );
 
   const [selectedMethod, setSelectedMethod] = useState(sorted[0] ?? 'TOTP');
   const [tokenId, setTokenId] = useState<string | null>(null);
@@ -235,9 +235,9 @@ function VerifyOtpPageInner({ shellProps }: { shellProps?: ShellProps }) {
   const nextPath = params.get('next');
 
   if (mfaSessionId) {
-    const allowedMethods = rawMethods
-      ? rawMethods.split(',').filter(Boolean)
-      : ['TOTP'];
+    // OTP_SMS is not yet available — strip it to keep only TOTP and OTP_EMAIL.
+    const allowedMethods = (rawMethods ? rawMethods.split(',').filter(Boolean) : ['TOTP'])
+      .filter((m) => m !== 'OTP_SMS');
 
     return (
       <LoginMfaPage

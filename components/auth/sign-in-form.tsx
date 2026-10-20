@@ -219,12 +219,9 @@ function SignInFormInner({
 
       if (res.mfaRequired) {
         const qs = new URLSearchParams({ mfa: res.mfaSessionId ?? '' });
-        if (res.allowedMethods?.length) {
-          qs.set('methods', res.allowedMethods.join(','));
-        }
-        if (res.primaryFactor) {
-          qs.set('primary', res.primaryFactor);
-        }
+        // OTP_SMS is not yet available — strip it before encoding the URL.
+        const methods = (res.allowedMethods ?? []).filter((m) => m !== 'OTP_SMS');
+        if (methods.length) qs.set('methods', methods.join(','));
         if (nextPath) qs.set('next', nextPath);
         router.push(`${mfaBasePath}/verify-otp?${qs.toString()}`);
         return;
