@@ -74,7 +74,10 @@ export async function fetchSiteContext(
 
     const ctxRaw = str(d.contextType ?? d.context);
     const contextType: SiteContext['contextType'] =
-      ctxRaw === 'SYSTEM_OWNER' || ctxRaw === 'TENANT' ? ctxRaw : 'UNKNOWN';
+      ctxRaw === 'SYSTEM_OWNER' || ctxRaw === 'TENANT' ? ctxRaw :
+      (d.systemOwner === true || str(d.domain) === 'system') ? 'SYSTEM_OWNER' :
+      d.tenantId ? 'TENANT' :
+      'UNKNOWN';
 
     const subAccRaw = str(d.subscriptionAccess ?? d.accessLevel ?? d.access);
     const subscriptionAccess: SubscriptionAccess | undefined =

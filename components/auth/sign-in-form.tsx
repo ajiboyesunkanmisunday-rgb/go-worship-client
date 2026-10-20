@@ -61,6 +61,8 @@ type Props = {
   logoSrc?: string;
   /** Override the subtitle below "Welcome Back" (defaults to org name from context). */
   subtitle?: string;
+  /** Base path for MFA redirect, e.g. '/system'. Defaults to '/auth'. */
+  mfaBasePath?: string;
 };
 
 function SignInFormInner({
@@ -73,6 +75,7 @@ function SignInFormInner({
   imgClassName,
   logoSrc,
   subtitle,
+  mfaBasePath = '/auth',
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -144,7 +147,7 @@ function SignInFormInner({
         if (res.mfaSessionId) qs.set('mfa', res.mfaSessionId);
         if (res.eligibleMethods?.length) qs.set('methods', res.eligibleMethods.join(','));
         if (nextPath) qs.set('next', nextPath);
-        router.push(`/auth/mfa-enroll?${qs.toString()}`);
+        router.push(`${mfaBasePath}/mfa-enroll?${qs.toString()}`);
         return;
       }
       if (res.mfaRequired) {
@@ -152,7 +155,7 @@ function SignInFormInner({
         if (res.allowedMethods?.length) qs.set('methods', res.allowedMethods.join(','));
         if (res.primaryFactor) qs.set('primary', res.primaryFactor);
         if (nextPath) qs.set('next', nextPath);
-        router.push(`/auth/verify-otp?${qs.toString()}`);
+        router.push(`${mfaBasePath}/verify-otp?${qs.toString()}`);
         return;
       }
       router.push(nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : redirectTo));
@@ -207,7 +210,7 @@ function SignInFormInner({
         if (res.mfaSessionId) qs.set('mfa', res.mfaSessionId);
         if (res.eligibleMethods?.length) qs.set('methods', res.eligibleMethods.join(','));
         if (nextPath) qs.set('next', nextPath);
-        router.push(`/auth/mfa-enroll?${qs.toString()}`);
+        router.push(`${mfaBasePath}/mfa-enroll?${qs.toString()}`);
         return;
       }
 
@@ -220,7 +223,7 @@ function SignInFormInner({
           qs.set('primary', res.primaryFactor);
         }
         if (nextPath) qs.set('next', nextPath);
-        router.push(`/auth/verify-otp?${qs.toString()}`);
+        router.push(`${mfaBasePath}/verify-otp?${qs.toString()}`);
         return;
       }
       // Honour ?next= from the route proxy, then role-based routing, then

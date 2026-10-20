@@ -23,11 +23,6 @@ import {
 
 const LOGIN_PATH = '/api/v1/auth/login';
 
-function tenantSignature(secret: string, tenantId: string, ts: number, path: string) {
-  const canonical = `${tenantId}:${ts}:${path}:POST`;
-  return createHmac('sha256', secret).update(canonical).digest('base64');
-}
-
 const hex16 = () => randomBytes(16).toString('hex');
 
 export async function POST(req: NextRequest) {
@@ -54,30 +49,33 @@ export async function POST(req: NextRequest) {
   }
 
   const upstreamBase = resolveUpstreamFromHeaders(req.headers);
-  const timestamp = Date.now();
-  const nonce = hex16();
 
+  // Captcha verification headers (separate ts/nonce from tenant signature).
+  const captchaTs = Date.now();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'X-Captcha-Token': captchaToken,
     'X-Captcha-Action': 'login',
-    'X-Captcha-Ts': String(timestamp),
-    'X-Captcha-Nonce': nonce,
+    'X-Captcha-Ts': String(captchaTs),
+    'X-Captcha-Nonce': hex16(),
     'X-Correlation-Id': hex16(),
   };
 
   const resolvedTenant = tenantId ?? process.env.API_TENANT_ID;
   if (resolvedTenant) headers['X-Tenant-Id'] = resolvedTenant;
 
+  // Tenant identity headers — own ts/nonce, canonical: tenantId|ts|nonce|METHOD|path
   const hmacSecret = process.env.LOGIN_HMAC_SECRET;
   if (hmacSecret && resolvedTenant) {
-    headers['X-Captcha-Signature'] = tenantSignature(
-      hmacSecret,
-      resolvedTenant,
-      timestamp,
-      LOGIN_PATH
-    );
+    const tenantTs = Date.now();
+    const tenantNonce = hex16();
+    const canonical = `${resolvedTenant}|${tenantTs}|${tenantNonce}|POST|${LOGIN_PATH}`;
+    const sig = createHmac('sha256', hmacSecret).update(canonical, 'utf8').digest('base64');
+    headers['X-Tenant-Id'] = resolvedTenant;
+    headers['X-Tenant-Timestamp'] = String(tenantTs);
+    headers['X-Tenant-Nonce'] = tenantNonce;
+    headers['X-Tenant-Signature'] = sig;
   }
 
   const upstream = await upstreamFetch(
@@ -85,7 +83,7 @@ export async function POST(req: NextRequest) {
     {
       method: 'POST',
       headers,
-      body: JSON.stringify({ username: identifier, password, timestamp, nonce }),
+      body: JSON.stringify({ username: identifier, password, timestamp: captchaTs, nonce: hex16() }),
     },
     upstreamBase
   );

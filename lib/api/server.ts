@@ -6,10 +6,13 @@ export const UPSTREAM = (
   process.env.API_UPSTREAM_URL ?? 'https://api.go-worship.com'
 ).replace(/\/$/, '');
 
-/** The frontend hostname that maps to the System-Owner (SO) context. */
-const SO_FRONTEND_HOST = (
-  process.env.SO_FRONTEND_HOST ?? 'app.go-worship.com'
-).toLowerCase();
+/** Frontend hostnames that map to the System-Owner (SO) context (comma-separated). */
+const SO_FRONTEND_HOSTS = (
+  process.env.SO_FRONTEND_HOSTS ?? 'app.go-worship.com,go-worship.com,www.go-worship.com'
+)
+  .split(',')
+  .map((h) => h.trim().toLowerCase())
+  .filter(Boolean);
 
 export const API_PREFIX = '/api/v1';
 
@@ -19,29 +22,25 @@ export const REFRESH_COOKIE = 'gw_refresh';
 /**
  * Option A (2026-08-27 backend decision): each church uses its own host.
  *
- * - SO frontend (app.go-worship.com) or localhost → canonical SO API (UPSTREAM)
+ * - SO frontend hosts or localhost → canonical SO API (UPSTREAM)
  * - Any other host → that host itself serves the tenant API (backend resolves
  *   tenant from the Host header it receives)
  */
 export function resolveUpstream(host: string): string {
-  const h = (host || '').split(':')[0].toLowerCase();
-  if (
-    h === '' ||
-    h === 'localhost' ||
-    h === '127.0.0.1' ||
-    h === '[::1]' ||
-    h === SO_FRONTEND_HOST
-  ) {
+  const h = (host || '').split(':')[0].toLowerCase().trim();
+  if (!h || h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || SO_FRONTEND_HOSTS.includes(h)) {
     return UPSTREAM;
   }
   return `https://${h}`;
 }
 
-/** Read the Host header from a request and resolve the upstream base URL. */
+/** Read the X-Forwarded-Host (or Host) header and resolve the upstream base URL. */
 export function resolveUpstreamFromHeaders(
   headers: Headers | { get(name: string): string | null }
 ): string {
-  return resolveUpstream(headers.get('host') ?? '');
+  const host =
+    (headers.get('x-forwarded-host') ?? headers.get('host') ?? '').split(':')[0].toLowerCase().trim();
+  return resolveUpstream(host);
 }
 
 /**
