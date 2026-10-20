@@ -78,7 +78,7 @@ export function OtpForm({
       />
 
       {title ? (
-        <h1 className="text-[28px] font-bold -tracking-[0.03em] lg:text-[36px]">{title}</h1>
+        <h1 className="text-[24px] font-bold -tracking-[0.02em] lg:text-[30px]">{title}</h1>
       ) : label ? (
         <p className="text-[16px] font-medium">{label}</p>
       ) : (

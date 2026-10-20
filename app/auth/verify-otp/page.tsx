@@ -142,7 +142,7 @@ function LoginMfaPage({
       <div className="flex flex-col gap-3">
         {sorted.length > 1 && (
           <>
-            <p className="text-[13px] font-medium text-[#888]">Verify with</p>
+            <p className="text-[13px] font-medium text-brand-gray-500">Verify with</p>
             <div className="flex flex-wrap gap-2">
               {sorted.map((m) => (
                 <button
@@ -150,10 +150,10 @@ function LoginMfaPage({
                   type="button"
                   disabled={phase === 'waiting'}
                   onClick={() => handleTabChange(m)}
-                  className={`rounded-full border px-4 py-1.5 text-[14px] font-medium transition-colors ${
+                  className={`rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${
                     selectedMethod === m
-                      ? 'border-brand-blue bg-brand-blue text-white'
-                      : 'border-[#ddd] bg-white text-[#333] hover:border-brand-blue'
+                      ? 'border-brand-blue bg-brand-blue/5 text-brand-blue'
+                      : 'border-[#e2e2e2] text-brand-gray-500 hover:border-brand-blue/40'
                   }`}
                 >
                   {methodLabel(m)}
@@ -162,7 +162,7 @@ function LoginMfaPage({
             </div>
           </>
         )}
-        <p className="text-[14px] text-[#666]">{methodDescription(selectedMethod)}</p>
+        <p className="text-[14px] text-brand-gray-500">{methodDescription(selectedMethod)}</p>
         {beginError && (
           <p role="alert" className="text-[14px] text-destructive">
             {beginError}
