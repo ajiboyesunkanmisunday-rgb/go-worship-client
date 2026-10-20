@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
     method: 'POST',
     headers,
     body: JSON.stringify({
+      // SO-004B uses 'challengeToken'; TN-003 uses 'token' — send both so
+      // either backend variant accepts the request.
+      token: challengeToken,
       challengeToken,
       newPassword,
       confirmPassword,

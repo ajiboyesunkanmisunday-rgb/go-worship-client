@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       nextAction: 'PASSWORD_CHANGE_REQUIRED',
       passwordChangeRequired: true,
-      challengeToken: data?.challengeToken ?? null,
+      challengeToken: data?.challengeToken ?? data?.token ?? null,
       expiresInSeconds: data?.expiresInSeconds ?? null,
       tenantId: data?.tenantId ?? null,
       username: data?.username ?? identifier,
