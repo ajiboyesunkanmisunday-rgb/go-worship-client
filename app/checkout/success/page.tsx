@@ -4,10 +4,16 @@ import { CheckoutShell } from '@/components/checkout/checkout-shell';
 import { PaymentSuccess } from '@/components/checkout/payment-success';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const router = useRouter();
+  const params = useSearchParams();
+  const amount = params.get('amount') ?? '0';
+  const display = amount && Number(amount) > 0
+    ? `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '$3,000';
 
   return (
     <CheckoutShell>
@@ -21,7 +27,7 @@ export default function CheckoutSuccessPage() {
           <ArrowLeft className="size-[18px]" />
         </button>
 
-        <PaymentSuccess amount="$3,000">
+        <PaymentSuccess amount={display}>
           <Link
             href="/auth/signup"
             className="flex h-[56px] w-full items-center justify-center rounded-[4px] bg-[#5cb475] text-[16px] font-semibold text-white no-underline transition-colors hover:bg-[#4fa267]"
@@ -38,5 +44,13 @@ export default function CheckoutSuccessPage() {
         </PaymentSuccess>
       </div>
     </CheckoutShell>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }
