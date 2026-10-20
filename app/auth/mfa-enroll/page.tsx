@@ -27,6 +27,7 @@ type ShellProps = {
   imgAlt?: string;
   imgClassName?: string;
   logoSrc?: string;
+  flat?: boolean;
 };
 
 function MfaEnrollInner({ shellProps }: { shellProps?: ShellProps }) {
@@ -113,6 +114,7 @@ function MfaEnrollInner({ shellProps }: { shellProps?: ShellProps }) {
       imgAlt={shellProps?.imgAlt ?? 'Go Worship'}
       imgClassName={shellProps?.imgClassName}
       logoSrc={shellProps?.logoSrc}
+      flat={shellProps?.flat}
     >
       <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
         <h1 className="text-[28px] font-bold -tracking-[0.03em] lg:text-[36px]">

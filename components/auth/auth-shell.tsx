@@ -9,7 +9,7 @@ type AuthShellProps = {
   children?: React.ReactNode;
   /** Extra classes for the right-hand content column. */
   contentClassName?: string;
-  /** Extra classes for the outer <main> (e.g. background override). */
+  /** Extra classes for the outer wrapper. */
   mainClassName?: string;
   /** Left church image source. Defaults to the shared auth photo. */
   imgSrc?: string;
@@ -18,6 +18,8 @@ type AuthShellProps = {
   logoSrc?: string;
   /** CSS classes for the left-panel <Image>. Defaults to 'object-cover mix-blend-hard-light'. */
   imgClassName?: string;
+  /** System/admin portal variant: full-bleed aside with no rounded card, no outer padding. */
+  flat?: boolean;
 };
 
 /**
@@ -35,10 +37,57 @@ export function AuthShell({
   imgAlt = 'Celebration Church',
   logoSrc,
   imgClassName = 'object-cover mix-blend-hard-light',
+  flat = false,
 }: AuthShellProps) {
   const { context } = useSiteContext();
   const logoUrl = logoSrc ?? context?.branding?.logoUrl;
   const orgName = context?.branding?.organizationName ?? context?.displayName;
+
+  if (flat) {
+    return (
+      <div className={cn('flex min-h-screen w-full bg-white', mainClassName)}>
+        {/* Left: full-bleed system panel — no rounding, no outer padding */}
+        <aside className="relative hidden w-[46%] shrink-0 overflow-hidden bg-brand-blue lg:block">
+          <Image
+            src={imgSrc}
+            alt={imgAlt}
+            fill
+            priority
+            sizes="46vw"
+            className={imgClassName ?? 'object-cover'}
+          />
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={orgName ?? 'Organization logo'}
+              className="absolute top-10 left-10 z-10 h-[30px] w-auto object-contain"
+            />
+          ) : (
+            <Image
+              src="/auth/cci-logo-white.svg"
+              alt={orgName ?? 'Celebration Church Canada'}
+              width={160}
+              height={30}
+              className="absolute top-10 left-10 z-10 h-[30px] w-auto"
+            />
+          )}
+        </aside>
+
+        {/* Right: content column */}
+        <main
+          className={cn(
+            'flex w-full items-center justify-center px-6 py-12 lg:w-[54%]',
+            contentClassName
+          )}
+        >
+          {children}
+        </main>
+
+        <NeedHelpButton />
+      </div>
+    );
+  }
 
   return (
     <main

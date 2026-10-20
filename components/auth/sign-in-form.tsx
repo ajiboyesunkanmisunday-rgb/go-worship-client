@@ -65,6 +65,8 @@ type Props = {
   mfaBasePath?: string;
   /** Hide the GoWorship brand logo above the form — use for SYSTEM_OWNER portals. */
   hideBrandLogo?: boolean;
+  /** System/admin portal variant: full-bleed aside shell, centered form, system heading sizes. */
+  flat?: boolean;
 };
 
 function SignInFormInner({
@@ -79,6 +81,7 @@ function SignInFormInner({
   subtitle,
   mfaBasePath = '/auth',
   hideBrandLogo = false,
+  flat = false,
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -237,14 +240,14 @@ function SignInFormInner({
   };
 
   return (
-    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc} imgClassName={imgClassName}>
+    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc} imgClassName={imgClassName} flat={flat}>
       {sessionBanner && (
         <div className="mb-4 flex items-start gap-3 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
           <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-500" />
           <span>{sessionBanner}</span>
         </div>
       )}
-      <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6 lg:items-center">
+      <div className={`mx-auto flex w-full flex-col gap-${flat ? '7' : '6'} ${flat ? 'max-w-[430px] items-center' : 'max-w-[460px] items-start lg:items-center'}`}>
         {!hideBrandLogo && (
           <Image
             src="/auth/infinity-blue.svg"
@@ -255,8 +258,8 @@ function SignInFormInner({
           />
         )}
 
-        <div className="flex flex-col items-start gap-2 text-left lg:items-center lg:text-center">
-          <h1 className="flex items-center gap-2 text-[28px] font-bold -tracking-[0.03em] lg:text-[40px]">
+        <div className={`flex flex-col gap-2 ${flat ? 'items-center text-center' : 'items-start text-left lg:items-center lg:text-center'}`}>
+          <h1 className={`flex items-center gap-2 font-bold ${flat ? 'text-[32px] -tracking-[0.02em] lg:text-[38px]' : 'text-[28px] -tracking-[0.03em] lg:text-[40px]'}`}>
             Welcome Back
             <Image
               src="/auth/wave.png"
@@ -266,7 +269,7 @@ function SignInFormInner({
               className="size-[28px] lg:size-[32px]"
             />
           </h1>
-          <p className="max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px]">
+          <p className={`max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px] ${flat ? 'text-brand-black/85' : ''}`}>
             {subtitleText}
           </p>
         </div>

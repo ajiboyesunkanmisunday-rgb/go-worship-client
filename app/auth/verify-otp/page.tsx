@@ -48,6 +48,7 @@ type ShellProps = {
   imgAlt?: string;
   imgClassName?: string;
   logoSrc?: string;
+  flat?: boolean;
 };
 
 function LoginMfaPage({
@@ -179,6 +180,7 @@ function LoginMfaPage({
       imgAlt={shellProps?.imgAlt ?? 'Celebration Church'}
       imgClassName={shellProps?.imgClassName}
       logoSrc={shellProps?.logoSrc}
+      flat={shellProps?.flat}
     >
       {phase === 'waiting' ? (
         <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">

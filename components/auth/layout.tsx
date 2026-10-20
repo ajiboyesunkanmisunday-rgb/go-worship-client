@@ -9,6 +9,7 @@ type AuthLayoutProps = {
   imgHeight?: number;
   logoSrc?: string;
   imgClassName?: string;
+  flat?: boolean;
 };
 
 export function AuthLayout({
@@ -18,9 +19,10 @@ export function AuthLayout({
   imgAlt,
   logoSrc,
   imgClassName,
+  flat,
 }: AuthLayoutProps) {
   return (
-    <AuthShell contentClassName={containerClassName} imgSrc={imgSrc} imgAlt={imgAlt} logoSrc={logoSrc} imgClassName={imgClassName}>
+    <AuthShell contentClassName={containerClassName} imgSrc={imgSrc} imgAlt={imgAlt} logoSrc={logoSrc} imgClassName={imgClassName} flat={flat}>
       {children}
     </AuthShell>
   );

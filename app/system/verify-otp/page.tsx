@@ -7,6 +7,7 @@ const SYSTEM_SHELL = {
   imgAlt: 'Go-Worship platform',
   imgClassName: 'object-cover',
   logoSrc: '/leadremit-logo-white.svg',
+  flat: true,
 };
 
 export default function SystemVerifyOTPPage() {
