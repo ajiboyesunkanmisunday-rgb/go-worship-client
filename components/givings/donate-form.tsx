@@ -102,9 +102,9 @@ export function DonateForm() {
     try {
       // 1. Create the donation record
       const donation = await createCustomerDonation({
+        fundId: data.purpose || undefined,
         amount,
         currency,
-        note: data.purpose,
       });
 
       // 2. Choose integration type
