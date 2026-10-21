@@ -98,8 +98,8 @@ function EngagementChart() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <StatCard title="Active Members" value={String(stats?.activeMembers ?? 50)} variant="blue" />
-          <StatCard title="Inactive Members" value={String(stats && stats.totalMembers > 0 ? stats.totalMembers - stats.activeMembers : 15)} variant="white" />
+          <StatCard title="Active Members" value={String(stats?.activeMembers ?? (USE_LIVE_API ? 0 : 50))} variant="blue" />
+          <StatCard title="Inactive Members" value={String(stats && stats.totalMembers > 0 ? stats.totalMembers - stats.activeMembers : (USE_LIVE_API ? 0 : 15))} variant="white" />
         </div>
       </div>
     </div>

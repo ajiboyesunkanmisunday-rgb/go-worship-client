@@ -87,8 +87,8 @@ export default function SermonAdminSermonsPage() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="grid grid-cols-2 gap-4">
-          <StatCard title="Total Sermons" value={String(sermons.length || 24)} variant="blue" />
-          <StatCard title="Draft Sermons" value={String(draftCount || 10)} variant="white" />
+          <StatCard title="Total Sermons" value={String(USE_LIVE_API ? sermons.length : (sermons.length || 24))} variant="blue" />
+          <StatCard title="Draft Sermons" value={String(USE_LIVE_API ? draftCount : (draftCount || 10))} variant="white" />
         </div>
         <QuickAccess />
       </div>

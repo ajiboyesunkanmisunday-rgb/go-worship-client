@@ -85,7 +85,7 @@ export default function SermonAdminSeriesPage() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="grid grid-cols-2 gap-4">
-          <StatCard title="Total Series" value={String(series.length || 24)} variant="blue" />
+          <StatCard title="Total Series" value={String(USE_LIVE_API ? series.length : (series.length || 24))} variant="blue" />
           <Link
             href="/sermon-admin/series/create"
             className="relative flex min-h-[135px] flex-col justify-between rounded-[14px] bg-white p-5 no-underline"
