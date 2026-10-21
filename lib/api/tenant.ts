@@ -327,16 +327,14 @@ export const provisionTenantMember = (payload: ProvisionTenantMemberPayload) =>
 
 /* -------- Member self-service content -------- */
 
-/** GET /self/events — not in backend API; use /tenant/events instead for event listings. */
+/** GET /tenant/events — confirmed in spec; used for customer event listings (/self/events is absent). */
 export async function getSelfEvents(): Promise<TenantEvent[]> {
-  // /self/events not in backend API — return empty
-  return [];
+  return getTenantEvents();
 }
 
-/** GET /self/events/:id — not in backend API. */
-export async function getSelfEvent(_id: string): Promise<TenantEvent | null> {
-  // /self/events not in backend API — return null
-  return null;
+/** GET /tenant/events/:id — confirmed in spec; used for customer single-event view. */
+export async function getSelfEvent(id: string): Promise<TenantEvent | null> {
+  return getTenantEvent(id);
 }
 
 /** GET /self/groups — not in backend API; no groups endpoint exists. */
