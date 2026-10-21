@@ -5,7 +5,7 @@ export default function SystemLoginPage() {
     <SignInForm
       redirectTo="/system/dashboard"
       imgSrc="/auth/system-bg.svg"
-      imgAlt="Go-Worship platform"
+      imgAlt=""
       imgClassName="object-cover"
       logoSrc="/leadremit-logo-white.svg"
       subtitle="Go-Worship church administration and giving platform."

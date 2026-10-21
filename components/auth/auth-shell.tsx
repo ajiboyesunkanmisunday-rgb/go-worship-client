@@ -60,7 +60,7 @@ export function AuthShell({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoUrl}
-              alt={orgName ?? 'Organization logo'}
+              alt={orgName ?? 'Leadremit'}
               className="absolute top-10 left-10 z-10 h-[30px] w-auto object-contain"
             />
           ) : (
@@ -83,8 +83,6 @@ export function AuthShell({
         >
           {children}
         </main>
-
-        <NeedHelpButton />
       </div>
     );
   }
