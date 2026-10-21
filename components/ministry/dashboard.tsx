@@ -359,7 +359,7 @@ const MOCK_STATS: UnifiedDashboardStats = {
   totalGiving: '$6500', totalMembers: 830, totalGroups: 150,
   totalEvents: 100, upcomingEvents: 0,
   totalTenants: 0, activeTenants: 0, totalUsers: 0,
-  trend: [],
+  trend: [], availableFamilies: [],
 };
 
 export function MinistryDashboard() {

@@ -3,34 +3,27 @@
 import { StatCard } from '@/components/ministry/shared';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
-import { getSystemStats, type SystemStats } from '@/lib/api/system';
+import { type SystemStats } from '@/lib/api/system';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
-import { getProfile } from '@/lib/api/auth';
-
 
 const MOCK_TREND = [
-  { month: 'May', value: 220 },
-  { month: 'Jun', value: 180 },
-  { month: 'Jul', value: 260 },
-  { month: 'Aug', value: 220 },
-  { month: 'Sep', value: 320 },
-  { month: 'Oct', value: 280 },
-  { month: 'Nov', value: 360 },
-  { month: 'Dec', value: 300 },
-  { month: 'Jan', value: 420 },
-  { month: 'Feb', value: 470 },
+  { month: 'May', value: 220 }, { month: 'Jun', value: 180 },
+  { month: 'Jul', value: 260 }, { month: 'Aug', value: 220 },
+  { month: 'Sep', value: 320 }, { month: 'Oct', value: 280 },
+  { month: 'Nov', value: 360 }, { month: 'Dec', value: 300 },
+  { month: 'Jan', value: 420 }, { month: 'Feb', value: 470 },
 ];
 
 const MOCK_ACTIVITY = [
-  { title: 'New tenant onboarded',     meta: 'Grace Community Church · 2h ago' },
-  { title: 'Payment gateway updated',  meta: 'Cornerstone Church · 5h ago' },
-  { title: 'Subscription renewed',     meta: 'Impact Church · 1d ago' },
-  { title: 'Tenant suspended',         meta: 'Hope Assembly · 2d ago' },
-  { title: 'New admin provisioned',    meta: 'Celebration Church · 3d ago' },
+  { title: 'New tenant onboarded',    meta: 'Grace Community Church · 2h ago' },
+  { title: 'Payment gateway updated', meta: 'Cornerstone Church · 5h ago' },
+  { title: 'Subscription renewed',    meta: 'Impact Church · 1d ago' },
+  { title: 'Tenant suspended',        meta: 'Hope Assembly · 2d ago' },
+  { title: 'New admin provisioned',   meta: 'Celebration Church · 3d ago' },
 ];
 
 const MOCK_STATS: SystemStats = {
@@ -43,13 +36,23 @@ const ZERO_STATS: SystemStats = {
   givingVolume: '$0', trialTenants: 0, overduePayments: 0,
 };
 
-const DASH_TABS = [
-  'Engagement', 'Finance', 'Communications', 'Platform',
-  'Tenant Operations', 'Content', 'Security',
-  'Guest Self Service', 'Customer Self Service', 'Campus Operations',
-];
-
 const MOCK_PLANS = [['Starter', '58'], ['Pro', '54'], ['Enterprise', '18']];
+
+/* Family codes from the API map to human-readable tab labels. */
+const FAMILY_LABELS: Record<string, string> = {
+  ENGAGEMENT:           'Engagement',
+  FINANCE:              'Finance',
+  COMMUNICATIONS:       'Communications',
+  PLATFORM:             'Platform',
+  TENANT_OPERATIONS:    'Tenant Operations',
+  CONTENT:              'Content',
+  SECURITY:             'Security',
+  GUEST_SELF_SERVICE:   'Guest Self Service',
+  CUSTOMER_SELF_SERVICE:'Customer Self Service',
+  CAMPUS_OPERATIONS:    'Campus Operations',
+};
+
+const DEFAULT_FAMILIES = Object.keys(FAMILY_LABELS);
 
 const chartConfig = {
   value: { label: 'Trend', color: '#5a4fe0' },
@@ -63,59 +66,75 @@ function fmt(n: number | string): string {
 
 export function SystemDashboard() {
   const [stats, setStats] = useState<SystemStats>(USE_LIVE_API ? ZERO_STATS : MOCK_STATS);
-  const [trendData, setTrendData] = useState(USE_LIVE_API ? [] : MOCK_TREND);
+  const [trendData, setTrendData] = useState<{ month: string; value: number }[]>(
+    USE_LIVE_API ? [] : MOCK_TREND
+  );
   const [activity, setActivity] = useState(USE_LIVE_API ? [] : MOCK_ACTIVITY);
   const [plans, setPlans] = useState(USE_LIVE_API ? [] : MOCK_PLANS);
   const [adminName, setAdminName] = useState('Super System Administrator');
   const [dashTab, setDashTab] = useState('Platform');
+  const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
+
+  const loadFamily = useCallback(async (family: string) => {
+    if (!USE_LIVE_API) return;
+    const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'));
+    if (!u) return;
+
+    if (u.adminDisplayName) setAdminName(u.adminDisplayName);
+    if (u.availableFamilies.length > 0) setFamilies(u.availableFamilies);
+
+    setStats((prev) => ({
+      ...prev,
+      totalTenants:    u.totalTenants,
+      activeTenants:   u.activeTenants,
+      newTenants:      u.newTenants,
+      totalCampuses:   u.totalCampuses,
+      totalUsers:      u.totalUsers,
+      activeUsers:     u.activeUsers,
+      newUsers:        u.newUsers,
+      activeSessions:  u.activeSessions,
+      riskySessions:   u.riskySessions,
+      successfulAuths: u.successfulAuths,
+      failedAuths:     u.failedAuths,
+      lockedAccounts:  u.lockedAccounts,
+      mfaEnabledUsers: u.mfaEnabledUsers,
+      auditFailures:   u.auditFailures,
+    }));
+
+    if (u.trend.length > 0) {
+      setTrendData(u.trend.map((p) => ({ month: p.label, value: p.value })));
+    }
+  }, []);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getProfile().then((p) => {
-      const joined = [p.firstName, p.lastName].filter(Boolean).join(' ');
-      const name = p.displayName ?? (joined || undefined);
-      if (name) setAdminName(name);
-    }).catch(() => {});
-    getUnifiedDashboard().then((u) => {
-      if (u) {
-        setStats((prev) => ({
-          ...prev,
-          totalTenants:    u.totalTenants ?? prev.totalTenants,
-          activeTenants:   u.activeTenants ?? prev.activeTenants,
-          totalUsers:      u.totalUsers ?? prev.totalUsers,
-          givingVolume:    u.totalGiving ?? prev.givingVolume,
-        }));
-      } else {
-        getSystemStats().then((s) => { if (s) setStats(s); }).catch(() => {});
-      }
-      if (u && u.trend.length > 0) {
-        setTrendData(u.trend.map((p) => ({ month: p.label, value: p.value })));
-      }
-    }).catch(() => {
-      getSystemStats().then((s) => { if (s) setStats(s); }).catch(() => {});
-    });
 
-    (api.get<unknown>('/system/audit-logs?page=0&size=5') as Promise<unknown>)
+    loadFamily('PLATFORM');
+
+    // Recent audit activity
+    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : [];
+        const arr: R[] = Array.isArray(data) ? (data as R[]) : [];
         if (arr.length === 0) return;
         const mapped = arr.map((a) => {
-          const rawTs = String(a['createdAt'] ?? a['timestamp'] ?? a['actionDate'] ?? '');
-          const ts = rawTs ? new Date(rawTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const rawTs = String(a['createdAt'] ?? a['timestamp'] ?? '');
+          const ts = rawTs
+            ? new Date(rawTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+          const action = String(a['action'] ?? a['title'] ?? a['eventType'] ?? '');
+          const resource = String(a['resourceType'] ?? '');
+          const actor = String(a['username'] ?? a['performedBy'] ?? a['createdBy'] ?? '');
           return {
-            title: String(a['action'] ?? a['title'] ?? a['message'] ?? a['eventType'] ?? ''),
-            meta: `${String(a['tenantName'] ?? a['orgName'] ?? a['performedBy'] ?? '')} · ${ts}`.replace(/^·\s*$/, ''),
+            title: resource ? `${action} ${resource}`.toLowerCase().replace(/_/g, ' ') : action,
+            meta: `${actor} · ${ts}`.replace(/^·\s*$/, ''),
           };
         }).filter((a) => a.title).slice(0, 5);
         if (mapped.length > 0) setActivity(mapped);
       })
       .catch(() => {});
 
+    // Plan distribution
     (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
@@ -128,35 +147,21 @@ export function SystemDashboard() {
               : [];
         if (arr.length === 0) return;
         const mapped: [string, string][] = arr
-          .map((p) => [String(p['name'] ?? p['planName'] ?? ''), String(p['tenantCount'] ?? p['count'] ?? p['subscribers'] ?? '0')] as [string, string])
+          .map((p) => [
+            String(p['name'] ?? p['planName'] ?? ''),
+            String(p['tenantCount'] ?? p['count'] ?? p['subscribers'] ?? '0'),
+          ] as [string, string])
           .filter(([name]) => name);
         if (mapped.length > 0) setPlans(mapped);
       })
       .catch(() => {});
+  }, [loadFamily]);
 
-    (api.get<Record<string, unknown>>('/system/security/stats') as Promise<Record<string, unknown>>)
-      .catch(() => api.get<Record<string, unknown>>('/system/audit/stats') as Promise<Record<string, unknown>>)
-      .catch(() => api.get<Record<string, unknown>>('/system/dashboard/security') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const patch: Partial<SystemStats> = {};
-        const n = (keys: string[]) => { const v = keys.map((k) => d[k]).find((v) => v != null); return v != null ? Number(v) : undefined; };
-        const sa = n(['successfulAuths', 'successfulLogins', 'authSuccess']);
-        const fa = n(['failedAuths', 'failedLogins', 'authFailures']);
-        const la = n(['lockedAccounts', 'lockedUsers']);
-        const mu = n(['mfaEnabledUsers', 'mfaCount']);
-        const af = n(['auditFailures', 'auditErrors']);
-        const as_ = n(['activeSessions', 'sessionCount']);
-        const rs = n(['riskySessions', 'riskySessionCount']);
-        if (sa != null) patch.successfulAuths = sa;
-        if (fa != null) patch.failedAuths = fa;
-        if (la != null) patch.lockedAccounts = la;
-        if (mu != null) patch.mfaEnabledUsers = mu;
-        if (af != null) patch.auditFailures = af;
-        if (as_ != null) patch.activeSessions = as_;
-        if (rs != null) patch.riskySessions = rs;
-        if (Object.keys(patch).length > 0) setStats((prev) => ({ ...prev, ...patch }));
-      }).catch(() => {});
-  }, []);
+  const handleTabChange = (familyCode: string) => {
+    const label = FAMILY_LABELS[familyCode] ?? familyCode;
+    setDashTab(label);
+    loadFamily(familyCode);
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -170,35 +175,38 @@ export function SystemDashboard() {
       </div>
 
       <div className="flex flex-wrap gap-2 text-[13px]">
-        {DASH_TABS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setDashTab(t)}
-            className={cn(
-              'rounded-full border px-4 py-1.5 transition-colors',
-              t === dashTab
-                ? 'border-brand-blue bg-brand-blue text-white'
-                : 'border-[#e5e5e5] text-brand-gray-500 hover:border-brand-blue/40'
-            )}
-          >
-            {t}
-          </button>
-        ))}
+        {families.map((f) => {
+          const label = FAMILY_LABELS[f] ?? f;
+          return (
+            <button
+              key={f}
+              type="button"
+              onClick={() => handleTabChange(f)}
+              className={cn(
+                'rounded-full border px-4 py-1.5 transition-colors',
+                label === dashTab
+                  ? 'border-brand-blue bg-brand-blue text-white'
+                  : 'border-[#e5e5e5] text-brand-gray-500 hover:border-brand-blue/40'
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div>
         <p className="mb-3 text-[16px] font-bold">Platform overview</p>
         <p className="mb-4 text-[13px] text-brand-gray-500">Current platform tenant, user, campus and session health.</p>
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <StatCard title="Total tenants"   value={fmt(stats.totalTenants)}                                        variant="blue" />
-          <StatCard title="Active tenants"  value={fmt(stats.activeTenants)}                                       variant="green" />
-          <StatCard title="New tenants"     value={fmt(stats.newTenants ?? 0)}                                     variant="white" />
-          <StatCard title="Total campuses"  value={fmt(stats.totalCampuses ?? 0)}                                  variant="white" />
-          <StatCard title="Active users"    value={fmt(stats.activeUsers ?? stats.totalUsers)}                     variant="white" />
-          <StatCard title="New users"       value={fmt(stats.newUsers ?? 0)}                                       variant="white" />
-          <StatCard title="Active sessions" value={fmt(stats.activeSessions ?? 0)}                                 variant="white" />
-          <StatCard title="Risky sessions"  value={fmt(stats.riskySessions ?? 0)}                                  variant="white" />
+          <StatCard title="Total tenants"   value={fmt(stats.totalTenants)}                      variant="blue" />
+          <StatCard title="Active tenants"  value={fmt(stats.activeTenants)}                     variant="green" />
+          <StatCard title="New tenants"     value={fmt(stats.newTenants ?? 0)}                   variant="white" />
+          <StatCard title="Total campuses"  value={fmt(stats.totalCampuses ?? 0)}                variant="white" />
+          <StatCard title="Active users"    value={fmt(stats.activeUsers ?? stats.totalUsers)}   variant="white" />
+          <StatCard title="New users"       value={fmt(stats.newUsers ?? 0)}                     variant="white" />
+          <StatCard title="Active sessions" value={fmt(stats.activeSessions ?? 0)}               variant="white" />
+          <StatCard title="Risky sessions"  value={fmt(stats.riskySessions ?? 0)}                variant="white" />
         </div>
       </div>
 
@@ -216,27 +224,9 @@ export function SystemDashboard() {
                   <stop offset="100%" stopColor="#5a4fe0" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tick={{ fontSize: 11 }}
-                interval={0}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 11 }}
-                width={40}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="#5a4fe0"
-                strokeWidth={2}
-                fill="url(#sysFill)"
-              />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11 }} interval={0} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={40} />
+              <Area type="monotone" dataKey="value" stroke="#5a4fe0" strokeWidth={2} fill="url(#sysFill)" />
             </AreaChart>
           </ChartContainer>
         </div>
@@ -272,8 +262,8 @@ export function SystemDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="Trial Tenants"     value={fmt(stats.trialTenants)}    variant="white" />
-        <StatCard title="Overdue Payments"  value={fmt(stats.overduePayments)} variant="white" />
+        <StatCard title="Trial Tenants"    value={fmt(stats.trialTenants)}    variant="white" />
+        <StatCard title="Overdue Payments" value={fmt(stats.overduePayments)} variant="white" />
         <div className="rounded-[14px] bg-white p-5">
           <p className="text-[14px] text-brand-gray-600">Plan Distribution</p>
           <div className="mt-3 flex flex-col gap-2 text-[13px]">
