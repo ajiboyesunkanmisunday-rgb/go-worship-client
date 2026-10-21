@@ -73,7 +73,7 @@ function AnalyticsCard({
 }
 
 export function Analytics() {
-  const [counts, setCounts] = useState({ upcoming: 5, registered: 9, past: 4 });
+  const [counts, setCounts] = useState(USE_LIVE_API ? { upcoming: 0, registered: 0, past: 0 } : { upcoming: 5, registered: 9, past: 4 });
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
