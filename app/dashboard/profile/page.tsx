@@ -5,7 +5,7 @@ import { ProfileImageSection } from '@/components/profile/profile-image';
 import { SecurityLogin } from '@/components/profile/security-login';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types/user';
-import { getProfile } from '@/lib/api/auth';
+import { getProfile, listSessions, revokeSession, type SessionInfo } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
@@ -37,6 +37,8 @@ const emptyProfile: UserProfile = {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile>(USE_LIVE_API ? emptyProfile : dummyUser);
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -62,7 +64,18 @@ export default function ProfilePage() {
         const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
         if (loc) setUser((prev) => ({ ...prev, location: prev.location || loc }));
       }).catch(() => {});
+    listSessions().then((data) => {
+      if (Array.isArray(data)) setSessions(data);
+    }).catch(() => {});
   }, []);
+
+  function handleRevoke(id: string) {
+    setRevokingId(id);
+    revokeSession(id)
+      .then(() => setSessions((prev) => prev.filter((s) => (s.id ?? s.sessionId) !== id)))
+      .catch(() => {})
+      .finally(() => setRevokingId(null));
+  }
 
   return (
     <div
@@ -83,7 +96,45 @@ export default function ProfilePage() {
 
       <div className="w-full rounded-[12.68px] bg-[#FBFBFB] p-6 md:p-10 lg:px-[55px] lg:py-[28px]">
         <h2 className="font-semibold text-[18px] text-[#243F84]">Active Sessions</h2>
-        <p className="mt-2 text-[13px] text-brand-gray-500">You are currently signed in on this device.</p>
+        {sessions.length === 0 ? (
+          <p className="mt-2 text-[13px] text-brand-gray-500">You are currently signed in on this device.</p>
+        ) : (
+          <div className="mt-4 flex flex-col gap-3">
+            {sessions.map((s) => {
+              const id = s.id ?? s.sessionId ?? '';
+              return (
+                <div key={id} className="flex items-center justify-between rounded-[8px] border border-[#e8e8e8] bg-white px-4 py-3">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] font-medium text-[#1a1a1a]">
+                        {s.deviceInfo || 'Unknown device'}
+                      </span>
+                      {s.current && (
+                        <span className="rounded-full bg-[#e7f7ee] px-2 py-0.5 text-[11px] font-medium text-[#34a853]">
+                          This device
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[12px] text-brand-gray-500">
+                      {s.ipAddress ? `${s.ipAddress} · ` : ''}
+                      {s.lastActive ? `Last active ${s.lastActive}` : s.createdAt ? `Started ${s.createdAt}` : ''}
+                    </span>
+                  </div>
+                  {!s.current && (
+                    <button
+                      type="button"
+                      disabled={revokingId === id}
+                      onClick={() => handleRevoke(id)}
+                      className="rounded-[6px] border border-[#eb0000] px-3 py-1.5 text-[12px] font-medium text-[#eb0000] transition-opacity disabled:opacity-50"
+                    >
+                      {revokingId === id ? 'Revoking…' : 'Revoke'}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <ProfileActions />
