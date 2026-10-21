@@ -19,10 +19,9 @@ import {
   NativeSelectOption,
 } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
-import { getTenantBranding } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
+import { useSiteContext } from '@/lib/site-context';
 
 /**
  * Required-ness follows the red asterisks in the design: First Name, Last
@@ -77,14 +76,9 @@ export function AccountDetailsForm({ onSuccess }: Props) {
     'signup-account-details',
     {}
   );
-  const [currentChurch, setCurrentChurch] = useState(USE_LIVE_API ? '' : 'Celebration Church Canada');
-
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    getTenantBranding().then((b) => {
-      if (b.organizationName) setCurrentChurch(b.organizationName);
-    }).catch(() => {});
-  }, []);
+  const { context } = useSiteContext();
+  const currentChurch =
+    context?.branding?.organizationName ?? context?.displayName ?? 'Celebration Church Canada';
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),

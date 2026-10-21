@@ -279,15 +279,8 @@ function SignInFormInner({
         )}
 
         <div className={`flex flex-col gap-2 ${flat ? 'items-center text-center' : 'items-start text-left lg:items-center lg:text-center'}`}>
-          <h1 className={`flex items-center gap-2 font-bold ${flat ? 'text-[32px] -tracking-[0.02em] lg:text-[38px]' : 'text-[28px] -tracking-[0.03em] lg:text-[40px]'}`}>
-            Welcome Back
-            <Image
-              src="/auth/wave.png"
-              alt=""
-              width={32}
-              height={32}
-              className="size-[28px] lg:size-[32px]"
-            />
+          <h1 className={`font-bold ${flat ? 'text-[32px] -tracking-[0.02em] lg:text-[38px]' : 'text-[28px] -tracking-[0.03em] lg:text-[40px]'}`}>
+            Welcome Back👋
           </h1>
           <p className={`max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px] ${flat ? 'text-brand-black/85' : ''}`}>
             {subtitleText}
