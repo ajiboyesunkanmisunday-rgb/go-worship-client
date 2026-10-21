@@ -66,10 +66,10 @@ export default function MinistryCommunicationPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Communication</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Messages" value={String(messages.length)} variant="white" subtitle="12% from last week" />
-        <StatCard title="Active Recipients" value={activeRecipients} variant="green" subtitle="5% from last week" />
-        <StatCard title="Unread Messages" value={String(unreadCount)} variant="white" subtitle="Click here to create group" />
-        <StatCard title="Scheduled" value={String(scheduledCount)} variant="white" subtitle="Click here to create group" />
+        <StatCard title="Total Messages" value={String(messages.length)} variant="white" />
+        <StatCard title="Active Recipients" value={activeRecipients} variant="green" />
+        <StatCard title="Unread Messages" value={String(unreadCount)} variant="white" />
+        <StatCard title="Scheduled" value={String(scheduledCount)} variant="white" />
         <ActionCard
           variant="blue"
           href="/ministry/communication/new"
