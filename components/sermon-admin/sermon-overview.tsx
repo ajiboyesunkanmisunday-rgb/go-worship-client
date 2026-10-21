@@ -128,8 +128,24 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
             Edit Sermon
           </Button>
           <Button asChild size="lg" variant="outline" className="h-[52px] w-full">
-            <button type="button" onClick={() => router.push(back)}>
-              Unpublished Sermon
+            <button
+              type="button"
+              onClick={() => {
+                if (USE_LIVE_API && id) {
+                  const action = sermon.status.toUpperCase() === 'PUBLISHED' ? 'unpublish' : 'publish';
+                  (api.patch(`/tenant/admin/content/sermons/${id}/${action}`, {}) as Promise<unknown>)
+                    .then(() => {
+                      setSermon((prev) => ({
+                        ...prev,
+                        status: action === 'publish' ? 'Published' : 'Draft',
+                      }));
+                    })
+                    .catch(() => {});
+                }
+                router.push(back);
+              }}
+            >
+              {sermon.status.toUpperCase() === 'PUBLISHED' ? 'Unpublish Sermon' : 'Publish Sermon'}
             </button>
           </Button>
         </div>

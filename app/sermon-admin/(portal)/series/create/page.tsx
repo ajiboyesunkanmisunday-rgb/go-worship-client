@@ -22,10 +22,10 @@ export default function SermonAdminAddSeriesPage() {
     e.preventDefault();
     if (USE_LIVE_API) {
       const fd = new FormData(e.currentTarget);
+      // SeriesRequest schema: title, description (no name/status fields)
       const payload = {
-        name: String(fd.get('name') ?? ''),
+        title: String(fd.get('name') ?? ''),
         description: String(fd.get('description') ?? ''),
-        status: String(fd.get('status') ?? 'Draft'),
       };
       try {
         setSubmitting(true);

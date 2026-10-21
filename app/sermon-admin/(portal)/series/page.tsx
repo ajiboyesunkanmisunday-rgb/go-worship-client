@@ -88,8 +88,8 @@ export default function SermonAdminSeriesPage() {
           variant={s.status === 'Published' ? 'view' : 'edit'}
           href={
             s.status === 'Published'
-              ? `/sermon-admin/sermons/${s.id || i + 1}`
-              : `/sermon-admin/sermons/${s.id || i + 1}/edit`
+              ? `/sermon-admin/series/${s.id || i + 1}`
+              : `/sermon-admin/series/${s.id || i + 1}/edit`
           }
         />
         {USE_LIVE_API && s.id && (s.status === 'Published' || s.status === 'Draft') && (

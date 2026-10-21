@@ -175,11 +175,10 @@ export function SermonForm({
       const fd = new FormData(e.currentTarget);
       const payload = {
         title: fd.get('title') as string,
-        speaker: fd.get('speaker') as string,
+        speakerName: fd.get('speaker') as string,
         sermonDate: fd.get('date') as string,
         description: fd.get('description') as string,
         seriesId: fd.get('series') as string || undefined,
-        videoUrl: fd.get('link') as string || undefined,
       };
       try {
         if (isEdit && id) {
