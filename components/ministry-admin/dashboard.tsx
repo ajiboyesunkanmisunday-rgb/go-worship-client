@@ -74,7 +74,7 @@ export function GroupLeaderDashboard() {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
     }).catch(() => {});
-    getUnifiedDashboard('TENANT').then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'ENGAGEMENT').then((s) => { if (s) setStats(s); }).catch(() => {});
     getTenantEvents().then((events) => {
       const mapped: EventRow[] = events.slice(0, 5).map((e: TenantEvent) => ({
         name: e.name,
@@ -98,9 +98,9 @@ export function GroupLeaderDashboard() {
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Total Events" value={stats ? String(stats.totalEvents) : (USE_LIVE_API ? '0' : '24')} variant="purple" />
-        <StatCard title="Total Registrations" value={stats ? String(stats.totalMembers) : (USE_LIVE_API ? '0' : '43')} />
+        <StatCard title="Total Registrations" value={stats ? String(stats.totalRegistrations ?? 0) : (USE_LIVE_API ? '0' : '43')} />
         <StatCard title="Upcoming Events" value={stats ? String(stats.upcomingEvents) : (USE_LIVE_API ? '0' : '15')} />
-        <StatCard title="Total Checkin" value={USE_LIVE_API ? '0' : '10'} />
+        <StatCard title="Total Checkin" value={stats ? String(stats.checkedIn ?? 0) : (USE_LIVE_API ? '0' : '10')} />
       </div>
 
       <EventsTable title="Recent Events" rows={recentEvents} />

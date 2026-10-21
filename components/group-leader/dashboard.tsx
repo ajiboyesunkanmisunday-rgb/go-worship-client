@@ -71,7 +71,7 @@ export function GroupLeaderDashboard() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => {});
-    getUnifiedDashboard('TENANT').then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'TENANT_OPERATIONS').then((s) => { if (s) setStats(s); }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -104,9 +104,9 @@ export function GroupLeaderDashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : (USE_LIVE_API ? '0' : '24')} variant="blue" />
-        <StatCard title="Total Member" value={stats ? String(stats.totalMembers) : (USE_LIVE_API ? String(members.length) : '15')} variant="white" />
-        <StatCard title="New Members" value={USE_LIVE_API ? '0' : '15'} variant="white" />
-        <StatCard title="Recent Attendance" value={USE_LIVE_API ? '0' : '10'} variant="white" />
+        <StatCard title="Total Member" value={stats ? String(stats.totalMembers || stats.totalUsers) : (USE_LIVE_API ? String(members.length) : '15')} variant="white" />
+        <StatCard title="New Members" value={stats ? String(stats.newMembers ?? stats.newUsers ?? 0) : (USE_LIVE_API ? '0' : '15')} variant="white" />
+        <StatCard title="Recent Attendance" value={stats ? String(stats.attendanceRecords ?? 0) : (USE_LIVE_API ? '0' : '10')} variant="white" />
       </div>
 
       <DataPanel

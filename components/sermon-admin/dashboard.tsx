@@ -58,7 +58,7 @@ export function SermonAdminDashboard() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getUnifiedDashboard('TENANT').then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'CONTENT').then((s) => { if (s) setStats(s); }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);

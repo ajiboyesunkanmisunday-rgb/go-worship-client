@@ -61,13 +61,20 @@ function sectionSeries(sections: R[], sectionType: string): { label: string; val
 }
 
 export type UnifiedDashboardStats = {
-  /* tenant/ministry */
+  /* tenant/ministry — TENANT_OPERATIONS family */
   totalGiving: string;
   totalMembers: number;
   totalGroups: number;
   totalEvents: number;
   upcomingEvents: number;
-  /* platform overview (zero for non-platform responses) */
+  newMembers?: number;
+  publishedSermons?: number;
+  attendanceRecords?: number;
+  /* engagement — ENGAGEMENT family */
+  totalRegistrations?: number;
+  checkedIn?: number;
+  uniqueAttendees?: number;
+  /* platform overview — PLATFORM family */
   totalTenants: number;
   activeTenants: number;
   newTenants?: number;
@@ -77,7 +84,7 @@ export type UnifiedDashboardStats = {
   newUsers?: number;
   activeSessions?: number;
   riskySessions?: number;
-  /* security (only populated for PLATFORM family) */
+  /* security */
   successfulAuths?: number;
   failedAuths?: number;
   lockedAccounts?: number;
@@ -144,7 +151,14 @@ export async function getUnifiedDashboard(
       adminDisplayName = str(context['userDisplayName']);
     }
 
+    /* Additional section-extracted fields */
+    let newMembers = 0, publishedSermons = 0, attendanceRecords = 0;
+    let totalRegistrations = 0, checkedIn = 0, uniqueAttendees = 0;
+    /* tenant-level event/member totals (from TENANT_OPERATIONS or ENGAGEMENT family) */
+    let tenantTotalEvents = 0, tenantUpcomingEvents = 0, tenantTotalMembers = 0;
+
     if (isSectionBased) {
+      // PLATFORM family sections
       totalTenants    = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'TOTAL_TENANTS');
       activeTenants   = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'ACTIVE_TENANTS');
       newTenants      = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'NEW_TENANTS');
@@ -154,17 +168,56 @@ export async function getUnifiedDashboard(
       activeSessions  = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'ACTIVE_SESSIONS');
       riskySessions   = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'RISKY_SESSIONS');
 
-      successfulAuths = sectionMetric(sections, 'SECURITY', 'SUCCESSFUL_AUTHENTICATIONS');
-      failedAuths     = sectionMetric(sections, 'SECURITY', 'FAILED_AUTHENTICATIONS');
-      lockedAccounts  = sectionMetric(sections, 'SECURITY', 'LOCKED_ACCOUNTS');
-      mfaEnabledUsers = sectionMetric(sections, 'SECURITY', 'MFA_ENABLED_USERS');
-      auditFailures   = sectionMetric(sections, 'SECURITY', 'AUDIT_FAILURES');
+      // SECURITY section (present in PLATFORM and SECURITY families)
+      successfulAuths = sectionMetric(sections, 'SECURITY', 'SUCCESSFUL_AUTHENTICATIONS')
+        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'SUCCESSFUL_AUTHENTICATIONS');
+      failedAuths     = sectionMetric(sections, 'SECURITY', 'FAILED_AUTHENTICATIONS')
+        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'FAILED_AUTHENTICATIONS');
+      lockedAccounts  = sectionMetric(sections, 'SECURITY', 'LOCKED_ACCOUNTS')
+        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'LOCKED_ACCOUNTS');
+      mfaEnabledUsers = sectionMetric(sections, 'SECURITY', 'MFA_ENABLED_USERS')
+        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'MFA_ENABLED_USERS');
+      auditFailures   = sectionMetric(sections, 'SECURITY', 'AUDIT_FAILURES')
+        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'AUDIT_FAILURES');
 
       totalUsers = totalTenants > 0
         ? sectionMetric(sections, 'TENANTS', 'ACTIVE_USERS') || activeUsers
         : activeUsers;
 
-      trend = sectionSeries(sections, 'TENANT_GROWTH');
+      // TENANT_OPERATIONS family: OVERVIEW section
+      const ovActiveUsers  = sectionMetric(sections, 'OVERVIEW', 'ACTIVE_USERS');
+      const ovNewUsers     = sectionMetric(sections, 'OVERVIEW', 'NEW_USERS');
+      const ovUpcoming     = sectionMetric(sections, 'OVERVIEW', 'UPCOMING_EVENTS');
+      const ovAttendance   = sectionMetric(sections, 'OVERVIEW', 'ATTENDANCE_RECORDS');
+      const ovSermons      = sectionMetric(sections, 'OVERVIEW', 'PUBLISHED_SERMONS');
+      if (ovActiveUsers)  tenantTotalMembers = ovActiveUsers;
+      if (ovNewUsers)     newMembers = ovNewUsers;
+      if (ovUpcoming)     tenantUpcomingEvents = ovUpcoming;
+      if (ovAttendance)   attendanceRecords = ovAttendance;
+      if (ovSermons)      publishedSermons = ovSermons;
+
+      // ENGAGEMENT family: EVENTS section
+      const engEvents     = sectionMetric(sections, 'EVENTS', 'EVENTS_IN_PERIOD');
+      const engUpcoming   = sectionMetric(sections, 'EVENTS', 'UPCOMING_EVENTS');
+      const engAttendance = sectionMetric(sections, 'EVENTS', 'ATTENDANCE_RECORDS')
+        || sectionMetric(sections, 'ATTENDANCE', 'ATTENDANCE_RECORDS');
+      if (engEvents)    tenantTotalEvents = engEvents;
+      if (engUpcoming)  tenantUpcomingEvents = tenantUpcomingEvents || engUpcoming;
+      if (engAttendance) attendanceRecords = attendanceRecords || engAttendance;
+      totalRegistrations = sectionMetric(sections, 'EVENTS', 'REGISTRATIONS')
+        || sectionMetric(sections, 'EVENT_REGISTRATIONS', 'REGISTRATIONS');
+      checkedIn       = sectionMetric(sections, 'EVENTS', 'CHECKED_IN')
+        || sectionMetric(sections, 'ATTENDANCE', 'CHECKED_IN');
+      uniqueAttendees = sectionMetric(sections, 'EVENTS', 'UNIQUE_ATTENDEES')
+        || sectionMetric(sections, 'ATTENDANCE', 'UNIQUE_ATTENDEES');
+
+      // CONTENT family: CONTENT / SERMONS sections
+      const contentSermons = sectionMetric(sections, 'CONTENT', 'PUBLISHED_SERMONS')
+        || sectionMetric(sections, 'SERMONS', 'PUBLISHED_SERMONS');
+      if (contentSermons) publishedSermons = contentSermons;
+
+      const trendSeries = sectionSeries(sections, 'TENANT_GROWTH');
+      trend = trendSeries.length ? trendSeries : sectionSeries(sections, 'EVENTS');
     } else {
       totalTenants  = num(fieldOf(d, ['totalTenants', 'tenantCount', 'tenants']));
       activeTenants = num(fieldOf(d, ['activeTenants', 'activeCount']));
@@ -181,12 +234,23 @@ export async function getUnifiedDashboard(
         : [];
     }
 
+    const flatTotalMembers = num(fieldOf(d, ['totalMembers', 'memberCount', 'members', 'totalCustomers']));
+    const flatTotalGroups  = num(fieldOf(d, ['totalGroups', 'groupCount', 'groups']));
+    const flatTotalEvents  = num(fieldOf(d, ['totalEvents', 'eventCount', 'events']));
+    const flatUpcoming     = num(fieldOf(d, ['upcomingEvents', 'upcoming']));
+
     return {
       totalGiving,
-      totalMembers:   num(fieldOf(d, ['totalMembers', 'memberCount', 'members', 'totalCustomers'])),
-      totalGroups:    num(fieldOf(d, ['totalGroups', 'groupCount', 'groups'])),
-      totalEvents:    num(fieldOf(d, ['totalEvents', 'eventCount', 'events'])),
-      upcomingEvents: num(fieldOf(d, ['upcomingEvents', 'upcoming'])),
+      totalMembers:   tenantTotalMembers || flatTotalMembers,
+      totalGroups:    flatTotalGroups,
+      totalEvents:    tenantTotalEvents || flatTotalEvents,
+      upcomingEvents: tenantUpcomingEvents || flatUpcoming,
+      newMembers:     newMembers || undefined,
+      publishedSermons: publishedSermons || undefined,
+      attendanceRecords: attendanceRecords || undefined,
+      totalRegistrations: totalRegistrations || undefined,
+      checkedIn:      checkedIn || undefined,
+      uniqueAttendees: uniqueAttendees || undefined,
       totalTenants, activeTenants, newTenants, totalCampuses,
       totalUsers, activeUsers, newUsers,
       activeSessions, riskySessions,
