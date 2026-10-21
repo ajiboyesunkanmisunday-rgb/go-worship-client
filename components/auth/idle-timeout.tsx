@@ -39,7 +39,7 @@ const ACTIVITY_EVENTS = [
   'wheel',
 ] as const;
 
-const CIRCUMFERENCE = 2 * Math.PI * 22; // r=22 SVG ring
+const CIRCUMFERENCE = 2 * Math.PI * 50; // r=50 SVG ring
 
 export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string }) {
   const router = useRouter();
@@ -161,29 +161,29 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
       <div className="mx-4 flex w-full max-w-[380px] flex-col items-center gap-6 rounded-[20px] bg-white p-8 text-center shadow-2xl">
         {/* Animated countdown ring */}
         <div className="relative flex items-center justify-center">
-          <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
+          <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
             <circle
-              cx="28"
-              cy="28"
-              r="22"
+              cx="60"
+              cy="60"
+              r="50"
               fill="none"
               stroke="#e5e7eb"
-              strokeWidth="4"
+              strokeWidth="6"
             />
             <circle
-              cx="28"
-              cy="28"
-              r="22"
+              cx="60"
+              cy="60"
+              r="50"
               fill="none"
               stroke="#1e40af"
-              strokeWidth="4"
+              strokeWidth="6"
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
               strokeDashoffset={strokeDashoffset}
               style={{ transition: 'stroke-dashoffset 0.5s linear' }}
             />
           </svg>
-          <span className="absolute text-[18px] font-bold tabular-nums text-[#1e40af]">
+          <span className="absolute text-[28px] font-bold tabular-nums text-[#1e40af]">
             {secondsLeft}
           </span>
         </div>
@@ -191,8 +191,8 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
         <div className="flex flex-col gap-2">
           <h2 className="text-[22px] font-bold">Still there?</h2>
           <p className="text-[14px] text-[#555]">
-            You&apos;ll be signed out in {secondsLeft} second
-            {secondsLeft !== 1 ? 's' : ''} due to inactivity.
+            You&apos;ve been inactive for a while. For your security you&apos;ll be signed out in{' '}
+            {secondsLeft} second{secondsLeft !== 1 ? 's' : ''}.
           </p>
         </div>
 

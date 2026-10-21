@@ -221,7 +221,7 @@ function SecurityPanel() {
     return <MessageSquare className="size-5 text-[#555]" />;
   };
 
-  const allMethods = ['TOTP', 'OTP_EMAIL', 'OTP_SMS'];
+  const allMethods = ['OTP_EMAIL', 'TOTP', 'OTP_SMS'];
 
   return (
     <div className="flex flex-col gap-6">
