@@ -119,11 +119,11 @@ export const verifyLoginMfa = (payload: MfaVerifyRequest) =>
 
 /* ---------------- Password recovery ---------------- */
 
-export const forgotPassword = (email: string, captchaToken: string) =>
-  api.post('/auth/forgot-password', { email, captchaToken });
+export const forgotPassword = (email: string, captchaToken: string, tenantId?: string | null) =>
+  authRoute<{ ok: true }>('/bff/auth/forgot-password', { email, captchaToken, tenantId });
 
-export const resetPassword = (token: string, newPassword: string) =>
-  api.post('/auth/reset-password', { token, newPassword });
+export const resetPassword = (token: string, newPassword: string, tenantId?: string | null) =>
+  authRoute<{ ok: true }>('/bff/auth/reset-password', { token, newPassword, tenantId });
 
 export const changePassword = (
   currentPassword: string,
