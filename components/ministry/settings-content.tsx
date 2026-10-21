@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { TwoFactorModal } from '@/components/ministry/two-factor-modal';
-import { PencilLine, Upload, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
+import { PencilLine, Upload, Trash2, CheckCircle2, Loader2, Plus, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ const TABS = [
   'Notifications',
   'Subscription',
   'Security',
+  'Campuses',
 ];
 
 function Field({
@@ -651,6 +652,205 @@ function PaymentBillingTab() {
   );
 }
 
+/* ---- Campuses Tab ---- */
+
+type Campus = { id: string; code: string; name: string; address: string; active: boolean };
+
+const CAMPUS_MOCK: Campus[] = [
+  { id: '1', code: 'HQ', name: 'Main Campus', address: '100 Church Street, Lagos', active: true },
+  { id: '2', code: 'ABJ', name: 'Abuja Branch', address: '45 Wuse Zone 5, Abuja', active: true },
+];
+
+function CampusesTab() {
+  const [campuses, setCampuses] = useState<Campus[]>(USE_LIVE_API ? [] : CAMPUS_MOCK);
+  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [adding, setAdding] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState({ code: '', name: '', address: '' });
+
+  useEffect(() => {
+    if (!USE_LIVE_API) { setLoading(false); return; }
+    (api.get<unknown>('/tenant/admin/campuses') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        const mapped: Campus[] = arr.map((c) => ({
+          id: String(c['id'] ?? c['campusId'] ?? ''),
+          code: String(c['code'] ?? ''),
+          name: String(c['name'] ?? c['campusName'] ?? ''),
+          address: String(c['address'] ?? ''),
+          active: c['active'] !== false,
+        })).filter((c) => c.id || c.name);
+        if (mapped.length > 0) setCampuses(mapped);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const openAdd = () => { setForm({ code: '', name: '', address: '' }); setAdding(true); setEditId(null); };
+  const openEdit = (c: Campus) => { setForm({ code: c.code, name: c.name, address: c.address }); setEditId(c.id); setAdding(false); };
+  const cancel = () => { setAdding(false); setEditId(null); };
+
+  const save = async () => {
+    if (!USE_LIVE_API) {
+      if (adding) {
+        setCampuses((prev) => [...prev, { id: String(Date.now()), ...form, active: true }]);
+      } else if (editId) {
+        setCampuses((prev) => prev.map((c) => c.id === editId ? { ...c, ...form } : c));
+      }
+      cancel();
+      return;
+    }
+    try {
+      if (adding) {
+        const res = await (api.post<unknown>('/tenant/admin/campuses', form) as Promise<unknown>);
+        type R = Record<string, unknown>;
+        const d = (res ?? {}) as R;
+        const newId = String(d['id'] ?? d['campusId'] ?? Date.now());
+        setCampuses((prev) => [...prev, { id: newId, ...form, active: true }]);
+      } else if (editId) {
+        await (api.put(`/tenant/admin/campuses/${editId}`, form) as Promise<unknown>);
+        setCampuses((prev) => prev.map((c) => c.id === editId ? { ...c, ...form } : c));
+      }
+      cancel();
+    } catch { cancel(); }
+  };
+
+  const deleteCampus = async (id: string) => {
+    if (!USE_LIVE_API) { setCampuses((prev) => prev.filter((c) => c.id !== id)); return; }
+    try {
+      await (api.del(`/tenant/admin/campuses/${id}`) as Promise<unknown>);
+      setCampuses((prev) => prev.filter((c) => c.id !== id));
+    } catch {}
+  };
+
+  const activeForm = adding || editId !== null;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[14px] font-semibold">Campus Locations</p>
+          <p className="text-[12px] text-brand-gray-500">Manage the physical campuses for your organisation.</p>
+        </div>
+        {!activeForm && (
+          <button
+            type="button"
+            onClick={openAdd}
+            className="flex items-center gap-1.5 rounded-[8px] bg-brand-blue px-4 py-2 text-[13px] font-medium text-white hover:opacity-90"
+          >
+            <Plus className="size-3.5" /> Add Campus
+          </button>
+        )}
+      </div>
+
+      {activeForm && (
+        <div className="rounded-[12px] border border-[#e5e7eb] bg-[#f9fafb] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[13px] font-semibold">{adding ? 'New Campus' : 'Edit Campus'}</p>
+            <button type="button" onClick={cancel} aria-label="Cancel"><X className="size-4 text-brand-gray-400" /></button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-[11px] text-brand-gray-500">Name*</label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Main Campus"
+                className="h-[40px] text-[13px]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-brand-gray-500">Code*</label>
+              <Input
+                value={form.code}
+                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
+                placeholder="HQ"
+                maxLength={10}
+                className="h-[40px] text-[13px]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-brand-gray-500">Address</label>
+              <Input
+                value={form.address}
+                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                placeholder="100 Church Street"
+                className="h-[40px] text-[13px]"
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={save}
+              disabled={!form.name || !form.code}
+              className="rounded-[7px] bg-brand-blue px-4 py-1.5 text-[13px] font-medium text-white disabled:opacity-50 hover:opacity-90"
+            >
+              {adding ? 'Create' : 'Save'}
+            </button>
+            <button type="button" onClick={cancel} className="rounded-[7px] border border-[#e5e7eb] px-4 py-1.5 text-[13px] text-brand-gray-500 hover:bg-[#f4f4f4]">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center gap-2 py-6 text-[13px] text-brand-gray-400">
+          <Loader2 className="size-4 animate-spin" /> Loading campuses…
+        </div>
+      ) : campuses.length === 0 ? (
+        <p className="py-6 text-center text-[13px] text-brand-gray-400">No campuses yet. Add your first campus above.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-[12px] border border-[#ededed]">
+          <table className="w-full min-w-[480px] border-collapse text-[12px]">
+            <thead>
+              <tr className="border-b border-[#f0f0f0] bg-[#fafafa] text-brand-gray-500">
+                <th className="px-4 py-3 text-left font-medium">Name</th>
+                <th className="px-4 py-3 text-left font-medium">Code</th>
+                <th className="px-4 py-3 text-left font-medium">Address</th>
+                <th className="px-4 py-3 text-left font-medium">Status</th>
+                <th className="px-4 py-3 text-left font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {campuses.map((c) => (
+                <tr key={c.id} className="border-b border-[#f8f8f8] last:border-0 hover:bg-[#fafafa]">
+                  <td className="px-4 py-3 font-medium">{c.name}</td>
+                  <td className="px-4 py-3 text-brand-gray-500">{c.code}</td>
+                  <td className="px-4 py-3 text-brand-gray-500">{c.address || '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium', c.active ? 'bg-[#eafaf0] text-[#22a45d]' : 'bg-[#f5f5f5] text-brand-gray-500')}>
+                      {c.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => openEdit(c)} className="text-brand-gray-400 hover:text-brand-blue">
+                        <PencilLine className="size-3.5" />
+                      </button>
+                      <button type="button" onClick={() => deleteCampus(c.id)} className="text-brand-gray-400 hover:text-[#eb0000]">
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabContent({ tab }: { tab: string }) {
   if (tab === 'Profile') {
     return <ProfileTab />;
@@ -665,6 +865,9 @@ function TabContent({ tab }: { tab: string }) {
   }
   if (tab === 'Payment & Billing') {
     return <PaymentBillingTab />;
+  }
+  if (tab === 'Campuses') {
+    return <CampusesTab />;
   }
   return (
     <div className="rounded-[14px] bg-white p-6">
