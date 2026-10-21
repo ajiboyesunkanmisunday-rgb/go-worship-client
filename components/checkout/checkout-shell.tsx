@@ -2,9 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-import { getTenantBranding } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
+import { useSiteContext } from '@/lib/site-context';
 
 type CheckoutShellProps = {
   children?: React.ReactNode;
@@ -21,15 +19,9 @@ type CheckoutShellProps = {
  * - Right: centered content column (the screen's card).
  */
 export function CheckoutShell({ children, contentClassName }: CheckoutShellProps) {
-  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church Canada');
-  const [logoUrl, setLogoUrl] = useState(USE_LIVE_API ? '' : '/auth/cci-logo-white.svg');
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    getTenantBranding().then((b) => {
-      if (b.organizationName) setOrgName(b.organizationName);
-      if (b.logoUrl) setLogoUrl(b.logoUrl);
-    }).catch(() => {});
-  }, []);
+  const { context } = useSiteContext();
+  const orgName = context?.branding?.organizationName ?? context?.displayName ?? 'Celebration Church Canada';
+  const logoUrl = context?.branding?.logoUrl ?? '';
   return (
     <main className="relative flex min-h-screen w-full flex-col items-stretch gap-6 bg-[#f7f7ff] px-4 py-4 lg:flex-row lg:items-center lg:gap-8 lg:px-6 lg:py-6">
       {/* Left: hero image with dark overlay + logo + headline */}
@@ -45,14 +37,22 @@ export function CheckoutShell({ children, contentClassName }: CheckoutShellProps
         />
         <div className="absolute inset-0 bg-black/40" />
 
-        <Image
-          src={logoUrl}
-          alt={orgName}
-          width={200}
-          height={36}
-          unoptimized
-          className="absolute top-8 left-8 z-10 w-[38%] max-w-[200px]"
-        />
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoUrl}
+            alt={orgName}
+            className="absolute top-8 left-8 z-10 w-[38%] max-w-[200px] object-contain"
+          />
+        ) : (
+          <Image
+            src="/auth/cci-logo-white.svg"
+            alt={orgName}
+            width={200}
+            height={36}
+            className="absolute top-8 left-8 z-10 w-[38%] max-w-[200px]"
+          />
+        )}
 
         <div className="absolute inset-x-0 bottom-16 z-10 flex flex-col items-center gap-4 px-10 text-center text-white">
           <h2 className="text-[36px] font-bold leading-[1.08] -tracking-[0.02em] xl:text-[48px]">

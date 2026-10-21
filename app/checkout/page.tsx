@@ -54,6 +54,7 @@ export default function CheckoutGivingPage() {
   const orgName = config.tenantDisplayName ?? 'Celebration Church';
   const currencies = config.currencies?.length ? config.currencies : DEFAULT_CURRENCIES;
   const funds = config.funds?.length ? config.funds : null;
+  const campuses = config.campuses?.length ? config.campuses : null;
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -78,6 +79,7 @@ export default function CheckoutGivingPage() {
     const currency = String(fd.get('currency') ?? 'USD');
     const amount = parseFloat(String(fd.get('amount') ?? '0'));
     const fundId = String(fd.get('fundId') ?? '') || undefined;
+    const campusId = String(fd.get('campusId') ?? '') || undefined;
 
     if (!donorEmail || amount <= 0) {
       setError('Please fill in your email address and a valid amount.');
@@ -92,6 +94,7 @@ export default function CheckoutGivingPage() {
         currency,
         amount,
         fundId,
+        campusId,
         donorType,
       });
 
@@ -180,6 +183,17 @@ export default function CheckoutGivingPage() {
               placeholder="Enter email address"
             />
           </Field>
+
+          {campuses && (
+            <Field label="Campus">
+              <NativeSelect name="campusId" className={INPUT_CLASS} defaultValue="">
+                <NativeSelectOption value="">Select a campus</NativeSelectOption>
+                {campuses.map((c) => (
+                  <NativeSelectOption key={c.id} value={c.id}>{c.name}</NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+          )}
 
           <Field label="Choose Currency">
             <NativeSelect name="currency" className={INPUT_CLASS} defaultValue={currencies[0]}>

@@ -43,9 +43,11 @@ const schema = z.object({
   fullName: z.string().optional(),
   email: z.email({ message: 'Please enter a valid email address' }),
   donorDetails: z.string().optional(),
+  campusId: z.string().optional(),
   currency: z.string().optional(),
   amount: z.string().min(1, { message: 'Please enter an amount' }),
   purpose: z.string().min(1, { message: 'Please select a purpose' }),
+  note: z.string().optional(),
 });
 
 type Schema = z.infer<typeof schema>;
@@ -62,9 +64,11 @@ export function DonateForm() {
       fullName: '',
       email: '',
       donorDetails: '',
+      campusId: '',
       currency: 'USD',
       amount: '',
       purpose: '',
+      note: '',
     },
   });
 
@@ -103,6 +107,8 @@ export function DonateForm() {
       // 1. Create the donation record
       const donation = await createCustomerDonation({
         fundId: data.purpose || undefined,
+        campusId: data.campusId || undefined,
+        note: data.note || undefined,
         amount,
         currency,
       });
@@ -248,6 +254,27 @@ export function DonateForm() {
               )}
             />
 
+            {(config?.campuses?.length ?? 0) > 0 && (
+              <FormField
+                control={form.control}
+                name="campusId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[15px] font-medium">Campus</FormLabel>
+                    <FormControl>
+                      <NativeSelect className="h-[52px]" {...field}>
+                        <NativeSelectOption value="">Select a campus</NativeSelectOption>
+                        {config!.campuses!.map((c) => (
+                          <NativeSelectOption key={c.id} value={c.id}>{c.name}</NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="currency"
@@ -308,6 +335,20 @@ export function DonateForm() {
                           </>
                         )}
                     </NativeSelect>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="note"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[15px] font-medium">Note (optional)</FormLabel>
+                  <FormControl>
+                    <Input className="h-[52px]" placeholder="Add a short note" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
