@@ -53,22 +53,22 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
   const amount = payment?.amount ?? 25;
   const dateStr = payment
     ? new Date(String(payment['paidAt'] ?? payment['requestedAt'] ?? '')).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'January 12, 2025';
+    : (USE_LIVE_API ? '—' : 'January 12, 2025');
   const status = payment?.status
     ? payment.status.charAt(0).toUpperCase() + payment.status.slice(1).toLowerCase()
-    : 'Successful';
-  const reference = payment?.paymentReference ?? payment?.id ?? 'TXN-02939493';
+    : (USE_LIVE_API ? '—' : 'Successful');
+  const reference = payment?.paymentReference ?? payment?.id ?? (USE_LIVE_API ? '—' : 'TXN-02939493');
   const statusColor = status.toUpperCase() === 'SUCCEEDED' || status.toLowerCase() === 'successful' ? '#22A45D' : '#ff8d28';
 
   const donorName = payment
-    ? String(payment['donorName'] ?? payment['payerName'] ?? payment['customerName'] ?? payment['fullName'] ?? 'Aderemi Doe')
-    : 'Aderemi Doe';
+    ? String(payment['donorName'] ?? payment['payerName'] ?? payment['customerName'] ?? payment['fullName'] ?? (USE_LIVE_API ? '—' : 'Aderemi Doe'))
+    : (USE_LIVE_API ? '—' : 'Aderemi Doe');
   const donorEmail = payment
-    ? String(payment['donorEmail'] ?? payment['payerEmail'] ?? payment['customerEmail'] ?? payment['email'] ?? 'aderemidoe@email.com')
-    : 'aderemidoe@email.com';
+    ? String(payment['donorEmail'] ?? payment['payerEmail'] ?? payment['customerEmail'] ?? payment['email'] ?? (USE_LIVE_API ? '—' : 'aderemidoe@email.com'))
+    : (USE_LIVE_API ? '—' : 'aderemidoe@email.com');
   const donorPhone = payment
-    ? String(payment['donorPhone'] ?? payment['payerPhone'] ?? payment['customerPhone'] ?? payment['phone'] ?? payment['mobilePhone'] ?? '+234 812 345 6789')
-    : '+234 812 345 6789';
+    ? String(payment['donorPhone'] ?? payment['payerPhone'] ?? payment['customerPhone'] ?? payment['phone'] ?? payment['mobilePhone'] ?? (USE_LIVE_API ? '—' : '+234 812 345 6789'))
+    : (USE_LIVE_API ? '—' : '+234 812 345 6789');
 
   return (
     <SheetPage className="w-full max-w-[665px]! gap-0" backLink={returnUrl}>
@@ -154,17 +154,17 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Fund/Campaign</span>
-              <span className="text-right">{String(payment?.['purpose'] ?? 'General Offering')}</span>
+              <span className="text-right">{String(payment?.['purpose'] ?? (USE_LIVE_API ? '—' : 'General Offering'))}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Donation Type</span>
-              <span className="text-right">One-time</span>
+              <span className="text-right">{USE_LIVE_API ? (String(payment?.['donationType'] ?? '—')) : 'One-time'}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Payment Method</span>
-              <span className="text-right">{String(payment?.['gatewayType'] ?? 'Debit Card (Visa •••• 2920)')}</span>
+              <span className="text-right">{String(payment?.['gatewayType'] ?? (USE_LIVE_API ? '—' : 'Debit Card (Visa •••• 2920)'))}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">

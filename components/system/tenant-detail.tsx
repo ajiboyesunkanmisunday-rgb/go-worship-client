@@ -54,10 +54,10 @@ type Tab = (typeof TABS)[number];
 
 function buildStats(t: SystemTenant) {
   return [
-    { label: 'Admin Users', value: t.adminUsers != null ? String(t.adminUsers) : '10', bg: 'bg-[#f6f8fb]' },
-    { label: 'Church Members', value: String(t.members || 830), bg: 'bg-[#eafaf0]' },
-    { label: 'Total Giving', value: t.totalGiving ?? '$125,000', bg: 'bg-[#e9f7f5]' },
-    { label: 'Current Plan', value: t.plan || 'Enterprise', bg: 'bg-[#eef2fb]' },
+    { label: 'Admin Users', value: t.adminUsers != null ? String(t.adminUsers) : (USE_LIVE_API ? '—' : '10'), bg: 'bg-[#f6f8fb]' },
+    { label: 'Church Members', value: t.members ? String(t.members) : (USE_LIVE_API ? '—' : '830'), bg: 'bg-[#eafaf0]' },
+    { label: 'Total Giving', value: t.totalGiving || (USE_LIVE_API ? '—' : '$125,000'), bg: 'bg-[#e9f7f5]' },
+    { label: 'Current Plan', value: t.plan || (USE_LIVE_API ? '—' : 'Enterprise'), bg: 'bg-[#eef2fb]' },
   ];
 }
 
@@ -222,16 +222,16 @@ export function TenantDetail({ id }: { id: string }) {
           <div className="rounded-[14px] border border-[#eee] p-6">
             <h2 className="text-[18px] font-bold">Account Details</h2>
             <div className="mt-5 flex flex-col gap-5">
-              <DetailRow icon={Tag} label="Slug" value={tenant.slug ?? tenant.id ?? 'grace-community'} />
+              <DetailRow icon={Tag} label="Slug" value={tenant.slug ?? tenant.id ?? (USE_LIVE_API ? '—' : 'grace-community')} />
               <DetailRow
                 icon={CalendarDays}
                 label="Created"
-                value={tenant.createdAt || 'January 14, 2023'}
+                value={tenant.createdAt || (USE_LIVE_API ? '—' : 'January 14, 2023')}
               />
               <DetailRow
                 icon={CalendarDays}
                 label="Last Active"
-                value={tenant.lastActive ?? 'January 13, 2024'}
+                value={tenant.lastActive ?? (USE_LIVE_API ? '—' : 'January 13, 2024')}
               />
             </div>
           </div>
@@ -727,12 +727,12 @@ function GivingReceiptSheet({
             Giving Receipt
           </Dialog.Title>
           <div className="flex flex-col gap-3">
-            <ReceiptRow label="Donation Date" value={row?.date ?? 'January 12, 2025'} />
-            <ReceiptRow label="Amount Given" value={row?.amount ?? '$25.00'} />
-            <ReceiptRow label="Fund / Campaign" value={row?.type ?? 'General Offering'} />
-            <ReceiptRow label="Donation Type" value="One-time" />
-            <ReceiptRow label="Payment Method" value={row?.method ?? 'Debit Card'} />
-            <ReceiptRow label="Transaction ID" value={row?.id || 'TXN-02939493'} />
+            <ReceiptRow label="Donation Date" value={row?.date ?? (USE_LIVE_API ? '—' : 'January 12, 2025')} />
+            <ReceiptRow label="Amount Given" value={row?.amount ?? (USE_LIVE_API ? '—' : '$25.00')} />
+            <ReceiptRow label="Fund / Campaign" value={row?.type ?? (USE_LIVE_API ? '—' : 'General Offering')} />
+            <ReceiptRow label="Donation Type" value={USE_LIVE_API ? '—' : 'One-time'} />
+            <ReceiptRow label="Payment Method" value={row?.method ?? (USE_LIVE_API ? '—' : 'Debit Card')} />
+            <ReceiptRow label="Transaction ID" value={row?.id || (USE_LIVE_API ? '—' : 'TXN-02939493')} />
             <ReceiptRow
               label="Status"
               value={

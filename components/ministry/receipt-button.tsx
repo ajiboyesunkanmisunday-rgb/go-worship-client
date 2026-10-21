@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 /** Transaction receipt modal — makes the table's "View" action functional. */
 export function ReceiptButton({
@@ -68,11 +69,11 @@ export function ReceiptButton({
 
             <div className="flex flex-col gap-3 rounded-[10px] bg-[#f7f9fc] p-4">
               {[
-                ['Donor', name ?? 'John Christain'],
-                ['Reference', reference ?? 'GW-2025-004821'],
-                ['Date', date ?? 'June 12, 2025'],
-                ['Method', method ?? 'Bank transfer'],
-                ['Fund / Campaign', fund ?? 'General Offering'],
+                ['Donor', name ?? (USE_LIVE_API ? '—' : 'John Christain')],
+                ['Reference', reference ?? (USE_LIVE_API ? '—' : 'GW-2025-004821')],
+                ['Date', date ?? (USE_LIVE_API ? '—' : 'June 12, 2025')],
+                ['Method', method ?? (USE_LIVE_API ? '—' : 'Bank transfer')],
+                ['Fund / Campaign', fund ?? (USE_LIVE_API ? '—' : 'General Offering')],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-4">
                   <span className="text-[12px] text-brand-gray-500">{k}</span>

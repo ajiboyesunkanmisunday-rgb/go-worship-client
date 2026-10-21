@@ -444,9 +444,9 @@ function ProfileTab() {
 
   return (
     <div className="rounded-[14px] bg-white p-6">
-      <Field label="Church Name" value={branding.organizationName || 'Celebration Church Int.'} />
-      <Field label="Email" value={profile.email || 'admin@celebration.org'} />
-      <Field label="Phone number" value={profile.mobilePhone || '(+62) 821 554 - 5432'} />
+      <Field label="Church Name" value={branding.organizationName || (USE_LIVE_API ? '' : 'Celebration Church Int.')} />
+      <Field label="Email" value={profile.email || (USE_LIVE_API ? '' : 'admin@celebration.org')} />
+      <Field label="Phone number" value={profile.mobilePhone || (USE_LIVE_API ? '' : '(+62) 821 554 - 5432')} />
       <Field label="Location" value={location} />
     </div>
   );

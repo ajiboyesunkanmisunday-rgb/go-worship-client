@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ReceiptButton } from '@/components/ministry/receipt-button';
+import { USE_LIVE_API } from '@/lib/api/config';
 
 export function StatCard({
   title,
@@ -126,24 +127,24 @@ const DEFAULT_TXNS: Transaction[] = [
 ];
 
 export function TransactionsTable({
-  rows = DEFAULT_TXNS,
+  rows = USE_LIVE_API ? [] : DEFAULT_TXNS,
 }: {
   rows?: Transaction[];
 }) {
   const smartRows: SmartRow[] = rows.map((t, i) => ({
     group: t.status,
     text: [
-      t.name ?? 'John Christain',
+      t.name ?? '—',
       t.status,
-      t.date ?? 'June 12, 2025',
-      t.amount ?? '$2000',
-      t.method ?? 'Bank transfer',
+      t.date ?? '—',
+      t.amount ?? '—',
+      t.method ?? '—',
       t.type,
     ],
     cells: [
       <span key="n" className="flex items-center gap-2">
         <span className="size-6 rounded-full bg-brand-gray-200" />
-        {t.name ?? 'John Christain'}
+        {t.name ?? '—'}
       </span>,
       <span
         key="s"
@@ -154,9 +155,9 @@ export function TransactionsTable({
       >
         {t.status}
       </span>,
-      t.date ?? 'June 12, 2025',
-      t.amount ?? '$2000',
-      t.method ?? 'Bank transfer',
+      t.date ?? '—',
+      t.amount ?? '—',
+      t.method ?? '—',
       t.type,
       <ReceiptButton
         key="a"

@@ -309,11 +309,11 @@ function mapTxnStatus(s?: string): Transaction['status'] {
 function Transactions({ rows }: { rows: Transaction[] }) {
   const smartRows: SmartRow[] = rows.map((t, i) => ({
     group: t.status,
-    text: [t.name ?? 'John Christain', t.status, t.date ?? 'June 12, 2025', t.amount ?? '$2000', t.method ?? 'Bank transfer', t.type],
+    text: [t.name ?? '—', t.status, t.date ?? '—', t.amount ?? '—', t.method ?? '—', t.type],
     cells: [
       <span key="n" className="flex items-center gap-2">
         <span className="size-6 rounded-full bg-brand-gray-200" />
-        {t.name ?? 'John Christain'}
+        {t.name ?? '—'}
       </span>,
       <span
         key="s"
@@ -324,9 +324,9 @@ function Transactions({ rows }: { rows: Transaction[] }) {
       >
         {t.status}
       </span>,
-      t.date ?? 'June 12, 2025',
-      t.amount ?? '$2000',
-      t.method ?? 'Bank transfer',
+      t.date ?? '—',
+      t.amount ?? '—',
+      t.method ?? '—',
       t.type,
       <ReceiptButton key="a" highlighted={i === 0} name={t.name} date={t.date} method={t.method} fund={t.type} amount={t.amount} />,
     ],

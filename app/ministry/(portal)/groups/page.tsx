@@ -20,7 +20,7 @@ const MOCK_GROUPS: GroupRow[] = [
 function toGroupRow(g: TenantGroup): GroupRow {
   const days = g.meetingDays?.length ? g.meetingDays.join('/') : '';
   const time = g.meetingTime ?? '';
-  const schedule = [days, time].filter(Boolean).join(' at ') || g.meetingFrequency || 'Tuesdays at 6:00 PM';
+  const schedule = [days, time].filter(Boolean).join(' at ') || g.meetingFrequency || (USE_LIVE_API ? '—' : 'Tuesdays at 6:00 PM');
   return {
     id: g.id,
     name: g.name,
