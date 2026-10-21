@@ -73,14 +73,18 @@ export default function ProfilePage() {
           My Profile
         </h1>
         <p className="font-poppins font-light text-[15px] text-brand-gray-500">
-          Connect with smaller communities and grow spiritually through
-          fellowship.
+          Manage your personal details, security, and sign-in settings.
         </p>
       </div>
 
       <ProfileImageSection user={user} />
       <PersonalInfo user={user} onUpdated={(updated) => setUser((prev) => ({ ...prev, ...updated }))} />
       <SecurityLogin />
+
+      <div className="w-full rounded-[12.68px] bg-[#FBFBFB] p-6 md:p-10 lg:px-[55px] lg:py-[28px]">
+        <h2 className="font-semibold text-[18px] text-[#243F84]">Active Sessions</h2>
+        <p className="mt-2 text-[13px] text-brand-gray-500">You are currently signed in on this device.</p>
+      </div>
 
       <ProfileActions />
     </div>
