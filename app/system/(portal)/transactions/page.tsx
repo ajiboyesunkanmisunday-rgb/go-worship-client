@@ -66,7 +66,7 @@ export default function SystemTransactionsPage() {
     // Transaction list: /system/dashboard/admin/transactions and /system/transactions
     // both returned 404 in localhost HAR — disabled until correct endpoint confirmed from DO.
 
-    // Stats: /system/finance/stats and /system/transactions/summary are unconfirmed — disabled.
+    // Stats: /system/finance/stats and /system/transactions/summary not in backend API — disabled.
 
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })

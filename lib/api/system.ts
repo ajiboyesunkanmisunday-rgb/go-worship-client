@@ -124,7 +124,7 @@ export async function getSystemTenants(): Promise<SystemTenant[]> {
 }
 
 export async function getSystemTenant(_id: string): Promise<SystemTenant | null> {
-  // Endpoint unconfirmed — disabled until verified from live DO.
+  // Endpoint absent from OpenAPI spec — disabled.
   return null;
 }
 
@@ -202,7 +202,7 @@ export type SystemStats = {
 };
 
 export async function getSystemStats(): Promise<SystemStats | null> {
-  // /system/dashboard endpoint unconfirmed from live DO — disabled until verified.
+  // /system/dashboard not in backend API — only /dashboard (root) exists.
   return null;
 }
 

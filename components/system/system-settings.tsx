@@ -371,7 +371,7 @@ function SystemHealthPanel() {
   const refresh = useCallback(async () => {
     setLoading(true);
     if (USE_LIVE_API) {
-      // /system/health and /actuator/health unconfirmed from live DO — disabled.
+      // /system/health and /actuator/health not in backend API — disabled.
     }
     setCheckedAt(new Date());
     setLoading(false);

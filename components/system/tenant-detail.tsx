@@ -288,8 +288,8 @@ const MEMBERS: MemberRow[] = [
 ];
 
 async function tryGetTenantResource(_id: string, _sub: string): Promise<unknown> {
-  // All tried paths (/system/dashboard/admin/tenants/:id/:sub, /system/tenants/:id/:sub)
-  // were unconfirmed or 404 in localhost HAR — disabled until verified from live DO.
+  // No GET /system/tenants/:id endpoint in backend API spec.
+  // Available tenant paths: GET /system/tenants/:id/payment-gateways, PATCH suspend/activate, DELETE soft-delete.
   return null;
 }
 

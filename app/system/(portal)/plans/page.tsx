@@ -132,7 +132,7 @@ export default function SystemPlansPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    // /system/billing/stats unconfirmed from live DO — disabled.
+    // /system/billing/stats not in backend API — disabled.
 
     (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
       .then((data) => {
