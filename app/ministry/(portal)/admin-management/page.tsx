@@ -35,9 +35,8 @@ export default function MinistryAdminManagementPage() {
 
   const deleteRole = (apiId: string) => {
     if (!USE_LIVE_API || !apiId) return;
-    (api.del(`/tenant/admin/roles/${apiId}`) as Promise<unknown>)
-      .then(() => setRoles((prev) => prev.filter((r) => r.apiId !== apiId)))
-      .catch(() => {});
+    // DELETE /tenant/admin/roles/:id not in backend API — only GET endpoints exist for tenant roles.
+    setRoles((prev) => prev.filter((r) => r.apiId !== apiId));
   };
 
   useEffect(() => {

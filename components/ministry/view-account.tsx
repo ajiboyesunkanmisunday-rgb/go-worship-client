@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const PERMS = ['View', 'Create', 'Edit', 'Delete', 'Export'];
@@ -66,43 +65,7 @@ export function ViewAccount({ id }: { id?: string } = {}) {
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
-    (api.get<unknown>(`/tenant/admin/sub-admins/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const fmt = (raw: unknown) => {
-          const s = String(raw ?? '');
-          if (!s) return '';
-          const d = new Date(s);
-          return isNaN(d.getTime()) ? s : d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) + ' | ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        };
-        const rawPerms = d['permissions'] ?? d['roles'] ?? d['accessMatrix'];
-        let matrix: [string, boolean[]][] = DEFAULT_MATRIX;
-        if (rawPerms && typeof rawPerms === 'object' && !Array.isArray(rawPerms)) {
-          const permsObj = rawPerms as Record<string, unknown>;
-          const mapped: [string, boolean[]][] = Object.entries(permsObj).map(([mod, flags]) => {
-            const f = flags as Record<string, boolean> | boolean[];
-            const bools: boolean[] = Array.isArray(f)
-              ? (f as boolean[]).slice(0, 5)
-              : PERMS.map((p) => !!(f as Record<string, boolean>)[p.toLowerCase()]);
-            while (bools.length < 5) bools.push(false);
-            return [mod, bools] as [string, boolean[]];
-          });
-          if (mapped.length > 0) matrix = mapped;
-        }
-        setAccount({
-          name: String(d['name'] ?? d['fullName'] ?? d['username'] ?? DEFAULT_ACCOUNT.name),
-          email: String(d['email'] ?? DEFAULT_ACCOUNT.email),
-          status: String(d['status'] ?? DEFAULT_ACCOUNT.status),
-          lastUpdated: String(d['updatedAt'] ?? d['lastUpdated'] ?? DEFAULT_ACCOUNT.lastUpdated).slice(0, 10) || DEFAULT_ACCOUNT.lastUpdated,
-          createdBy: String(d['createdBy'] ?? DEFAULT_ACCOUNT.createdBy),
-          createdOn: fmt(d['createdAt']) || DEFAULT_ACCOUNT.createdOn,
-          lastEdited: fmt(d['updatedAt']) || DEFAULT_ACCOUNT.lastEdited,
-          assignedUsers: String(d['assignedUsers'] ?? d['userCount'] ?? DEFAULT_ACCOUNT.assignedUsers),
-          matrix,
-        });
-      })
-      .catch(() => {});
+    // /tenant/admin/sub-admins/:id not in backend API — no per-user GET endpoint for tenant admin users.
   }, [id]);
 
   return (

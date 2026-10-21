@@ -4,7 +4,7 @@
  * Ministry → Members → Add member (TN-007).
  *
  * Authorized by go-worship-auth-endpoints.md:
- *   TN-007  POST /api/v1/tenant/admin/users/customers/provision
+ *   TN-007  POST /api/v1/tenant/admin/users/customers
  *   {email, displayName, sendInviteEmail, profile{fullName,email,phone}}
  *
  * INDIRECT provisioning: the admin creates the account and the backend

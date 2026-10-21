@@ -77,24 +77,7 @@ export function AnalyticsContent() {
   useEffect(() => {
     if (!USE_LIVE_API || tab === 'Finance') return;
     setTabTrend([]);
-    const slug = tab.toLowerCase();
-    (api.get<unknown>(`/tenant/admin/analytics/${slug}/trend`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['trend'])
-            ? ((data as R)['trend'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const points = arr.map((p) => ({
-          month: String(p['label'] ?? p['month'] ?? p['period'] ?? p['name'] ?? ''),
-          value: Number(p['value'] ?? p['count'] ?? p['total'] ?? 0),
-        })).filter((p) => p.month);
-        if (points.length > 0) setTabTrend(points);
-      }).catch(() => {});
+    // /tenant/admin/analytics/:slug/trend not in backend API — disabled.
   }, [tab]);
 
   const chartData =

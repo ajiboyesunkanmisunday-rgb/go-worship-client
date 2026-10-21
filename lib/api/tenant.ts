@@ -8,13 +8,12 @@
  * is always resolved from the Host — never from a body field.
  *
  * CONFIRMED endpoints (from the Postman collection / live HAR):
- *   TN-006  POST /tenant/admin/users/provision          — staff/admin provisioning
- *   TN-007  POST /tenant/admin/users/customers/provision — ADMIN provisions a member (INDIRECT; requires TENANT_ADMIN Bearer)
- *   CU-001  POST /public/customers/register           — member SELF-registers (DIRECT; public, no Bearer needed)
+ *   TN-007  POST /tenant/admin/users/customers         — ADMIN provisions a member (confirmed from OpenAPI spec)
+ *   CU-001  POST /public/customers/register            — member SELF-registers (DIRECT; public, no Bearer needed)
  *
- * CONTENT endpoints follow the /tenant/admin/* + /self/* naming pattern.
- * Paths marked [VERIFY PATH] need to be confirmed from the full Swagger once
- * access is available (see docs/backend-issues.md).
+ * NOTE: /tenant/admin/users/provision (TN-006 staff/admin provisioning) is absent from
+ * the confirmed backend OpenAPI spec — provisionTenantUser() is disabled below.
+ * All paths are verified against the live DO OpenAPI spec at /v3/api-docs.
  */
 
 import { api } from './client';
@@ -322,9 +321,9 @@ export type ProvisionTenantMemberPayload = {
   };
 };
 
-/** TN-007  POST /tenant/admin/users/customers/provision — ADMIN provisions a member (INDIRECT) */
+/** TN-007  POST /tenant/admin/users/customers — ADMIN provisions a member (confirmed path, no /provision suffix) */
 export const provisionTenantMember = (payload: ProvisionTenantMemberPayload) =>
-  api.post<unknown>('/tenant/admin/users/customers/provision', payload);
+  api.post<unknown>('/tenant/admin/users/customers', payload);
 
 /* -------- Member self-service content -------- */
 
