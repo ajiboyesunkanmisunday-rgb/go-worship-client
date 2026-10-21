@@ -59,7 +59,7 @@ export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: s
     getTenantBranding().then((b) => {
       if (b.organizationName) setReceipt((prev) => ({ ...prev, org: prev.org === DEFAULT_RECEIPT.org ? b.organizationName! : prev.org }));
     }).catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
       .then((d) => {
         const addr = String((d['address'] as string | undefined) ?? (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? '');
         if (addr) setReceipt((prev) => ({ ...prev, orgAddress: prev.orgAddress === DEFAULT_RECEIPT.orgAddress ? addr : prev.orgAddress }));

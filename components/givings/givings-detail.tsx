@@ -32,7 +32,7 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
       .then((d) => {
         const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
         if (loc) setOrgLocation(loc);

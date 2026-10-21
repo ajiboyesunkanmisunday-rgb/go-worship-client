@@ -92,7 +92,7 @@ function Topbar() {
         if (b.organizationName) setOrgName(b.organizationName);
       })
       .catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/profile') as Promise<Record<string, unknown>>)
+    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
       .then((d) => {
         const loc =
           (d['city'] as string | undefined) ??
