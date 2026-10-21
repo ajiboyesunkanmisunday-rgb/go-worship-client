@@ -748,7 +748,7 @@ function GivingReceiptSheet({
 
           <div className="flex items-center justify-between rounded-[10px] bg-[#f6f8fb] px-4 py-3">
             <span className="text-[14px] font-semibold">Subtotal:</span>
-            <span className="text-[14px] font-bold">$200.00</span>
+            <span className="text-[14px] font-bold">{row?.amount ?? '$0.00'}</span>
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-2">
@@ -1199,7 +1199,7 @@ const INVOICES: InvoiceRow[] = [
 
 function BillingTab({ id }: { id: string }) {
   const [invoices, setInvoices] = useState<InvoiceRow[]>(INVOICES);
-  const [openReceipt, setOpenReceipt] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -1296,7 +1296,7 @@ function BillingTab({ id }: { id: string }) {
                 <td className="py-4">
                   <button
                     type="button"
-                    onClick={() => setOpenReceipt(true)}
+                    onClick={() => setSelectedInvoice(inv)}
                     className="rounded-full bg-[#eef1f6] px-5 py-1.5 text-[12px] font-medium text-brand-blue hover:bg-[#e2e7f0]"
                   >
                     View
@@ -1309,8 +1309,9 @@ function BillingTab({ id }: { id: string }) {
       </div>
 
       <BillingReceiptSheet
-        open={openReceipt}
-        onClose={() => setOpenReceipt(false)}
+        open={!!selectedInvoice}
+        invoice={selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
       />
     </div>
   );
@@ -1319,9 +1320,11 @@ function BillingTab({ id }: { id: string }) {
 /** Billing Payment Receipt slide-over (Billing-tab View). */
 function BillingReceiptSheet({
   open,
+  invoice,
   onClose,
 }: {
   open: boolean;
+  invoice: InvoiceRow | null;
   onClose(): void;
 }) {
   return (
@@ -1344,30 +1347,29 @@ function BillingReceiptSheet({
           <div>
             <p className="text-[13px] font-semibold">Plan Details:</p>
             <div className="mt-2 flex flex-col gap-3">
-              <ReceiptRow label="Plan" value="Growth Plan" />
+              <ReceiptRow label="Plan" value={invoice?.plan ?? 'Growth Plan'} />
               <ReceiptRow label="Billing Cycle" value="Monthly" />
-              <ReceiptRow label="Start Date" value="19 Aug 2025" />
-              <ReceiptRow label="Expiry Date" value="19 Sept 2025" />
+              <ReceiptRow label="Start Date" value={invoice?.start ?? '—'} />
+              <ReceiptRow label="Expiry Date" value={invoice?.end ?? '—'} />
             </div>
           </div>
 
           <div>
             <p className="text-[13px] font-semibold">Payment Summary:</p>
             <div className="mt-2 flex flex-col gap-3">
-              <ReceiptRow label="Growth Plan (Monthly)" value="$5,000" />
-              <ReceiptRow label="Subtotal" value="$5,000" />
-              <ReceiptRow label="VAT (7.5%)" value="$542.50" />
+              <ReceiptRow label={invoice?.plan ?? 'Growth Plan'} value={invoice?.amount ?? '—'} />
+              <ReceiptRow label="Subtotal" value={invoice?.amount ?? '—'} />
             </div>
           </div>
 
           <div className="flex items-center justify-between rounded-[10px] bg-[#f6f8fb] px-4 py-3">
             <span className="text-[14px] font-semibold">Total Paid:</span>
-            <span className="text-[14px] font-bold">$5,542.50</span>
+            <span className="text-[14px] font-bold">{invoice?.amount ?? '—'}</span>
           </div>
 
           <ReceiptRow
             label="Payment Method"
-            value="Debit Card •••• 4323"
+            value={invoice?.method ?? '—'}
           />
 
           <div className="mt-auto pt-2">
