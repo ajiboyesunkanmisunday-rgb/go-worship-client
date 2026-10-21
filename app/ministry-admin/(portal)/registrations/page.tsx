@@ -47,7 +47,7 @@ export default function MinistryAdminRegistrationsPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-        <StatCard title="Total Registrations" value={String(total)} variant="purple" />
+        <StatCard title="Total Events" value={String(total)} variant="purple" />
         <StatCard title="Upcoming Events" value={String(active)} />
         <div className="lg:col-span-2">
           <QuickAccessCard />

@@ -124,7 +124,7 @@ export function SermonAdminDashboard() {
         <div className="relative overflow-hidden rounded-[14px] bg-white p-6">
           <h1 className="text-[28px] font-bold lg:text-[32px]">Hello{userName ? `, ${userName}` : ''} 👋</h1>
           <p className="mt-2 max-w-[320px] text-[14px] text-brand-gray-500">
-            Welcome to {orgName} Go worship Platform
+            Welcome to the {orgName || 'Go Worship'} platform
           </p>
           <span className="pointer-events-none absolute -right-8 top-8 size-[210px] rounded-full border-[6px] border-[#eef1fb]" />
           <span className="pointer-events-none absolute right-16 top-24 size-[130px] rounded-full border-[6px] border-[#e6ebf8]" />

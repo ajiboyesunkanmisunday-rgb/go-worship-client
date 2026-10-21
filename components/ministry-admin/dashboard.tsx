@@ -15,7 +15,7 @@ function HelloCard({ orgName, userName }: { orgName: string; userName: string })
         Hello{userName ? `, ${userName}` : ''} 👋
       </h1>
       <p className="relative mt-3 max-w-[341px] font-poppins text-[15px] font-light">
-        Welcome to {orgName} Go worship Platform
+        Welcome to the {orgName || 'Go Worship'} platform
       </p>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSelfEvents, getSelfGroups, getTenantBranding } from '@/lib/api/tenant';
+import { getSelfEvents, getSelfGroups } from '@/lib/api/tenant';
 import { getProfile } from '@/lib/api/auth';
 import { getCustomerPayments } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
@@ -84,15 +84,10 @@ export function Analytics() {
   const [totalGiven, setTotalGiven] = useState(USE_LIVE_API ? '$0' : '$1000');
   const [totalGroups, setTotalGroups] = useState(USE_LIVE_API ? 0 : 9);
   const [upcomingEvents, setUpcomingEvents] = useState(USE_LIVE_API ? 0 : 4);
-  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church International');
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-
-    getTenantBranding().then((b) => {
-      if (b.organizationName) setOrgName(b.organizationName);
-    }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -125,7 +120,7 @@ export function Analytics() {
           Hello{userName ? `, ${userName}` : ''} 👋
         </h1>
         <p className="max-w-[356px] text-[16px] leading-[150%] font-light text-brand-gray-500">
-          Welcome to {orgName} Go worship Platform
+          Go-Worship church administration and giving platform.
         </p>
       </div>
 

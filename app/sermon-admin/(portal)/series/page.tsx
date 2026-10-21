@@ -7,8 +7,6 @@ import { DataCard, QuickAccess, StatusText, ViewEditButton } from '@/components/
 import type { SmartRow } from '@/components/shared/smart-table';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import Link from 'next/link';
-import { ArrowUpRight, Layers } from 'lucide-react';
 
 type Series = { name: string; desc: string; count: string; status: string; date: string };
 
@@ -86,21 +84,7 @@ export default function SermonAdminSeriesPage() {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="grid grid-cols-2 gap-4">
           <StatCard title="Total Series" value={String(USE_LIVE_API ? series.length : (series.length || 24))} variant="blue" />
-          <Link
-            href="/sermon-admin/series/create"
-            className="relative flex min-h-[135px] flex-col justify-between rounded-[14px] bg-white p-5 no-underline"
-          >
-            <div className="flex items-start justify-between">
-              <Layers className="size-7 text-brand-blue" />
-              <span className="flex size-8 items-center justify-center rounded-full bg-brand-blue/10">
-                <ArrowUpRight className="size-4 text-brand-blue" />
-              </span>
-            </div>
-            <div>
-              <p className="text-[15px] font-semibold text-black">Add Series</p>
-              <p className="text-[12px] text-brand-gray-500">Click here to add a series</p>
-            </div>
-          </Link>
+          <StatCard title="Draft Sermons" value={String(USE_LIVE_API ? draftCount : (draftCount || 10))} variant="white" />
         </div>
         <QuickAccess />
       </div>

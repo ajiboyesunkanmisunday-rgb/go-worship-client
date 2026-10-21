@@ -44,7 +44,7 @@ export default function MinistryAdminCheckInPage() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
         <StatCard title="Total Check in" value={String(total)} variant="purple" />
-        <StatCard title="Registered event" value={String(upcoming)} />
+        <StatCard title="Total Events" value={String(total)} />
         <div className="lg:col-span-2">
           <QuickAccessCard />
         </div>
