@@ -23,7 +23,57 @@ type Log = {
   details: string;
   ip: string;
   time: string;
+  category?: string;
 };
+
+type AuditTab = 'All activity' | 'Sensitive actions' | 'Roles & permissions' | 'Payment gateways';
+
+const AUDIT_TABS: AuditTab[] = [
+  'All activity',
+  'Sensitive actions',
+  'Roles & permissions',
+  'Payment gateways',
+];
+
+const TAB_CATEGORY: Record<AuditTab, string | null> = {
+  'All activity':        null,
+  'Sensitive actions':   'SENSITIVE',
+  'Roles & permissions': 'ROLES_PERMISSIONS',
+  'Payment gateways':    'PAYMENT_GATEWAY',
+};
+
+function matchesTab(log: Log, tab: AuditTab): boolean {
+  if (tab === 'All activity') return true;
+  const action   = (log.action ?? '').toUpperCase();
+  const resource = (log.resource ?? '').toUpperCase();
+  const cat      = (log.category ?? '').toUpperCase();
+  if (tab === 'Sensitive actions') {
+    if (cat === 'SENSITIVE') return true;
+    return (
+      action.includes('DELETE') || action.includes('SUSPEND') ||
+      action.includes('DISABLE') || action.includes('REVOKE') ||
+      action.includes('REMOVE') || log.action === 'Deleted' ||
+      log.action === 'Suspended'
+    );
+  }
+  if (tab === 'Roles & permissions') {
+    if (cat === 'ROLES_PERMISSIONS') return true;
+    return (
+      resource.includes('ROLE') || resource.includes('PERMISSION') ||
+      resource.includes('MFA') || resource.includes('POLICY') ||
+      resource.includes('ACCESS')
+    );
+  }
+  if (tab === 'Payment gateways') {
+    if (cat === 'PAYMENT_GATEWAY') return true;
+    return (
+      resource.includes('PAYMENT') || resource.includes('BILLING') ||
+      resource.includes('GATEWAY') || resource.includes('TRANSACTION') ||
+      resource.includes('INVOICE') || resource.includes('SUBSCRIPTION')
+    );
+  }
+  return true;
+}
 
 const ACTION_BADGE: Record<string, string> = {
   Created: 'bg-[#eafaf0] text-[#22a45d]',
@@ -72,37 +122,60 @@ function fmtLogDate(iso?: string): string {
   } catch { return iso; }
 }
 
+function mapLogRow(e: Record<string, unknown>): Log {
+  return {
+    action:   normalizeAction(String(e['action'] ?? e['eventType'] ?? e['type'] ?? '')),
+    resource: String(e['resource'] ?? e['resourceType'] ?? e['entityType'] ?? e['target'] ?? ''),
+    user:     String(e['performedBy'] ?? e['actor'] ?? e['username'] ?? e['user'] ?? e['userId'] ?? 'Administrator'),
+    details:  String(e['description'] ?? e['details'] ?? e['message'] ?? ''),
+    ip:       String(e['ipAddress'] ?? e['ip'] ?? ''),
+    time:     fmtLogDate(String(e['createdAt'] ?? e['timestamp'] ?? e['eventTime'] ?? '')),
+    category: String(e['category'] ?? e['auditCategory'] ?? ''),
+  };
+}
+
+function parseArr(data: unknown): Record<string, unknown>[] {
+  type R = Record<string, unknown>;
+  if (Array.isArray(data)) return data as R[];
+  if (!data || typeof data !== 'object') return [];
+  const d = data as R;
+  for (const k of ['content', 'data', 'items', 'events', 'logs', 'results']) {
+    if (Array.isArray(d[k])) return d[k] as R[];
+  }
+  return [];
+}
+
 export default function SystemAuditLogsPage() {
   const [selected, setSelected] = useState<Log | null>(null);
   const [logs, setLogs] = useState<Log[]>(USE_LIVE_API ? [] : LOGS);
+  const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
-  useEffect(() => {
+  const loadLogs = (tab: AuditTab) => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
+    const cat = TAB_CATEGORY[tab];
+    const qs = cat ? `?category=${cat}` : '';
+    (api.get<unknown>(`/system/audit/events/recent${qs}`) as Promise<unknown>)
       .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+        const arr = parseArr(data);
         if (arr.length === 0) return;
-        const mapped: Log[] = arr.map((e) => ({
-          action: normalizeAction(String(e['action'] ?? e['eventType'] ?? e['type'] ?? '')),
-          resource: String(e['resource'] ?? e['entityType'] ?? e['target'] ?? ''),
-          user: String(e['performedBy'] ?? e['actor'] ?? e['user'] ?? e['userId'] ?? 'Administrator'),
-          details: String(e['description'] ?? e['details'] ?? e['message'] ?? ''),
-          ip: String(e['ipAddress'] ?? e['ip'] ?? ''),
-          time: fmtLogDate(String(e['createdAt'] ?? e['timestamp'] ?? e['eventTime'] ?? '')),
-        }));
-        setLogs(mapped);
+        setLogs(arr.map(mapLogRow));
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadLogs('All activity');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const rows: SmartRow[] = logs.map((l) => ({
+  const handleTab = (tab: AuditTab) => {
+    setActiveTab(tab);
+    loadLogs(tab);
+  };
+
+  const visibleLogs = logs.filter((l) => matchesTab(l, activeTab));
+
+  const rows: SmartRow[] = visibleLogs.map((l) => ({
     group: l.action,
     text: [l.action, l.resource, l.user, l.details, l.ip, l.time],
     cells: [
@@ -124,7 +197,7 @@ export default function SystemAuditLogsPage() {
     ],
   }));
 
-  const filterOptions = [...new Set(logs.map((l) => l.action))].filter(Boolean);
+  const filterOptions = [...new Set(visibleLogs.map((l) => l.action))].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-5">
@@ -133,6 +206,24 @@ export default function SystemAuditLogsPage() {
         <p className="text-[14px] text-brand-gray-500">
           Track all platform activities and changes
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-[13px]">
+        {AUDIT_TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => handleTab(t)}
+            className={cn(
+              'rounded-full px-4 py-1.5 transition-colors',
+              t === activeTab
+                ? 'bg-brand-blue text-white'
+                : 'bg-[#f2f2f2] text-brand-gray-500 hover:bg-[#e6e6e6]'
+            )}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       <SmartTable
