@@ -226,7 +226,7 @@ export type ProvisionTenantPayload = {
 };
 
 export const provisionTenant = (payload: ProvisionTenantPayload) =>
-  api.post<unknown>('/system/tenants/provision', payload);
+  api.post<unknown>('/system/tenants/indirect', payload);
 
 export type UpdateTenantPayload = {
   name?: string;
@@ -238,9 +238,9 @@ export type UpdateTenantPayload = {
   [key: string]: unknown;
 };
 
-/** PUT /system/tenants/:id */
-export const updateSystemTenant = (id: string, payload: UpdateTenantPayload) =>
-  api.put<unknown>(`/system/tenants/${id}`, payload);
+/** PUT /system/tenants/:id — no such endpoint in backend API — disabled. */
+export const updateSystemTenant = (_id: string, _payload: UpdateTenantPayload): Promise<unknown> =>
+  Promise.resolve(null);
 
 /* -------- Platform user provisioning -------- */
 

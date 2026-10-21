@@ -258,7 +258,7 @@ export type TenantStats = {
 
 export async function getTenantStats(): Promise<TenantStats | null> {
   try {
-    const data = await api.get<R>('/tenant/admin/dashboard');
+    const data = await api.get<R>('/tenant/admin/organization/analytics');
     if (!data || typeof data !== 'object') return null;
     const inner = ((data as R)['data'] ?? data) as R;
     return {
@@ -299,9 +299,9 @@ export type ProvisionTenantUserPayload = {
   };
 };
 
-/** TN-006  POST /tenant/admin/users/provision */
-export const provisionTenantUser = (payload: ProvisionTenantUserPayload) =>
-  api.post<unknown>('/tenant/admin/users/provision', payload);
+/** TN-006  POST /tenant/admin/users/provision — not in backend API — disabled. */
+export const provisionTenantUser = (_payload: ProvisionTenantUserPayload): Promise<unknown> =>
+  Promise.resolve(null);
 
 /* -------- Member Provisioning (confirmed: TN-007) -------- */
 

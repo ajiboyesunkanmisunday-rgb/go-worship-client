@@ -339,12 +339,9 @@ export const verifyGuestOtp = (email: string, tokenId: string, code: string) =>
     { email, tokenId, code }
   );
 
-/** POST /tenant/admin/users/guests/upgrade-to-customer (authed via /bff/gw) */
-export const upgradeGuestToCustomer = (payload: {
+/** POST /tenant/admin/users/guests/upgrade-to-customer — not in backend API — disabled. */
+export const upgradeGuestToCustomer = (_payload: {
   displayName?: string;
   rawPassword?: string;
   confirmPassword?: string;
-}) =>
-  import('./client').then(({ api }) =>
-    api.post<unknown>('/tenant/admin/users/guests/upgrade-to-customer', payload)
-  );
+}): Promise<unknown> => Promise.resolve(null);
