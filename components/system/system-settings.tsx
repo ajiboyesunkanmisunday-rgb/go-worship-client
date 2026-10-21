@@ -6,24 +6,15 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone } from 'lucide-react';
 
-/**
- * System → Settings (778:38441). Tabs General / Payments / Email / SMS /
- * System Health with heading "Configure platform settings and integrations"
- * and a Save Changes action. Distinct from the Ministry settings the page used
- * to (wrongly) reuse.
- *
- * NOTE: the General / Payments / Email / SMS tab fields are taken from the
- * design. The **System Health** tab's content was not captured legibly, so it
- * shows a minimal honest placeholder rather than invented content — flagged in
- * docs/design-audit.md.
- */
 const TABS = [
   'General',
+  'Branding',
   'Payments',
   'Email',
   'SMS',
+  'Security',
   'System Health',
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -162,6 +153,198 @@ function parseHealth(data: unknown): ServiceHealth[] {
   return results.length ? results : [];
 }
 
+// ── Security ───────────────────────────────────────────────────────────────
+
+type MfaData = {
+  mfaEnabled: boolean;
+  preferredMethod: string;
+  totpEnrolled: boolean;
+  otpEmailAvailable: boolean;
+  otpSmsAvailable: boolean;
+  enrolledMethods: string[];
+};
+
+function SecurityPanel() {
+  const [mfa, setMfa] = useState<MfaData | null>(null);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    (api.get<Record<string, unknown>>('/self/security/mfa') as Promise<Record<string, unknown>>)
+      .then((res) => {
+        const d = (res['data'] ?? res) as Record<string, unknown>;
+        setMfa({
+          mfaEnabled:        Boolean(d['mfaEnabled']),
+          preferredMethod:   String(d['preferredMethod'] ?? ''),
+          totpEnrolled:      Boolean(d['totpEnrolled']),
+          otpEmailAvailable: Boolean(d['otpEmailAvailable'] ?? true),
+          otpSmsAvailable:   Boolean(d['otpSmsAvailable']),
+          enrolledMethods:   Array.isArray(d['enrolledMethods']) ? (d['enrolledMethods'] as string[]) : [],
+        });
+      })
+      .catch(() => {});
+  }, []);
+
+  const updatePassword = async () => {
+    if (!newPw || newPw !== confirmPw) return;
+    setPwSaving(true);
+    try {
+      await (api.put('/self/security/password', { currentPassword: currentPw, newPassword: newPw }) as Promise<unknown>);
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+    } catch { /* keep form */ }
+    finally { setPwSaving(false); }
+  };
+
+  const removeMethod = (method: string) => {
+    if (!USE_LIVE_API) return;
+    (api.del(`/self/security/mfa/${method.toLowerCase()}`) as Promise<unknown>)
+      .then(() => setMfa((prev) => prev ? { ...prev, enrolledMethods: prev.enrolledMethods.filter((m) => m !== method), totpEnrolled: method === 'TOTP' ? false : prev.totpEnrolled } : prev))
+      .catch(() => {});
+  };
+
+  const methodLabel: Record<string, string> = {
+    TOTP: 'Authenticator app',
+    OTP_EMAIL: 'Email code',
+    OTP_SMS: 'Text message (SMS)',
+  };
+  const methodDesc: Record<string, string> = {
+    TOTP: 'Use Google Authenticator, Authy, or 1Password. Most secure.',
+    OTP_EMAIL: 'Receive a one-time code by email each time you sign in.',
+    OTP_SMS: 'Receive a one-time code by text message to your phone.',
+  };
+  const MethodIcon = ({ method }: { method: string }) => {
+    if (method === 'TOTP') return <Smartphone className="size-5 text-[#555]" />;
+    if (method === 'OTP_EMAIL') return <ShieldCheck className="size-5 text-[#555]" />;
+    return <MessageSquare className="size-5 text-[#555]" />;
+  };
+
+  const allMethods = ['TOTP', 'OTP_EMAIL', 'OTP_SMS'];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Password */}
+      <div className="rounded-[14px] border border-[#eee] p-6">
+        <div className="flex items-center gap-2">
+          <KeyRound className="size-5 text-[#555]" />
+          <h2 className="text-[16px] font-bold">Password</h2>
+        </div>
+        <p className="mt-1 text-[13px] text-brand-gray-500">
+          Use a strong password you don&apos;t reuse anywhere else.
+        </p>
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium">Current Password</span>
+            <div className="relative">
+              <Input type="password" className="h-[48px] pr-10" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+            </div>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium">New Password</span>
+            <Input type="password" className="h-[48px]" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium">Confirm Password</span>
+            <Input type="password" className="h-[48px]" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+          </label>
+        </div>
+        <Button
+          className="mt-5 h-[44px] px-6"
+          disabled={pwSaving || !newPw || newPw !== confirmPw}
+          onClick={updatePassword}
+        >
+          {pwSaving ? 'Updating…' : 'Update password'}
+        </Button>
+      </div>
+
+      {/* 2FA */}
+      <div className="rounded-[14px] border border-[#eee] p-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-[16px] font-bold">Two-factor authentication</h2>
+          {mfa && (
+            <span className={cn(
+              'rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+              mfa.mfaEnabled ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#fde8e8] text-[#eb0000]'
+            )}>
+              {mfa.mfaEnabled ? 'On' : 'Off'}
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-[13px] text-brand-gray-500">
+          Add a second step when signing in, so a password alone isn&apos;t enough.
+        </p>
+
+        {mfa && (
+          <>
+            <div className="mt-5 flex items-center justify-between gap-4 rounded-[10px] bg-[#f7f9fc] px-4 py-3">
+              <div>
+                <p className="text-[13px] font-medium">Primary method</p>
+                <p className="text-[12px] text-brand-gray-500">The method you&apos;ll be asked for first when signing in.</p>
+              </div>
+              <span className="rounded-[8px] border border-[#ddd] bg-white px-3 py-2 text-[13px]">
+                {methodLabel[mfa.preferredMethod] ?? mfa.preferredMethod}
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-col divide-y divide-[#f2f2f2]">
+              {allMethods.map((method) => {
+                const enrolled = mfa.enrolledMethods.includes(method);
+                const preferred = mfa.preferredMethod === method;
+                const comingSoon = method === 'OTP_SMS' && !mfa.otpSmsAvailable;
+                return (
+                  <div key={method} className="flex items-start justify-between gap-4 py-4">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f2f2f2]">
+                        <MethodIcon method={method} />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2 text-[13px] font-medium">
+                          {methodLabel[method]}
+                          {enrolled && (
+                            <span className="flex items-center gap-1 text-[11px] font-normal text-[#22a45d]">
+                              <CheckCircle2 className="size-3" /> Enrolled
+                            </span>
+                          )}
+                          {preferred && enrolled && (
+                            <span className="rounded-full bg-[#e9f0ff] px-2 py-0.5 text-[10px] text-brand-blue">Preferred</span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-[12px] text-brand-gray-500">{methodDesc[method]}</p>
+                        {comingSoon && (
+                          <p className="mt-1 text-[11px] text-brand-gray-400">
+                            Coming soon — text-message codes aren&apos;t enabled yet. Set up another method now and switch when SMS is available.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {comingSoon ? (
+                      <span className="shrink-0 rounded-full bg-[#fff4e5] px-2.5 py-1 text-[11px] font-medium text-[#ff8d28]">Coming soon</span>
+                    ) : enrolled ? (
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-[6px] border border-[#eb0000] px-3 py-1 text-[12px] font-medium text-[#eb0000] hover:bg-[#fde8e8]"
+                        onClick={() => removeMethod(method)}
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {!mfa && USE_LIVE_API && (
+          <p className="mt-4 text-[13px] text-brand-gray-400">Loading security settings…</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SystemHealthPanel() {
   const [services, setServices] = useState<ServiceHealth[]>(USE_LIVE_API ? [] : MOCK_HEALTH);
   const [loading, setLoading] = useState(false);
@@ -256,24 +439,30 @@ export function SystemSettings() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/system/config') as Promise<unknown>)
-      .catch(() => api.get<unknown>('/system/settings') as Promise<unknown>)
-      .then((data) => {
-        if (data && typeof data === 'object') {
-          const flat: ConfigMap = {};
-          const walk = (obj: Record<string, unknown>, prefix = '') => {
-            for (const [k, v] of Object.entries(obj)) {
-              const key = prefix ? `${prefix}.${k}` : k;
-              if (v !== null && typeof v === 'object') walk(v as Record<string, unknown>, key);
-              else flat[key] = String(v ?? '');
-            }
-          };
-          walk(data as Record<string, unknown>);
-          setConfig(flat);
-          setFormKey((k) => k + 1);
-        }
-      })
-      .catch(() => {});
+    const flattenInto = (obj: Record<string, unknown>, out: ConfigMap, prefix = '') => {
+      for (const [k, v] of Object.entries(obj)) {
+        const key = prefix ? `${prefix}.${k}` : k;
+        if (v !== null && typeof v === 'object') flattenInto(v as Record<string, unknown>, out, key);
+        else out[key] = String(v ?? '');
+      }
+    };
+    const flat: ConfigMap = {};
+    Promise.allSettled([
+      (api.get<unknown>('/system/config') as Promise<unknown>)
+        .catch(() => api.get<unknown>('/system/settings') as Promise<unknown>),
+      api.get<unknown>('/system/branding') as Promise<unknown>,
+    ]).then(([configRes, brandingRes]) => {
+      if (configRes.status === 'fulfilled' && configRes.value && typeof configRes.value === 'object') {
+        flattenInto(configRes.value as Record<string, unknown>, flat);
+      }
+      if (brandingRes.status === 'fulfilled' && brandingRes.value && typeof brandingRes.value === 'object') {
+        flattenInto(brandingRes.value as Record<string, unknown>, flat, 'branding');
+      }
+      if (Object.keys(flat).length > 0) {
+        setConfig(flat);
+        setFormKey((k) => k + 1);
+      }
+    });
   }, []);
 
   const onSave = async () => {
@@ -298,7 +487,7 @@ export function SystemSettings() {
             Configure platform settings and integrations
           </p>
         </div>
-        {tab !== 'System Health' && (
+        {tab !== 'System Health' && tab !== 'Security' && (
           <Button size="lg" className="h-[44px] px-6" onClick={onSave}>
             Save Changes
           </Button>
@@ -356,7 +545,18 @@ export function SystemSettings() {
           <Field name="twilioPhone" label="Phone Number" placeholder="+1234567890" defaultValue={config['twilioPhone'] ?? config['sms.phone']} />
         </Section>
       )}
+
+      {tab === 'Branding' && (
+        <Section title="Platform Branding">
+          <Field name="logoUrl" label="Logo URL" placeholder="https://cdn.example.com/logo.png" defaultValue={config['logoUrl'] ?? config['branding.logoUrl']} />
+          <Field name="faviconUrl" label="Favicon URL" placeholder="https://cdn.example.com/favicon.ico" defaultValue={config['faviconUrl'] ?? config['branding.faviconUrl']} />
+          <Field name="primaryColor" label="Primary Color" placeholder="#1a56db" defaultValue={config['primaryColor'] ?? config['branding.primaryColor']} />
+          <Field name="secondaryColor" label="Secondary Color" placeholder="#ffffff" defaultValue={config['secondaryColor'] ?? config['branding.secondaryColor']} />
+        </Section>
+      )}
       </form>
+
+      {tab === 'Security' && <SecurityPanel />}
 
       {tab === 'System Health' && <SystemHealthPanel />}
     </div>
