@@ -16,7 +16,7 @@ const PORTALS = [
   { match: '/dashboard', label: 'Member', category: 'member' },
   { match: '/group-leader', label: 'Group Leader', category: 'staff' },
   { match: '/ministry-admin', label: 'Ministry Admin', category: 'staff' },
-  { match: '/sermon-admin', label: 'Sermon Admin', category: 'staff' },
+  { match: '/sermon-admin', label: 'Sermon Staff', category: 'staff' },
   { match: '/ministry', label: 'Church Admin', category: 'church-admin' },
 ] as const;
 
