@@ -20,7 +20,7 @@ export function SuccessScreen({
   actionLabel = 'Go to dashboard',
   actionHref = '/dashboard',
 }: SuccessScreenProps) {
-  const [defaultSubtitle, setDefaultSubtitle] = useState('Welcome to Celebration Church International Go worship Platform');
+  const [defaultSubtitle, setDefaultSubtitle] = useState(USE_LIVE_API ? '' : 'Welcome to Celebration Church International Go worship Platform');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

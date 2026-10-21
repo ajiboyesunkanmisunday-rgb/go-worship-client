@@ -18,8 +18,8 @@ const MOCK_EVENTS: EventRow[] = [
 ];
 
 export default function MinistryAdminRegistrationsPage() {
-  const [rows, setRows] = useState<EventRow[]>(MOCK_EVENTS);
-  const [total, setTotal] = useState(MOCK_EVENTS.length);
+  const [rows, setRows] = useState<EventRow[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
+  const [total, setTotal] = useState(USE_LIVE_API ? 0 : MOCK_EVENTS.length);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

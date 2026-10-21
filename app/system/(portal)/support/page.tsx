@@ -48,24 +48,24 @@ const TONE = {
 };
 
 export default function SystemSupportPage() {
-  const [tickets, setTickets] = useState<Ticket[]>(TICKETS);
-  const [active, setActive] = useState('t1');
-  const current = tickets.find((t) => t.id === active) ?? tickets[0]!;
+  const [tickets, setTickets] = useState<Ticket[]>(USE_LIVE_API ? [] : TICKETS);
+  const [active, setActive] = useState(USE_LIVE_API ? '' : 't1');
+  const current = tickets.find((t) => t.id === active) ?? tickets[0];
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
 
-  const [ticketTitle, setTicketTitle] = useState('Help needed for payment failure');
-  const [ticketBody, setTicketBody] = useState('I need help to process the payment after the checkout. I need to send out this campaign within today. Can you please help ASAP?');
-  const [ticketDate, setTicketDate] = useState('23rd December 4:15pm');
-  const [ticketFiles, setTicketFiles] = useState<string[]>(['Doc.pdf', 'Doc.pdf']);
-  const [visitorEmail, setVisitorEmail] = useState('dean.laptop@gmail.com');
-  const [visitorPhone, setVisitorPhone] = useState('+234 812 345 6789');
-  const [visitorLocation, setVisitorLocation] = useState('Nigeria (View on map)');
-  const [visitorLocalTime, setVisitorLocalTime] = useState('04:30 am / 2:30 pm');
-  const [visitorLanguage, setVisitorLanguage] = useState('English');
-  const [visitorIp, setVisitorIp] = useState('107.116.97.201');
-  const [visitorOs, setVisitorOs] = useState('Windows 10');
-  const [visitorBrowser, setVisitorBrowser] = useState('Mozilla Firefox');
+  const [ticketTitle, setTicketTitle] = useState(USE_LIVE_API ? '' : 'Help needed for payment failure');
+  const [ticketBody, setTicketBody] = useState(USE_LIVE_API ? '' : 'I need help to process the payment after the checkout. I need to send out this campaign within today. Can you please help ASAP?');
+  const [ticketDate, setTicketDate] = useState(USE_LIVE_API ? '' : '23rd December 4:15pm');
+  const [ticketFiles, setTicketFiles] = useState<string[]>(USE_LIVE_API ? [] : ['Doc.pdf', 'Doc.pdf']);
+  const [visitorEmail, setVisitorEmail] = useState(USE_LIVE_API ? '' : 'dean.laptop@gmail.com');
+  const [visitorPhone, setVisitorPhone] = useState(USE_LIVE_API ? '' : '+234 812 345 6789');
+  const [visitorLocation, setVisitorLocation] = useState(USE_LIVE_API ? '' : 'Nigeria (View on map)');
+  const [visitorLocalTime, setVisitorLocalTime] = useState(USE_LIVE_API ? '' : '04:30 am / 2:30 pm');
+  const [visitorLanguage, setVisitorLanguage] = useState(USE_LIVE_API ? '' : 'English');
+  const [visitorIp, setVisitorIp] = useState(USE_LIVE_API ? '' : '107.116.97.201');
+  const [visitorOs, setVisitorOs] = useState(USE_LIVE_API ? '' : 'Windows 10');
+  const [visitorBrowser, setVisitorBrowser] = useState(USE_LIVE_API ? '' : 'Mozilla Firefox');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -208,7 +208,7 @@ export default function SystemSupportPage() {
         <div className="flex flex-col rounded-[14px] border border-[#eee] p-5">
           <p className="text-[16px] font-bold">{ticketTitle}</p>
           <p className="text-[12px] text-brand-gray-500">
-            {current.name} · {ticketDate}
+            {current?.name} · {ticketDate}
           </p>
 
           <div className="mt-4 flex-1 rounded-[10px] bg-[#f7f9fc] p-4 text-[13px] text-[#333]">

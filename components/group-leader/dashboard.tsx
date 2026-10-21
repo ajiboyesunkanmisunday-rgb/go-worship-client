@@ -65,7 +65,7 @@ export function GroupLeaderDashboard() {
   const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [userName, setUserName] = useState('');
-  const [orgName, setOrgName] = useState('Go Worship');
+  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Go Worship');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

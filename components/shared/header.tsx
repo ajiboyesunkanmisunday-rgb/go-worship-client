@@ -14,8 +14,8 @@ import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function CompanyInfo() {
-  const [name, setName] = useState('Celebration Church Int.');
-  const [location, setLocation] = useState('Ontario Canada, Canada City');
+  const [name, setName] = useState(USE_LIVE_API ? '' : 'Celebration Church Int.');
+  const [location, setLocation] = useState(USE_LIVE_API ? '' : 'Ontario Canada, Canada City');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

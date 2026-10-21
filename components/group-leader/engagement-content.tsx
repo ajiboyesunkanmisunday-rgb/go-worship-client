@@ -32,7 +32,7 @@ const config = {
 function EngagementChart() {
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
-  const [engagementScore, setEngagementScore] = useState('78%');
+  const [engagementScore, setEngagementScore] = useState(USE_LIVE_API ? '—' : '78%');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -115,7 +115,7 @@ function toRow(g: TenantGroup): TableRow {
 }
 
 export function EngagementContent() {
-  const [rows, setRows] = useState<TableRow[]>(GROUP_ROWS);
+  const [rows, setRows] = useState<TableRow[]>(USE_LIVE_API ? [] : GROUP_ROWS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

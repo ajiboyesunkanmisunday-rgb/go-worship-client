@@ -81,10 +81,10 @@ function StatCard({
 }
 
 export function Analytics() {
-  const [totalGiven, setTotalGiven] = useState('$1000');
-  const [totalGroups, setTotalGroups] = useState(9);
-  const [upcomingEvents, setUpcomingEvents] = useState(4);
-  const [orgName, setOrgName] = useState('Celebration Church International');
+  const [totalGiven, setTotalGiven] = useState(USE_LIVE_API ? '$0' : '$1000');
+  const [totalGroups, setTotalGroups] = useState(USE_LIVE_API ? 0 : 9);
+  const [upcomingEvents, setUpcomingEvents] = useState(USE_LIVE_API ? 0 : 4);
+  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church International');
   const [userName, setUserName] = useState('');
 
   useEffect(() => {

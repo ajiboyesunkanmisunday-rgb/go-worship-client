@@ -21,8 +21,8 @@ type CheckoutShellProps = {
  * - Right: centered content column (the screen's card).
  */
 export function CheckoutShell({ children, contentClassName }: CheckoutShellProps) {
-  const [orgName, setOrgName] = useState('Celebration Church Canada');
-  const [logoUrl, setLogoUrl] = useState('/auth/cci-logo-white.svg');
+  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church Canada');
+  const [logoUrl, setLogoUrl] = useState(USE_LIVE_API ? '' : '/auth/cci-logo-white.svg');
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {

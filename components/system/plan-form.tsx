@@ -40,7 +40,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
   const isEdit = mode === 'edit';
   const back = '/system/plans';
   const [result, setResult] = useState<'success' | 'error' | null>(null);
-  const [plan, setPlan] = useState(PLAN);
+  const [plan, setPlan] = useState(USE_LIVE_API && !isEdit ? { name: '', price: '', users: '', features: '' } : PLAN);
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {

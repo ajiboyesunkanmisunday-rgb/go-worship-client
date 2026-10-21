@@ -21,11 +21,11 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     [isIntercepted]
   );
   const [payment, setPayment] = useState<PaymentStatusResponse | null>(null);
-  const [orgName, setOrgName] = useState('Celebration Church Int.');
-  const [orgLocation, setOrgLocation] = useState('Ontario Canada, Canada City');
-  const [orgPhone, setOrgPhone] = useState('+127-987-67543');
-  const [orgEmail, setOrgEmail] = useState('info@churchname.org');
-  const [orgWeb, setOrgWeb] = useState('www.churchname.org');
+  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church Int.');
+  const [orgLocation, setOrgLocation] = useState(USE_LIVE_API ? '' : 'Ontario Canada, Canada City');
+  const [orgPhone, setOrgPhone] = useState(USE_LIVE_API ? '' : '+127-987-67543');
+  const [orgEmail, setOrgEmail] = useState(USE_LIVE_API ? '' : 'info@churchname.org');
+  const [orgWeb, setOrgWeb] = useState(USE_LIVE_API ? '' : 'www.churchname.org');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

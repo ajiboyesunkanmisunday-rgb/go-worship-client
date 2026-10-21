@@ -429,7 +429,7 @@ function SubscriptionTab() {
 function ProfileTab() {
   const [branding, setBranding] = useState<TenantBranding>({});
   const [profile, setProfile] = useState<Profile>({});
-  const [location, setLocation] = useState('Ontario, Canada');
+  const [location, setLocation] = useState(USE_LIVE_API ? '' : 'Ontario, Canada');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

@@ -77,7 +77,7 @@ export function AccountDetailsForm({ onSuccess }: Props) {
     'signup-account-details',
     {}
   );
-  const [currentChurch, setCurrentChurch] = useState('Celebration Church Canada');
+  const [currentChurch, setCurrentChurch] = useState(USE_LIVE_API ? '' : 'Celebration Church Canada');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

@@ -122,7 +122,7 @@ export function SermonForm({
   const back = backTo ?? '/sermon-admin/sermons';
   const [hasAudio, setHasAudio] = useState(isEdit);
   const [hasCover, setHasCover] = useState(isEdit);
-  const [sermon, setSermon] = useState(SERMON);
+  const [sermon, setSermon] = useState(USE_LIVE_API && !isEdit ? { title: '', speaker: '', date: '', description: '', link: '' } : SERMON);
   const [formKey, setFormKey] = useState(0);
   const [seriesOpts, setSeriesOpts] = useState<{ value: string; label: string }[]>([]);
 

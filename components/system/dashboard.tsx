@@ -71,7 +71,7 @@ export function SystemDashboard() {
   );
   const [activity, setActivity] = useState(USE_LIVE_API ? [] : MOCK_ACTIVITY);
   const [plans, setPlans] = useState(USE_LIVE_API ? [] : MOCK_PLANS);
-  const [adminName, setAdminName] = useState('Super System Administrator');
+  const [adminName, setAdminName] = useState(USE_LIVE_API ? '' : 'Super System Administrator');
   const [dashTab, setDashTab] = useState('Platform');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
 
