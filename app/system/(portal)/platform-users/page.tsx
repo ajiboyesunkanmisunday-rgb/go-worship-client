@@ -11,20 +11,20 @@ import { getSystemUsers, type SystemUser } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const ROLE_STYLE: Record<string, string> = {
-  Admin:    'bg-[#fff4e5] text-[#ff8d28]',
-  Support:  'bg-[#e9f0ff] text-brand-blue',
-  Auditor:  'bg-[#e7f7ee] text-[#34a853]',
+  'Super Admin': 'bg-[#fde8e8] text-[#eb0000]',
+  Admin:         'bg-[#fff4e5] text-[#ff8d28]',
+  Support:       'bg-[#e9f0ff] text-brand-blue',
 };
 
 /* Mock fallback */
 const MOCK: SystemUser[] = [
-  { id: '1', name: 'John Adeyemi',            email: 'john@leadremit.com',         role: 'Admin',   status: 'Active',   lastLogin: 'Jun 12, 2025', createdAt: 'Dec 12, 2023' },
-  { id: '2', name: 'Grace Obi',               email: 'grace@leadremit.com',        role: 'Admin',   status: 'Active',   lastLogin: 'Jun 11, 2025', createdAt: 'Feb 02, 2024' },
-  { id: '3', name: 'Celebration Church Leads', email: 'admin@celebration.org',     role: 'Support', status: 'Active',   lastLogin: 'Jun 10, 2025', createdAt: 'Mar 18, 2024' },
-  { id: '4', name: 'Mercy Paul',              email: 'mercy@leadremit.com',        role: 'Auditor', status: 'Inactive', lastLogin: 'Jun 09, 2025', createdAt: 'Apr 09, 2024' },
+  { id: '1', name: 'John Adeyemi',            email: 'john@leadremit.com',         role: 'Admin',       status: 'Active',   lastLogin: 'Jun 12, 2025', createdAt: 'Dec 12, 2023' },
+  { id: '2', name: 'Grace Obi',               email: 'grace@leadremit.com',        role: 'Admin',       status: 'Active',   lastLogin: 'Jun 11, 2025', createdAt: 'Feb 02, 2024' },
+  { id: '3', name: 'Celebration Church Leads', email: 'admin@celebration.org',     role: 'Support',     status: 'Active',   lastLogin: 'Jun 10, 2025', createdAt: 'Mar 18, 2024' },
+  { id: '4', name: 'System Owner',            email: 'support@go-worship.com',     role: 'Super Admin', status: 'Active',   lastLogin: 'Jun 09, 2025', createdAt: 'Apr 09, 2024' },
 ];
 
-const TABS = ['Admin', 'Support', 'Auditor'];
+const TABS = ['Super Admin', 'Admin', 'Support'];
 
 /** System → Platform Users (board 778:38441). */
 export default function SystemPlatformUsersPage() {
@@ -132,7 +132,7 @@ export default function SystemPlatformUsersPage() {
         <SmartTable
           headers={['Users', 'Role', 'Status', 'Last Login', 'Created', 'Action']}
           rows={rows}
-          filterOptions={['Admin', 'Support', 'Auditor']}
+          filterOptions={['Super Admin', 'Admin', 'Support']}
           filterAll="Role: All"
         />
       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Plus } from 'lucide-react';
+import { Plus, ClipboardList } from 'lucide-react';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import Link from 'next/link';
@@ -159,6 +159,16 @@ export default function SystemTenantsPage() {
           filterOptions={['Active', 'Pending', 'Suspended']}
           filterAll="Filter"
           headerRowClassName="bg-brand-blue text-white"
+          emptyNode={
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-[#f2f2f2]">
+                <ClipboardList className="size-7 text-[#bbb]" />
+              </div>
+              <p className="max-w-[340px] text-center text-[14px] text-[#888]">
+                No tenants to display yet. The platform tenant directory will appear here once it is available.
+              </p>
+            </div>
+          }
         />
       )}
     </div>

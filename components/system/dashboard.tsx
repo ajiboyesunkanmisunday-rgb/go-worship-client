@@ -36,6 +36,126 @@ const ZERO_STATS: SystemStats = {
   givingVolume: '$0', trialTenants: 0, overduePayments: 0,
 };
 
+type StatVariant = 'blue' | 'green' | 'white';
+
+type FamilySection = {
+  title: string;
+  subtitle: string;
+  stats: Array<{ label: string; value: (s: SystemStats) => string | number; variant: StatVariant }>;
+};
+
+const FAMILY_SECTIONS: Record<string, FamilySection> = {
+  TENANT_OPERATIONS: {
+    title: 'Overview',
+    subtitle: 'Authorized tenant and campus operational summary.',
+    stats: [
+      { label: 'Active campuses',       value: (s) => fmt(s.totalCampuses ?? 0),               variant: 'white' },
+      { label: 'Active users',          value: (s) => fmt(s.activeUsers ?? s.totalUsers),       variant: 'white' },
+      { label: 'New users',             value: (s) => fmt(s.newUsers ?? 0),                     variant: 'white' },
+      { label: 'Received donations',    value: (s) => s.givingVolume ?? '$0',                   variant: 'white' },
+      { label: 'Successful payments',   value: (s) => fmt(s.successfulAuths ?? 0),              variant: 'white' },
+      { label: 'Upcoming events',       value: (s) => fmt(s.upcomingEvents ?? 0),               variant: 'white' },
+      { label: 'Attendance records',    value: (s) => fmt(s.attendanceRecords ?? 0),            variant: 'white' },
+      { label: 'Visitor follow-ups due',value: (s) => fmt(s.visitorFollowUps ?? 0),             variant: 'white' },
+      { label: 'Published sermons',     value: (s) => fmt(s.publishedSermons ?? 0),             variant: 'white' },
+    ],
+  },
+  PLATFORM: {
+    title: 'Platform overview',
+    subtitle: 'Current platform tenant, user, campus and session health.',
+    stats: [
+      { label: 'Total tenants',   value: (s) => fmt(s.totalTenants),                         variant: 'blue'  },
+      { label: 'Active tenants',  value: (s) => fmt(s.activeTenants),                        variant: 'green' },
+      { label: 'New tenants',     value: (s) => fmt(s.newTenants ?? 0),                      variant: 'white' },
+      { label: 'Total campuses',  value: (s) => fmt(s.totalCampuses ?? 0),                   variant: 'white' },
+      { label: 'Active users',    value: (s) => fmt(s.activeUsers ?? s.totalUsers),          variant: 'white' },
+      { label: 'New users',       value: (s) => fmt(s.newUsers ?? 0),                        variant: 'white' },
+      { label: 'Active sessions', value: (s) => fmt(s.activeSessions ?? 0),                  variant: 'white' },
+      { label: 'Risky sessions',  value: (s) => fmt(s.riskySessions ?? 0),                   variant: 'white' },
+    ],
+  },
+  SECURITY: {
+    title: 'Security',
+    subtitle: 'Authentication, session, MFA and audit health.',
+    stats: [
+      { label: 'Successful authentications', value: (s) => fmt(s.successfulAuths ?? 0), variant: 'green' },
+      { label: 'Failed authentications',     value: (s) => fmt(s.failedAuths ?? 0),     variant: 'white' },
+      { label: 'Active sessions',            value: (s) => fmt(s.activeSessions ?? 0),  variant: 'white' },
+      { label: 'Risky sessions',             value: (s) => fmt(s.riskySessions ?? 0),   variant: 'white' },
+      { label: 'Locked accounts',            value: (s) => fmt(s.lockedAccounts ?? 0),  variant: 'white' },
+      { label: 'MFA-enabled users',          value: (s) => fmt(s.mfaEnabledUsers ?? 0), variant: 'white' },
+      { label: 'Audit failures',             value: (s) => fmt(s.auditFailures ?? 0),   variant: 'white' },
+    ],
+  },
+  FINANCE: {
+    title: 'Finance',
+    subtitle: 'Platform revenue, giving and billing health.',
+    stats: [
+      { label: 'Giving volume',      value: (s) => s.givingVolume ?? '$0',    variant: 'blue'  },
+      { label: 'Total tenants',      value: (s) => fmt(s.totalTenants),       variant: 'white' },
+      { label: 'Active tenants',     value: (s) => fmt(s.activeTenants),      variant: 'green' },
+      { label: 'Trial tenants',      value: (s) => fmt(s.trialTenants ?? 0),  variant: 'white' },
+      { label: 'Overdue payments',   value: (s) => fmt(s.overduePayments ?? 0), variant: 'white' },
+    ],
+  },
+  ENGAGEMENT: {
+    title: 'Engagement',
+    subtitle: 'Member, group and event engagement across tenants.',
+    stats: [
+      { label: 'Active users',    value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'blue'  },
+      { label: 'New users',       value: (s) => fmt(s.newUsers ?? 0),               variant: 'white' },
+      { label: 'Active sessions', value: (s) => fmt(s.activeSessions ?? 0),          variant: 'white' },
+      { label: 'Total tenants',   value: (s) => fmt(s.totalTenants),                 variant: 'white' },
+    ],
+  },
+  COMMUNICATIONS: {
+    title: 'Communications',
+    subtitle: 'Messaging and notification health across the platform.',
+    stats: [
+      { label: 'Active tenants', value: (s) => fmt(s.activeTenants),                variant: 'blue'  },
+      { label: 'Active users',   value: (s) => fmt(s.activeUsers ?? s.totalUsers),  variant: 'white' },
+      { label: 'New users',      value: (s) => fmt(s.newUsers ?? 0),                variant: 'white' },
+    ],
+  },
+  CONTENT: {
+    title: 'Content',
+    subtitle: 'Published sermons, media and content across tenants.',
+    stats: [
+      { label: 'Published sermons', value: (s) => fmt(s.publishedSermons ?? 0),   variant: 'white' },
+      { label: 'Active tenants',    value: (s) => fmt(s.activeTenants),            variant: 'blue'  },
+      { label: 'Active users',      value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
+    ],
+  },
+  GUEST_SELF_SERVICE: {
+    title: 'Guest Self Service',
+    subtitle: 'Guest registrations and self-service activity.',
+    stats: [
+      { label: 'Active tenants', value: (s) => fmt(s.activeTenants),               variant: 'blue'  },
+      { label: 'Total campuses', value: (s) => fmt(s.totalCampuses ?? 0),          variant: 'white' },
+      { label: 'Active users',   value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
+    ],
+  },
+  CUSTOMER_SELF_SERVICE: {
+    title: 'Customer Self Service',
+    subtitle: 'Customer portal and self-service activity.',
+    stats: [
+      { label: 'Active tenants', value: (s) => fmt(s.activeTenants),               variant: 'blue'  },
+      { label: 'Active users',   value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
+      { label: 'New users',      value: (s) => fmt(s.newUsers ?? 0),               variant: 'white' },
+    ],
+  },
+  CAMPUS_OPERATIONS: {
+    title: 'Campus Operations',
+    subtitle: 'Campus events, attendance and operations.',
+    stats: [
+      { label: 'Active campuses',    value: (s) => fmt(s.totalCampuses ?? 0),          variant: 'blue'  },
+      { label: 'Active users',       value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
+      { label: 'Upcoming events',    value: (s) => fmt(s.upcomingEvents ?? 0),         variant: 'white' },
+      { label: 'Attendance records', value: (s) => fmt(s.attendanceRecords ?? 0),      variant: 'white' },
+    ],
+  },
+};
+
 const MOCK_PLANS = [['Starter', '58'], ['Pro', '54'], ['Enterprise', '18']];
 
 /* Family codes from the API map to human-readable tab labels. */
@@ -72,7 +192,7 @@ export function SystemDashboard() {
   const [activity, setActivity] = useState(USE_LIVE_API ? [] : MOCK_ACTIVITY);
   const [plans, setPlans] = useState(USE_LIVE_API ? [] : MOCK_PLANS);
   const [adminName, setAdminName] = useState(USE_LIVE_API ? '' : 'Super System Administrator');
-  const [dashTab, setDashTab] = useState('Platform');
+  const [dashFamily, setDashFamily] = useState('TENANT_OPERATIONS');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
 
   const loadFamily = useCallback(async (family: string) => {
@@ -109,7 +229,7 @@ export function SystemDashboard() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
-    loadFamily('PLATFORM');
+    loadFamily('TENANT_OPERATIONS');
 
     // Recent audit activity
     (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
@@ -158,8 +278,7 @@ export function SystemDashboard() {
   }, [loadFamily]);
 
   const handleTabChange = (familyCode: string) => {
-    const label = FAMILY_LABELS[familyCode] ?? familyCode;
-    setDashTab(label);
+    setDashFamily(familyCode);
     loadFamily(familyCode);
   };
 
@@ -184,7 +303,7 @@ export function SystemDashboard() {
               onClick={() => handleTabChange(f)}
               className={cn(
                 'rounded-full border px-4 py-1.5 transition-colors',
-                label === dashTab
+                f === dashFamily
                   ? 'border-brand-blue bg-brand-blue text-white'
                   : 'border-[#e5e5e5] text-brand-gray-500 hover:border-brand-blue/40'
               )}
@@ -195,20 +314,20 @@ export function SystemDashboard() {
         })}
       </div>
 
-      <div>
-        <p className="mb-3 text-[16px] font-bold">Platform overview</p>
-        <p className="mb-4 text-[13px] text-brand-gray-500">Current platform tenant, user, campus and session health.</p>
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <StatCard title="Total tenants"   value={fmt(stats.totalTenants)}                      variant="blue" />
-          <StatCard title="Active tenants"  value={fmt(stats.activeTenants)}                     variant="green" />
-          <StatCard title="New tenants"     value={fmt(stats.newTenants ?? 0)}                   variant="white" />
-          <StatCard title="Total campuses"  value={fmt(stats.totalCampuses ?? 0)}                variant="white" />
-          <StatCard title="Active users"    value={fmt(stats.activeUsers ?? stats.totalUsers)}   variant="white" />
-          <StatCard title="New users"       value={fmt(stats.newUsers ?? 0)}                     variant="white" />
-          <StatCard title="Active sessions" value={fmt(stats.activeSessions ?? 0)}               variant="white" />
-          <StatCard title="Risky sessions"  value={fmt(stats.riskySessions ?? 0)}                variant="white" />
-        </div>
-      </div>
+      {(() => {
+        const section = FAMILY_SECTIONS[dashFamily] ?? FAMILY_SECTIONS['PLATFORM'];
+        return (
+          <div>
+            <p className="mb-3 text-[16px] font-bold">{section.title}</p>
+            <p className="mb-4 text-[13px] text-brand-gray-500">{section.subtitle}</p>
+            <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+              {section.stats.map((s) => (
+                <StatCard key={s.label} title={s.label} value={String(s.value(stats))} variant={s.variant} />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.7fr_1fr]">
         <div className="rounded-[14px] bg-white p-6">
@@ -244,20 +363,6 @@ export function SystemDashboard() {
               </li>
             ))}
           </ul>
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-3 text-[16px] font-bold">Security</p>
-        <p className="mb-4 text-[13px] text-brand-gray-500">Authentication, session, MFA and audit health.</p>
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <StatCard title="Successful authentications" value={fmt(stats.successfulAuths ?? 0)} variant="green" />
-          <StatCard title="Failed authentications"     value={fmt(stats.failedAuths ?? 0)}     variant="white" />
-          <StatCard title="Active sessions"            value={fmt(stats.activeSessions ?? 0)}  variant="white" />
-          <StatCard title="Risky sessions"             value={fmt(stats.riskySessions ?? 0)}   variant="white" />
-          <StatCard title="Locked accounts"            value={fmt(stats.lockedAccounts ?? 0)}  variant="white" />
-          <StatCard title="MFA-enabled users"          value={fmt(stats.mfaEnabledUsers ?? 0)} variant="white" />
-          <StatCard title="Audit failures"             value={fmt(stats.auditFailures ?? 0)}   variant="white" />
         </div>
       </div>
 

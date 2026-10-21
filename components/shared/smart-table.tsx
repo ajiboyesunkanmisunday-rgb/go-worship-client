@@ -51,12 +51,14 @@ export function SmartTable({
   pageSize = 8,
   headerRowClassName,
   className,
+  emptyNode,
 }: {
   title?: string;
   headers: string[];
   rows: SmartRow[];
   filterOptions?: string[];
   filterAll?: string;
+  emptyNode?: React.ReactNode;
   /**
    * When true (default) the dropdown filters rows by `group`. Set false for a
    * decorative dropdown that only displays a selection — e.g. the design's
@@ -216,11 +218,12 @@ export function SmartTable({
             ))}
             {pageRows.length === 0 && (
               <tr>
-                <td
-                  colSpan={headers.length}
-                  className="py-10 text-center text-[13px] text-brand-gray-500"
-                >
-                  No results found
+                <td colSpan={headers.length}>
+                  {emptyNode ?? (
+                    <p className="py-10 text-center text-[13px] text-brand-gray-500">
+                      No results found
+                    </p>
+                  )}
                 </td>
               </tr>
             )}

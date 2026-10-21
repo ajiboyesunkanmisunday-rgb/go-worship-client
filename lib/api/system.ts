@@ -216,6 +216,10 @@ export type SystemStats = {
   lockedAccounts?: number;
   mfaEnabledUsers?: number;
   auditFailures?: number;
+  upcomingEvents?: number;
+  attendanceRecords?: number;
+  visitorFollowUps?: number;
+  publishedSermons?: number;
 };
 
 export async function getSystemStats(): Promise<SystemStats | null> {
