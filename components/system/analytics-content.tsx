@@ -178,96 +178,13 @@ export function SystemAnalyticsContent() {
       })
       .catch(() => {});
 
-    const loadTxns = async () => {
-      for (const p of ['/system/dashboard/admin/transactions?page=0&size=10', '/system/transactions?page=0&size=10']) {
-        try { return await (api.get<unknown>(p) as Promise<unknown>); } catch { /* try next */ }
-      }
-      return null;
-    };
-    loadTxns()
-      .then((data) => {
-        if (!data) return;
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const mapped: LiveTxn[] = arr.map((t) => {
-          const raw = String(t['status'] ?? '').toUpperCase();
-          const status = raw.includes('SUCCESS') || raw.includes('COMPLET') ? 'Success'
-            : raw.includes('FAIL') || raw.includes('CANCEL') ? 'Failed' : 'Pending';
-          const rawAmt = Number(t['amount'] ?? t['totalAmount'] ?? 0);
-          const amount = rawAmt ? `$${rawAmt.toLocaleString()}` : String(t['amountFormatted'] ?? '');
-          return {
-            name: String(t['memberName'] ?? t['name'] ?? t['email'] ?? ''),
-            status, amount,
-            type: String(t['type'] ?? t['purpose'] ?? t['category'] ?? 'General Offering'),
-          };
-        }).filter((t) => t.name);
-        if (mapped.length > 0) setLiveTxns(mapped);
-      })
-      .catch(() => {});
+    // Transactions: /system/dashboard/admin/transactions and /system/transactions both
+    // returned 404 in localhost HAR — disabled until correct endpoint confirmed from DO.
 
-    const loadUsers = async () => {
-      for (const p of ['/system/dashboard/admin/users?page=0&size=10']) {
-        try { return await (api.get<unknown>(p) as Promise<unknown>); } catch { /* try next */ }
-      }
-      return null;
-    };
-    loadUsers()
-      .then((data) => {
-        if (!data) return;
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : [];
-        if (arr.length === 0) return;
-        const mapped: LiveUser[] = arr.map((u) => {
-          const rawDate = String(u['createdAt'] ?? u['joinedAt'] ?? u['registeredAt'] ?? '');
-          const joined = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          const raw = String(u['status'] ?? '').toUpperCase();
-          const status = raw.includes('INACTIV') || raw.includes('BLOCK') ? 'Inactive' : 'Active';
-          return {
-            name: String(u['fullName'] ?? u['name'] ?? u['firstName'] ?? ''),
-            email: String(u['email'] ?? ''),
-            role: String(u['role'] ?? u['userType'] ?? 'Member'),
-            status, joined,
-          };
-        }).filter((u) => u.name);
-        if (mapped.length > 0) setLiveUsers(mapped);
-      })
-      .catch(() => {});
+    // Users: /system/dashboard/admin/users returned 404; use /system/users directly
+    // via getSystemUsers() on the platform-users page instead.
 
-    (api.get<unknown>('/system/billing/subscriptions?page=0&size=10') as Promise<unknown>)      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : [];
-        if (arr.length === 0) return;
-        const mapped: LiveSub[] = arr.map((s) => {
-          const rawRenewal = String(s['renewalDate'] ?? s['nextBillingDate'] ?? s['endDate'] ?? '');
-          const renewal = rawRenewal ? new Date(rawRenewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-          const raw = String(s['status'] ?? '').toUpperCase();
-          const status = raw.includes('INACTIV') || raw.includes('CANCEL') ? 'Inactive' : 'Active';
-          const rawAmt = Number(s['amount'] ?? s['price'] ?? 0);
-          const amount = rawAmt ? `$${rawAmt}` : String(s['amountFormatted'] ?? '');
-          return {
-            tenant: String(s['tenantName'] ?? s['orgName'] ?? s['name'] ?? ''),
-            plan: String(s['planName'] ?? s['plan'] ?? ''),
-            status, amount, renewal,
-          };
-        }).filter((s) => s.tenant);
-        if (mapped.length > 0) setLiveSubs(mapped);
-      })
-      .catch(() => {});
+    // Subscriptions: /system/billing/subscriptions returned 404 in localhost HAR — disabled.
   }, []);
 
   const chartData = tab === 'Finances' && financeTrend.length > 0 ? financeTrend : trend;

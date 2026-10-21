@@ -67,8 +67,7 @@ export function NewMessageForm() {
         scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
       };
       try {
-        await (api.post('/tenant/admin/communications', payload) as Promise<unknown>)
-          .catch(() => api.post('/tenant/admin/messages', payload) as Promise<unknown>);
+        await (api.post('/tenant/admin/communications', payload) as Promise<unknown>);
       } catch {}
     }
     router.push(back);

@@ -371,15 +371,7 @@ function SystemHealthPanel() {
   const refresh = useCallback(async () => {
     setLoading(true);
     if (USE_LIVE_API) {
-      try {
-        const data = await (
-          api.get<unknown>('/system/health') as Promise<unknown>
-        ).catch(() => api.get<unknown>('/actuator/health') as Promise<unknown>);
-        const parsed = parseHealth(data);
-        if (parsed.length) setServices(parsed);
-      } catch {
-        // keep current state if both endpoints fail
-      }
+      // /system/health and /actuator/health unconfirmed from live DO — disabled.
     }
     setCheckedAt(new Date());
     setLoading(false);
@@ -465,22 +457,8 @@ export function SystemSettings() {
       }
     };
     const flat: ConfigMap = {};
-    Promise.allSettled([
-      (api.get<unknown>('/system/config') as Promise<unknown>)
-        .catch(() => api.get<unknown>('/system/settings') as Promise<unknown>),
-      api.get<unknown>('/system/branding') as Promise<unknown>,
-    ]).then(([configRes, brandingRes]) => {
-      if (configRes.status === 'fulfilled' && configRes.value && typeof configRes.value === 'object') {
-        flattenInto(configRes.value as Record<string, unknown>, flat);
-      }
-      if (brandingRes.status === 'fulfilled' && brandingRes.value && typeof brandingRes.value === 'object') {
-        flattenInto(brandingRes.value as Record<string, unknown>, flat, 'branding');
-      }
-      if (Object.keys(flat).length > 0) {
-        setConfig(flat);
-        setFormKey((k) => k + 1);
-      }
-    });
+    // /system/config, /system/settings, /system/branding unconfirmed from live DO — disabled.
+    void flat;
   }, []);
 
   const onSave = async () => {
@@ -489,10 +467,7 @@ export function SystemSettings() {
     const payload: ConfigMap = {};
     fd.forEach((v, k) => { payload[k] = String(v); });
     if (USE_LIVE_API) {
-      try {
-        await (api.put('/system/config', payload) as Promise<unknown>)
-          .catch(() => api.put('/system/settings', payload) as Promise<unknown>);
-      } catch {}
+      // /system/config and /system/settings unconfirmed from live DO — disabled.
     }
   };
 

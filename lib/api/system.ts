@@ -117,40 +117,15 @@ function mapTenant(row: R): SystemTenant {
 }
 
 export async function getSystemTenants(): Promise<SystemTenant[]> {
-  const paths = [
-    '/system/admin/tenants',
-    '/system/tenants',
-    '/system/organizations',
-    '/system/dashboard/admin/tenants',
-  ];
-  let last: unknown;
-  for (const path of paths) {
-    try {
-      last = await api.get<unknown>(path);
-      break;
-    } catch { /* try next */ }
-  }
-  const rows = findTableRows(last, 'tenant');
-  return rows.map(mapTenant).filter((t) => t.name);
+  // All tried paths (/system/admin/tenants, /system/tenants, /system/organizations,
+  // /system/dashboard/admin/tenants) returned 404 in localhost HAR — disabled until
+  // the correct endpoint is confirmed from live DO.
+  return [];
 }
 
-/** [VERIFY PATH] GET /system/dashboard/admin/tenants/:id */
-export async function getSystemTenant(id: string): Promise<SystemTenant | null> {
-  try {
-    const data = await api.get<unknown>(`/system/dashboard/admin/tenants/${id}`);
-    const rows = findTableRows(data, 'tenant');
-    if (rows.length > 0) return mapTenant(rows[0]);
-    if (data && typeof data === 'object') return mapTenant(data as Record<string, unknown>);
-    return null;
-  } catch {
-    // Fall back to fetching all and filtering by id
-    try {
-      const all = await getSystemTenants();
-      return all.find((t) => t.id === id) ?? null;
-    } catch {
-      return null;
-    }
-  }
+export async function getSystemTenant(_id: string): Promise<SystemTenant | null> {
+  // Endpoint unconfirmed — disabled until verified from live DO.
+  return null;
 }
 
 /* -------- System user list -------- */
@@ -227,34 +202,8 @@ export type SystemStats = {
 };
 
 export async function getSystemStats(): Promise<SystemStats | null> {
-  try {
-    const data = await api.get<R>('/system/dashboard');
-    if (!data || typeof data !== 'object') return null;
-    const d = (data as R);
-    const inner = (d['data'] ?? d) as R;
-    return {
-      totalTenants:    Number(fieldOf(inner, ['totalTenants', 'tenantCount', 'tenants'])) || 0,
-      activeTenants:   Number(fieldOf(inner, ['activeTenants', 'activeCount'])) || 0,
-      totalUsers:      Number(fieldOf(inner, ['totalUsers', 'userCount', 'users'])) || 0,
-      givingVolume:    fieldOf(inner, ['givingVolume', 'totalGiving', 'volume', 'totalRevenue']),
-      trialTenants:    Number(fieldOf(inner, ['trialTenants', 'trialCount'])) || 0,
-      overduePayments: Number(fieldOf(inner, ['overduePayments', 'overdue'])) || 0,
-      pendingPayments: Number(fieldOf(inner, ['pendingPayments', 'pending'])) || undefined,
-      newTenants:      Number(fieldOf(inner, ['newTenants', 'newTenantCount', 'recentTenants'])) || undefined,
-      totalCampuses:   Number(fieldOf(inner, ['totalCampuses', 'campusCount', 'campuses'])) || undefined,
-      activeUsers:     Number(fieldOf(inner, ['activeUsers', 'activeUserCount'])) || undefined,
-      newUsers:        Number(fieldOf(inner, ['newUsers', 'newUserCount', 'recentUsers'])) || undefined,
-      activeSessions:  Number(fieldOf(inner, ['activeSessions', 'sessionCount', 'sessions'])) || undefined,
-      riskySessions:   Number(fieldOf(inner, ['riskySessions', 'riskySessionCount', 'suspiciousSessions'])) || undefined,
-      successfulAuths: Number(fieldOf(inner, ['successfulAuths', 'successfulLogins', 'authSuccess', 'loginSuccess'])) || undefined,
-      failedAuths:     Number(fieldOf(inner, ['failedAuths', 'failedLogins', 'authFailures', 'loginFailures'])) || undefined,
-      lockedAccounts:  Number(fieldOf(inner, ['lockedAccounts', 'lockedUsers', 'blockedAccounts'])) || undefined,
-      mfaEnabledUsers: Number(fieldOf(inner, ['mfaEnabledUsers', 'mfaCount', 'mfaUsers'])) || undefined,
-      auditFailures:   Number(fieldOf(inner, ['auditFailures', 'auditErrors'])) || undefined,
-    };
-  } catch {
-    return null;
-  }
+  // /system/dashboard endpoint unconfirmed from live DO — disabled until verified.
+  return null;
 }
 
 /* -------- Tenant provisioning -------- */

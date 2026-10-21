@@ -63,60 +63,13 @@ export default function SystemTransactionsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    const txnPaths = [
-      '/system/dashboard/admin/payments',
-      '/system/dashboard/admin/transactions',
-      '/system/transactions',
-    ];
-    const tryTxn = async () => {
-      for (const path of txnPaths) {
-        try {
-          const d = await (api.get<unknown>(path) as Promise<unknown>);
-          return d;
-        } catch { /* try next */ }
-      }
-      return null;
-    };
-    tryTxn()
-      .then((data) => {
-        if (!data) return;
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const mapped: SysTxn[] = arr.map((p) => ({
-          name: String(p['donorName'] ?? p['name'] ?? p['payerName'] ?? 'Unknown'),
-          email: String(p['donorEmail'] ?? p['email'] ?? ''),
-          status: normalizeStatus(String(p['status'] ?? '')),
-          date: fmtDate(String(p['paidAt'] ?? p['requestedAt'] ?? p['createdAt'] ?? '')),
-          amount: fmtAmt(p['amount'], String(p['currency'] ?? 'USD')),
-          method: String(p['gatewayType'] ?? p['paymentMethod'] ?? 'Online'),
-          type: String(p['purpose'] ?? p['type'] ?? 'Donation'),
-          channel: String(p['channel'] ?? 'Online'),
-        }));
-        setTxns(mapped);
-        setTotalTxnCount(mapped.length);
-        setPaidInvoices(mapped.filter((t) => t.status === 'Success').length);
-      })
-      .catch(() => {});
+    // Transaction list: /system/dashboard/admin/transactions and /system/transactions
+    // both returned 404 in localhost HAR — disabled until correct endpoint confirmed from DO.
+
+    // Stats: /system/finance/stats and /system/transactions/summary are unconfirmed — disabled.
+
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
-      .catch(() => {});
-    (api.get<Record<string, unknown>>('/system/finance/stats') as Promise<Record<string, unknown>>)
-      .catch(() => api.get<Record<string, unknown>>('/system/transactions/summary') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const pi = d['paidInvoices'] ?? d['paidCount'] ?? d['successCount'];
-        const pa = d['pendingAmount'] ?? d['pendingTotal'] ?? d['pending'];
-        const tt = d['totalTransactions'] ?? d['totalCount'] ?? d['total'];
-        if (pi != null) setPaidInvoices(Number(pi));
-        if (pa != null) setPendingAmount(fmtAmt(pa, 'USD'));
-        if (tt != null) setTotalTxnCount(Number(tt));
-      })
       .catch(() => {});
   }, []);
 

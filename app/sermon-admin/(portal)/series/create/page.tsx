@@ -29,8 +29,7 @@ export default function SermonAdminAddSeriesPage() {
       };
       try {
         setSubmitting(true);
-        await (api.post('/tenant/admin/media/series', payload) as Promise<unknown>)
-          .catch(() => api.post('/tenant/admin/sermon/series', payload) as Promise<unknown>);
+        await (api.post('/tenant/admin/media/series', payload) as Promise<unknown>);
       } catch {
         // fall through
       } finally {

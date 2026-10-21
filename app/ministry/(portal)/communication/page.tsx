@@ -50,7 +50,6 @@ export default function MinistryCommunicationPage() {
       })
       .catch(() => {});
     (api.get<Record<string, unknown>>('/tenant/admin/members/count') as Promise<Record<string, unknown>>)
-      .catch(() => api.get<Record<string, unknown>>('/tenant/admin/communications/stats') as Promise<Record<string, unknown>>)
       .then((d) => {
         const count = d['activeCount'] ?? d['active'] ?? d['count'] ?? d['total'] ?? d['activeRecipients'];
         if (count != null) setActiveRecipients(String(count));

@@ -41,7 +41,6 @@ export function TagForm({
   useEffect(() => {
     if (!USE_LIVE_API || !isEdit || !id) return;
     (api.get<unknown>(`/tenant/admin/sermon/tags/${id}`) as Promise<unknown>)
-      .catch(() => api.get<unknown>(`/tenant/admin/tags/${id}`) as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const d = data as R;
@@ -68,11 +67,9 @@ export function TagForm({
     if (USE_LIVE_API) {
       try {
         if (isEdit && id) {
-          await (api.put(`/tenant/admin/sermon/tags/${id}`, payload) as Promise<unknown>)
-            .catch(() => api.put(`/tenant/admin/tags/${id}`, payload) as Promise<unknown>);
+          await (api.put(`/tenant/admin/sermon/tags/${id}`, payload) as Promise<unknown>);
         } else {
-          await (api.post('/tenant/admin/sermon/tags', payload) as Promise<unknown>)
-            .catch(() => api.post('/tenant/admin/tags', payload) as Promise<unknown>);
+          await (api.post('/tenant/admin/sermon/tags', payload) as Promise<unknown>);
         }
       } catch {}
     }

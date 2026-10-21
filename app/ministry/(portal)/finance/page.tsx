@@ -63,7 +63,6 @@ export default function MinistryFinancePage() {
       .catch(() => {});
 
     (api.get<unknown>('/tenant/admin/finance/summary') as Promise<unknown>)
-      .catch(() => api.get<unknown>('/tenant/finance/stats') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const d = data as R;

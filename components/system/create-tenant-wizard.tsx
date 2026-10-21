@@ -150,7 +150,6 @@ export function CreateTenantWizard() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
     (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
-      .catch(() => api.get<unknown>('/system/plans') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)

@@ -47,9 +47,7 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
         onConfirm={async () => {
           setConfirm(false);
           if (USE_LIVE_API) {
-            try {
-              await (api.put(`/system/tenants/${id}/suspend`, {}) as Promise<unknown>);
-            } catch { /* try generic update on specific endpoint failure */ }
+            // /system/tenants/:id/suspend unconfirmed from live DO — disabled.
           }
           onSuspend();
         }}

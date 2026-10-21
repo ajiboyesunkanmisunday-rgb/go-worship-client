@@ -150,17 +150,9 @@ export default function SystemAuditLogsPage() {
   const [logs, setLogs] = useState<Log[]>(USE_LIVE_API ? [] : LOGS);
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
-  const loadLogs = (tab: AuditTab) => {
-    if (!USE_LIVE_API) return;
-    const cat = TAB_CATEGORY[tab];
-    const qs = cat ? `?category=${cat}` : '';
-    (api.get<unknown>(`/system/audit/events/recent${qs}`) as Promise<unknown>)
-      .then((data) => {
-        const arr = parseArr(data);
-        if (arr.length === 0) return;
-        setLogs(arr.map(mapLogRow));
-      })
-      .catch(() => {});
+  const loadLogs = (_tab: AuditTab) => {
+    // /system/audit/events/recent endpoint unconfirmed from live DO — disabled.
+    void USE_LIVE_API;
   };
 
   useEffect(() => {

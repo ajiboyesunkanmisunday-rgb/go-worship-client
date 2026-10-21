@@ -132,20 +132,7 @@ export default function SystemPlansPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getSystemStats()
-      .then((s) => {
-        if (!s) return;
-        if (s.givingVolume) setRevenue(s.givingVolume);
-        if (s.overduePayments) setOverdue(String(s.overduePayments));
-        if (s.pendingPayments) setPendingPayments(String(s.pendingPayments));
-      })
-      .catch(() => {});
-    (api.get<Record<string, unknown>>('/system/billing/stats') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const pp = d['pendingPayments'] ?? d['pending'] ?? d['pendingAmount'];
-        if (pp != null) setPendingPayments(typeof pp === 'number' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(pp) : String(pp));
-      })
-      .catch(() => {});
+    // /system/billing/stats unconfirmed from live DO — disabled.
 
     (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
       .then((data) => {

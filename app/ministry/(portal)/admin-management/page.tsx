@@ -36,7 +36,6 @@ export default function MinistryAdminManagementPage() {
   const deleteRole = (apiId: string) => {
     if (!USE_LIVE_API || !apiId) return;
     (api.del(`/tenant/admin/roles/${apiId}`) as Promise<unknown>)
-      .catch(() => api.del(`/tenant/admin/sub-admins/${apiId}`) as Promise<unknown>)
       .then(() => setRoles((prev) => prev.filter((r) => r.apiId !== apiId)))
       .catch(() => {});
   };

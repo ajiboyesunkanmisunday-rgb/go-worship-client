@@ -46,7 +46,6 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
   useEffect(() => {
     if (!USE_LIVE_API || !isEdit || !id) return;
     (api.get<unknown>(`/system/billing/plans/${id}`) as Promise<unknown>)
-      .catch(() => api.get<unknown>(`/system/plans/${id}`) as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const d = data as R;

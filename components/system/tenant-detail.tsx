@@ -287,18 +287,9 @@ const MEMBERS: MemberRow[] = [
   { name: 'Micheal paul', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
 ];
 
-async function tryGetTenantResource(id: string, sub: string): Promise<unknown> {
-  const paths = [
-    `/system/dashboard/admin/tenants/${id}/${sub}`,
-    `/system/tenants/${id}/${sub}`,
-  ];
-  for (const path of paths) {
-    try {
-      return await (api.get<unknown>(path) as Promise<unknown>);
-    } catch {
-      // try next path
-    }
-  }
+async function tryGetTenantResource(_id: string, _sub: string): Promise<unknown> {
+  // All tried paths (/system/dashboard/admin/tenants/:id/:sub, /system/tenants/:id/:sub)
+  // were unconfirmed or 404 in localhost HAR — disabled until verified from live DO.
   return null;
 }
 

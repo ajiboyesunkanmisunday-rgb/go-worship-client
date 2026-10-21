@@ -41,8 +41,6 @@ export function QuickAccess() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
     (api.get<Record<string, unknown>>('/tenant/media/storage-stats') as Promise<Record<string, unknown>>)
-      .catch(() => api.get<Record<string, unknown>>('/tenant/media/stats') as Promise<Record<string, unknown>>)
-      .catch(() => api.get<Record<string, unknown>>('/tenant/stats') as Promise<Record<string, unknown>>)
       .then((d) => {
         const size = (d['usedFormatted'] as string | undefined) ?? (d['totalSize'] as string | undefined) ?? (d['size'] as string | undefined);
         const count = (d['count'] as number | undefined) ?? (d['itemCount'] as number | undefined) ?? (d['totalCount'] as number | undefined);

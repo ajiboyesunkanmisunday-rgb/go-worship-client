@@ -47,27 +47,9 @@ export function NotificationsBell({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
-    type R = Record<string, unknown>;
-    const tryFetch = (path: string) => api.get<unknown>(path) as Promise<unknown>;
-    tryFetch('/self/notifications')
-      .catch(() => tryFetch('/tenant/notifications'))
-      .then((data) => {
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const mapped: Notification[] = arr.map((n) => ({
-          title: String(n['title'] ?? n['subject'] ?? n['name'] ?? 'Notification'),
-          body: String(n['body'] ?? n['message'] ?? n['description'] ?? n['content'] ?? ''),
-          unread: !n['read'] && !n['isRead'],
-        })).filter((n) => n.body);
-        if (mapped.length > 0) setNotifications(mapped);
-      }).catch(() => {});
+    // Both /self/notifications and /tenant/notifications returned 404 in localhost HAR.
+    // Disabled until correct endpoint is confirmed from live DO.
+    void USE_LIVE_API;
   }, []);
 
   useEffect(() => {

@@ -219,28 +219,7 @@ export function SystemDashboard() {
 
     loadFamily('PLATFORM');
 
-    // Recent audit activity
-    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data) ? (data as R[]) : [];
-        if (arr.length === 0) return;
-        const mapped = arr.map((a) => {
-          const rawTs = String(a['createdAt'] ?? a['timestamp'] ?? '');
-          const ts = rawTs
-            ? new Date(rawTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-            : '';
-          const action = String(a['action'] ?? a['title'] ?? a['eventType'] ?? '');
-          const resource = String(a['resourceType'] ?? '');
-          const actor = String(a['username'] ?? a['performedBy'] ?? a['createdBy'] ?? '');
-          return {
-            title: resource ? `${action} ${resource}`.toLowerCase().replace(/_/g, ' ') : action,
-            meta: `${actor} · ${ts}`.replace(/^·\s*$/, ''),
-          };
-        }).filter((a) => a.title).slice(0, 5);
-        if (mapped.length > 0) setActivity(mapped);
-      })
-      .catch(() => {});
+    // /system/audit/events/recent unconfirmed from live DO — disabled.
 
     // Plan distribution
     (api.get<unknown>('/system/billing/plans') as Promise<unknown>)

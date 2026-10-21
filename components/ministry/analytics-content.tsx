@@ -79,7 +79,6 @@ export function AnalyticsContent() {
     setTabTrend([]);
     const slug = tab.toLowerCase();
     (api.get<unknown>(`/tenant/admin/analytics/${slug}/trend`) as Promise<unknown>)
-      .catch(() => api.get<unknown>(`/tenant/admin/analytics/${slug}`))
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
