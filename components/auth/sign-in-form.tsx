@@ -52,6 +52,8 @@ type Props = {
   disableGoogle?: boolean;
   /** Show a "Register your church" link — only relevant on the platform root login. */
   showRegisterChurch?: boolean;
+  /** Show a "Continue as guest" link — off by default. */
+  showGuest?: boolean;
   /** Override the left-panel background image (default: church photo). */
   imgSrc?: string;
   imgAlt?: string;
@@ -84,6 +86,7 @@ function SignInFormInner({
   signupHref,
   disableGoogle = false,
   showRegisterChurch = false,
+  showGuest = false,
   imgSrc,
   imgAlt,
   imgClassName,
@@ -427,7 +430,7 @@ function SignInFormInner({
               </p>
             )}
 
-            {showGoogle && signupHref && (
+            {showGuest && showGoogle && signupHref && (
               <p className="text-center text-[14px] font-light text-brand-gray-500">
                 Just browsing?{' '}
                 <Link href="/auth/guest" className="font-medium text-brand-blue hover:underline">
