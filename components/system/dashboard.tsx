@@ -219,7 +219,35 @@ export function SystemDashboard() {
 
     loadFamily('PLATFORM');
 
-    // /system/audit/events/recent unconfirmed from live DO — disabled.
+    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        const mapped = arr.slice(0, 5).map((e) => {
+          const action = String(e['action'] ?? e['eventType'] ?? e['type'] ?? 'Event');
+          const resource = String(e['resource'] ?? e['entityType'] ?? e['target'] ?? '');
+          const actor = String(e['performedBy'] ?? e['actor'] ?? e['tenantName'] ?? '');
+          const at = e['createdAt'] ?? e['timestamp'] ?? e['eventTime'];
+          let meta = actor;
+          if (at) {
+            const dt = new Date(String(at));
+            if (!isNaN(dt.getTime())) {
+              const diffH = Math.floor((Date.now() - dt.getTime()) / 3600000);
+              meta += diffH < 24 ? ` · ${diffH}h ago` : ` · ${Math.floor(diffH / 24)}d ago`;
+            }
+          }
+          const title = resource ? `${action}: ${resource}` : action;
+          return { title, meta };
+        });
+        if (mapped.length > 0) setActivity(mapped);
+      })
+      .catch(() => {});
 
     // Plan distribution
     (api.get<unknown>('/system/billing/plans') as Promise<unknown>)

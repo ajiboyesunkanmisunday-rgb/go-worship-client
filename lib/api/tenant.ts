@@ -156,23 +156,16 @@ function mapMember(row: R): TenantMember {
   };
 }
 
-/** [VERIFY PATH] GET /tenant/admin/users/customers */
+/** GET /tenant/admin/users/customers — list endpoint not in backend API; use POST to create only. */
 export async function getTenantMembers(): Promise<TenantMember[]> {
-  const data = await api.get<unknown>('/tenant/admin/users/customers');
-  return findTableRows(data, 'customer', 'member', 'user').map(mapMember).filter((m) => m.name || m.email);
+  // GET /tenant/admin/users/customers not in backend API — return empty
+  return [];
 }
 
-/** [VERIFY PATH] GET /tenant/admin/users/customers/:id */
-export async function getTenantMember(id: string): Promise<TenantMember | null> {
-  try {
-    const data = await api.get<unknown>(`/tenant/admin/users/customers/${id}`);
-    const rows = findTableRows(data, 'customer', 'member', 'user');
-    if (rows.length > 0) return mapMember(rows[0]);
-    if (data && typeof data === 'object') return mapMember(data as Record<string, unknown>);
-    return null;
-  } catch {
-    return null;
-  }
+/** GET /tenant/admin/users/customers/:id — list endpoint not in backend API. */
+export async function getTenantMember(_id: string): Promise<TenantMember | null> {
+  // GET /tenant/admin/users/customers not in backend API — return null
+  return null;
 }
 
 /* -------- Tenant Group -------- */
@@ -335,49 +328,28 @@ export const provisionTenantMember = (payload: ProvisionTenantMemberPayload) =>
 
 /* -------- Member self-service content -------- */
 
-/** [VERIFY PATH] GET /self/events — member's registered/upcoming events */
+/** GET /self/events — not in backend API; use /tenant/events instead for event listings. */
 export async function getSelfEvents(): Promise<TenantEvent[]> {
-  const data = await api.get<unknown>('/self/events');
-  return findTableRows(data, 'event').map(mapEvent).filter((e) => e.name);
+  // /self/events not in backend API — return empty
+  return [];
 }
 
-/** [VERIFY PATH] GET /self/events/:id — single event detail for member */
-export async function getSelfEvent(id: string): Promise<TenantEvent | null> {
-  try {
-    const data = await api.get<unknown>(`/self/events/${id}`);
-    const rows = findTableRows(data, 'event');
-    if (rows.length > 0) return mapEvent(rows[0]);
-    if (data && typeof data === 'object') return mapEvent(data as Record<string, unknown>);
-    return null;
-  } catch {
-    // Fall back to fetching all and filtering
-    try {
-      const all = await getSelfEvents();
-      return all.find((e) => e.id === id) ?? null;
-    } catch {
-      return null;
-    }
-  }
+/** GET /self/events/:id — not in backend API. */
+export async function getSelfEvent(_id: string): Promise<TenantEvent | null> {
+  // /self/events not in backend API — return null
+  return null;
 }
 
-/** [VERIFY PATH] GET /self/groups — groups the member belongs to */
+/** GET /self/groups — not in backend API; no groups endpoint exists. */
 export async function getSelfGroups(): Promise<TenantGroup[]> {
-  const data = await api.get<unknown>('/self/groups');
-  return findTableRows(data, 'group').map(mapGroup).filter((g) => g.name);
+  // /self/groups not in backend API — return empty
+  return [];
 }
 
-/** [VERIFY PATH] GET /self/groups/activities — all group activities for the member */
+/** GET /self/groups/activities — not in backend API; no groups endpoint exists. */
 export async function getSelfGroupActivities(): Promise<import('@/types/groups').GroupActivity[]> {
-  const data = await api.get<unknown>('/self/groups/activities');
-  return (findTableRows(data, 'activity') as R[]).map((row) => ({
-    id:        fieldOf(row, ['id', 'activityId']) || String(Math.random()),
-    date:      fieldOf(row, ['date', 'activityDate', 'eventDate']) || '',
-    time:      fieldOf(row, ['time', 'activityTime', 'eventTime', 'startTime']) || '',
-    location:  fieldOf(row, ['location', 'venue', 'place']) || '',
-    topic:     fieldOf(row, ['topic', 'title', 'subject', 'name']) || undefined,
-    status:    fieldOf(row, ['status', 'activityStatus']) || 'Upcoming',
-    createdAt: fieldOf(row, ['createdAt', 'created_at']) || '',
-  }));
+  // /self/groups/activities not in backend API — return empty
+  return [];
 }
 
 /* -------- Tenant Branding (confirmed: brand.js + auth-endpoints memory) ---- */
