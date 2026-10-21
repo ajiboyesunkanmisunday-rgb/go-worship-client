@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 import { getSystemUsers, type SystemUser } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 
@@ -38,7 +37,7 @@ export default function SystemPlatformUsersPage() {
       .then((data) => {
         if (data.length > 0) setUsers(data);
       })
-      .catch(() => toast.error('Could not load platform users'))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

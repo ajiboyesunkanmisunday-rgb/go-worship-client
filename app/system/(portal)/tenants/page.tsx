@@ -6,7 +6,6 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
@@ -70,7 +69,7 @@ export default function SystemTenantsPage() {
       .then((data) => {
         if (data.length > 0) setTenants(data);
       })
-      .catch(() => toast.error('Could not load tenants'))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
