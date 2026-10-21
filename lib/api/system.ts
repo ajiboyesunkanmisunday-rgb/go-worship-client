@@ -117,8 +117,20 @@ function mapTenant(row: R): SystemTenant {
 }
 
 export async function getSystemTenants(): Promise<SystemTenant[]> {
-  const data = await api.get<unknown>('/system/dashboard/admin/tenants');
-  const rows = findTableRows(data, 'tenant');
+  const paths = [
+    '/system/admin/tenants',
+    '/system/tenants',
+    '/system/organizations',
+    '/system/dashboard/admin/tenants',
+  ];
+  let last: unknown;
+  for (const path of paths) {
+    try {
+      last = await api.get<unknown>(path);
+      break;
+    } catch { /* try next */ }
+  }
+  const rows = findTableRows(last, 'tenant');
   return rows.map(mapTenant).filter((t) => t.name);
 }
 

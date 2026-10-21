@@ -44,7 +44,7 @@ function AddTagCard() {
 }
 
 export default function SermonAdminTagsPage() {
-  const [tags, setTags] = useState<Tag[]>(TAGS);
+  const [tags, setTags] = useState<Tag[]>(USE_LIVE_API ? [] : TAGS);
 
   const deleteTag = (id: string) => {
     if (!USE_LIVE_API || !id) return;

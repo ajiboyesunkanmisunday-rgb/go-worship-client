@@ -23,7 +23,7 @@ const SERMONS: Sermon[] = [
 ];
 
 export default function SermonAdminSermonsPage() {
-  const [sermons, setSermons] = useState<Sermon[]>(SERMONS);
+  const [sermons, setSermons] = useState<Sermon[]>(USE_LIVE_API ? [] : SERMONS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
