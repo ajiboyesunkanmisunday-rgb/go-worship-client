@@ -7,7 +7,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
+import { RefreshCw, Check, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
 
 const TABS = [
   'General',
@@ -321,7 +321,7 @@ function SecurityPanel() {
                           {methodLabel[method]}
                           {enrolled && (
                             <span className="flex items-center gap-1 text-[11px] font-normal text-[#22a45d]">
-                              <CheckCircle2 className="size-3" /> Enrolled
+                              <Check className="size-3" /> Enrolled
                             </span>
                           )}
                           {preferred && enrolled && (
