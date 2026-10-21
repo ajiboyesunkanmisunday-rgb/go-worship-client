@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail } from 'lucide-react';
 
 const TABS = [
   'General',
@@ -215,13 +216,21 @@ function SecurityPanel() {
     OTP_EMAIL: 'Receive a one-time code by email each time you sign in.',
     OTP_SMS: 'Receive a one-time code by text message to your phone.',
   };
-  const MethodIcon = ({ method }: { method: string }) => {
-    if (method === 'TOTP') return <Smartphone className="size-5 text-[#555]" />;
-    if (method === 'OTP_EMAIL') return <ShieldCheck className="size-5 text-[#555]" />;
+  const MethodIcon = ({ method, enrolled }: { method: string; enrolled: boolean }) => {
+    const color = enrolled ? 'text-[#22a45d]' : 'text-[#555]';
+    if (method === 'TOTP') return <Smartphone className={`size-5 ${color}`} />;
+    if (method === 'OTP_EMAIL') return <Mail className={`size-5 ${color}`} />;
     return <MessageSquare className="size-5 text-[#555]" />;
   };
 
-  const allMethods = ['OTP_EMAIL', 'TOTP', 'OTP_SMS'];
+  const setPreferredMethod = (method: string) => {
+    if (!USE_LIVE_API) return;
+    (api.put('/self/security/mfa/preferred', { method }) as Promise<unknown>)
+      .then(() => setMfa((prev) => prev ? { ...prev, preferredMethod: method } : prev))
+      .catch(() => {});
+  };
+
+  const allMethods = ['TOTP', 'OTP_EMAIL', 'OTP_SMS'];
 
   return (
     <div className="flex flex-col gap-6">
@@ -237,17 +246,15 @@ function SecurityPanel() {
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium">Current Password</span>
-            <div className="relative">
-              <Input type="password" className="h-[48px] pr-10" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
-            </div>
+            <PasswordInput containerProps={{ className: 'h-[48px]' }} value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium">New Password</span>
-            <Input type="password" className="h-[48px]" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+            <PasswordInput containerProps={{ className: 'h-[48px]' }} value={newPw} onChange={(e) => setNewPw(e.target.value)} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium">Confirm Password</span>
-            <Input type="password" className="h-[48px]" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+            <PasswordInput containerProps={{ className: 'h-[48px]' }} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
           </label>
         </div>
         <Button
@@ -262,6 +269,7 @@ function SecurityPanel() {
       {/* 2FA */}
       <div className="rounded-[14px] border border-[#eee] p-6">
         <div className="flex items-center gap-3">
+          <ShieldCheck className={cn('size-5', mfa?.mfaEnabled ? 'text-[#22a45d]' : 'text-[#555]')} />
           <h2 className="text-[16px] font-bold">Two-factor authentication</h2>
           {mfa && (
             <span className={cn(
@@ -283,9 +291,15 @@ function SecurityPanel() {
                 <p className="text-[13px] font-medium">Primary method</p>
                 <p className="text-[12px] text-brand-gray-500">The method you&apos;ll be asked for first when signing in.</p>
               </div>
-              <span className="rounded-[8px] border border-[#ddd] bg-white px-3 py-2 text-[13px]">
-                {methodLabel[mfa.preferredMethod] ?? mfa.preferredMethod}
-              </span>
+              <select
+                value={mfa.preferredMethod}
+                onChange={(e) => setPreferredMethod(e.target.value)}
+                className="rounded-[8px] border border-[#ddd] bg-white px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand-blue"
+              >
+                {mfa.enrolledMethods.map((m) => (
+                  <option key={m} value={m}>{methodLabel[m] ?? m}</option>
+                ))}
+              </select>
             </div>
 
             <div className="mt-4 flex flex-col divide-y divide-[#f2f2f2]">
@@ -296,8 +310,8 @@ function SecurityPanel() {
                 return (
                   <div key={method} className="flex items-start justify-between gap-4 py-4">
                     <div className="flex items-start gap-3">
-                      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f2f2f2]">
-                        <MethodIcon method={method} />
+                      <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px]', enrolled ? 'bg-[#e7f7ee]' : 'bg-[#f2f2f2]')}>
+                        <MethodIcon method={method} enrolled={enrolled} />
                       </span>
                       <div>
                         <div className="flex items-center gap-2 text-[13px] font-medium">
