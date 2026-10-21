@@ -19,7 +19,7 @@ const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, (_, i) => ({
 }));
 
 export default function GroupLeaderMembersPage() {
-  const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

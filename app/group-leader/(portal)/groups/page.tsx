@@ -17,7 +17,7 @@ function toRow(g: TenantGroup): TableRow {
 }
 
 export default function GroupLeaderGroupsPage() {
-  const [rows, setRows] = useState<TableRow[]>(GROUP_ROWS);
+  const [rows, setRows] = useState<TableRow[]>(USE_LIVE_API ? [] : GROUP_ROWS);
   const [stats, setStats] = useState<TenantStats | null>(null);
 
   useEffect(() => {
