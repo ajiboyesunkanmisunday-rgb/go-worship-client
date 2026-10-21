@@ -105,21 +105,21 @@ export type CreateEventPayload = {
   [key: string]: unknown;
 };
 
-/** POST /tenant/admin/events */
+/** POST /tenant/events */
 export async function createTenantEvent(payload: CreateEventPayload): Promise<void> {
-  await api.post('/tenant/admin/events', payload);
+  await api.post('/tenant/events', payload);
 }
 
-/** [VERIFY PATH] GET /tenant/admin/events */
+/** GET /tenant/events */
 export async function getTenantEvents(): Promise<TenantEvent[]> {
-  const data = await api.get<unknown>('/tenant/admin/events');
+  const data = await api.get<unknown>('/tenant/events');
   return findTableRows(data, 'event').map(mapEvent).filter((e) => e.name);
 }
 
-/** [VERIFY PATH] GET /tenant/admin/events/{id} */
+/** GET /tenant/events/{eventId} */
 export async function getTenantEvent(id: string): Promise<TenantEvent | null> {
   try {
-    const data = await api.get<unknown>(`/tenant/admin/events/${id}`);
+    const data = await api.get<unknown>(`/tenant/events/${id}`);
     if (!data || typeof data !== 'object') return null;
     const d = data as R;
     const row = (d['data'] ?? d) as R;
@@ -211,23 +211,16 @@ function mapGroup(row: R): TenantGroup {
   };
 }
 
-/** [VERIFY PATH] GET /tenant/admin/groups */
+/** GET /tenant/admin/groups — no groups endpoint exists in the backend API. */
 export async function getTenantGroups(): Promise<TenantGroup[]> {
-  const data = await api.get<unknown>('/tenant/admin/groups');
-  return findTableRows(data, 'group').map(mapGroup).filter((g) => g.name);
+  // /tenant/admin/groups not in backend API — return empty
+  return [];
 }
 
-/** [VERIFY PATH] GET /tenant/admin/groups/:id */
-export async function getTenantGroup(id: string): Promise<TenantGroup | null> {
-  try {
-    const data = await api.get<unknown>(`/tenant/admin/groups/${id}`);
-    const rows = findTableRows(data, 'group');
-    if (rows.length > 0) return mapGroup(rows[0]);
-    if (data && typeof data === 'object') return mapGroup(data as Record<string, unknown>);
-    return null;
-  } catch {
-    return null;
-  }
+/** GET /tenant/admin/groups/:id — no groups endpoint exists in the backend API. */
+export async function getTenantGroup(_id: string): Promise<TenantGroup | null> {
+  // /tenant/admin/groups not in backend API — return null
+  return null;
 }
 
 export type CreateGroupPayload = {
@@ -246,14 +239,14 @@ export type CreateGroupPayload = {
   isPublic?: boolean;
 };
 
-/** POST /tenant/admin/groups */
-export async function createTenantGroup(payload: CreateGroupPayload): Promise<void> {
-  await api.post('/tenant/admin/groups', payload);
+/** POST /tenant/admin/groups — no groups endpoint exists in the backend API. */
+export async function createTenantGroup(_payload: CreateGroupPayload): Promise<void> {
+  // /tenant/admin/groups not in backend API — no-op
 }
 
-/** PUT /tenant/admin/groups/:id */
-export async function updateTenantGroup(id: string, payload: Partial<CreateGroupPayload>): Promise<void> {
-  await api.put(`/tenant/admin/groups/${id}`, payload);
+/** PUT /tenant/admin/groups/:id — no groups endpoint exists in the backend API. */
+export async function updateTenantGroup(_id: string, _payload: Partial<CreateGroupPayload>): Promise<void> {
+  // /tenant/admin/groups not in backend API — no-op
 }
 
 /* -------- Tenant Admin Dashboard Stats -------- */

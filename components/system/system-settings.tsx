@@ -457,8 +457,15 @@ export function SystemSettings() {
       }
     };
     const flat: ConfigMap = {};
-    // /system/config, /system/settings, /system/branding unconfirmed from live DO — disabled.
-    void flat;
+    (api.get<unknown>('/system/branding') as Promise<unknown>)
+      .then((data) => {
+        if (data && typeof data === 'object') {
+          flattenInto(data as Record<string, unknown>, flat);
+          setConfig({ ...flat });
+          setFormKey((k) => k + 1);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const onSave = async () => {
@@ -466,8 +473,8 @@ export function SystemSettings() {
     const fd = new FormData(formRef.current);
     const payload: ConfigMap = {};
     fd.forEach((v, k) => { payload[k] = String(v); });
-    if (USE_LIVE_API) {
-      // /system/config and /system/settings unconfirmed from live DO — disabled.
+    if (USE_LIVE_API && tab === 'Branding') {
+      await (api.put('/system/branding', payload) as Promise<unknown>).catch(() => {});
     }
   };
 

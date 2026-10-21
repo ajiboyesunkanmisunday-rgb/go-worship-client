@@ -79,7 +79,27 @@ export default function SystemRolesPage() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
-    // /system/roles returned 500 in localhost HAR — disabled until confirmed from DO.
+    (api.get<unknown>('/system/roles') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        const mapped: Role[] = arr.map((r) => ({
+          id: String(r['id'] ?? r['roleId'] ?? ''),
+          name: String(r['name'] ?? r['roleName'] ?? r['code'] ?? ''),
+          type: String(r['type'] ?? r['roleType'] ?? 'System'),
+          scope: String(r['scope'] ?? 'Platform'),
+          permissionCount: Number(r['permissionCount'] ?? r['permissions'] ?? 0),
+          status: String(r['status'] ?? 'Active').charAt(0).toUpperCase() + String(r['status'] ?? 'Active').slice(1).toLowerCase() as 'Active' | 'Inactive',
+        })).filter((r) => r.name);
+        if (mapped.length > 0) setRoles(mapped);
+      })
+      .catch(() => {});
 
     (api.get<unknown>('/system/permissions') as Promise<unknown>)
       .then((data) => {

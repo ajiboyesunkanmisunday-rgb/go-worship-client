@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 import {
   AlignLeft,
@@ -69,78 +68,12 @@ export default function SystemSupportPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<Record<string, unknown>>(`/system/support/tickets/${active}`) as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const subject = d['subject'] ?? d['title'] ?? d['summary'];
-        if (subject) setTicketTitle(String(subject));
-        const msgs = d['messages'] ?? d['conversations'] ?? d['replies'];
-        if (Array.isArray(msgs) && msgs.length > 0) {
-          const first = msgs[0] as Record<string, unknown>;
-          const body = first['body'] ?? first['content'] ?? first['message'] ?? first['text'];
-          if (body) setTicketBody(String(body));
-          const at = first['createdAt'] ?? first['sentAt'] ?? first['timestamp'];
-          if (at) {
-            const dt = new Date(String(at));
-            if (!isNaN(dt.getTime())) setTicketDate(dt.toLocaleString('en-US', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
-          }
-        } else {
-          const body = d['body'] ?? d['content'] ?? d['description'] ?? d['message'];
-          if (body) setTicketBody(String(body));
-        }
-        const attachments = d['attachments'] ?? d['files'];
-        if (Array.isArray(attachments) && (attachments as unknown[]).length > 0) {
-          const names = (attachments as Record<string, unknown>[]).map((a) => String(a['name'] ?? a['filename'] ?? a['url'] ?? '')).filter(Boolean);
-          if (names.length > 0) setTicketFiles(names);
-        }
-        const visitor = (d['visitor'] ?? d['requester'] ?? {}) as Record<string, unknown>;
-        const email = visitor['email'] ?? visitor['emailAddress'] ?? d['email'];
-        if (email) setVisitorEmail(String(email));
-        const phone = visitor['phone'] ?? visitor['phoneNumber'] ?? d['phone'];
-        if (phone) setVisitorPhone(String(phone));
-        const location = visitor['location'] ?? visitor['country'] ?? visitor['city'] ?? d['location'] ?? d['country'];
-        if (location) setVisitorLocation(String(location));
-        const lang = visitor['language'] ?? visitor['locale'] ?? d['language'];
-        if (lang) setVisitorLanguage(String(lang));
-        const device = (d['device'] ?? d['deviceInfo'] ?? {}) as Record<string, unknown>;
-        const ip = device['ip'] ?? device['ipAddress'] ?? visitor['ip'] ?? d['ip'] ?? d['ipAddress'];
-        if (ip) setVisitorIp(String(ip));
-        const os = device['os'] ?? device['operatingSystem'] ?? device['platform'] ?? d['os'];
-        if (os) setVisitorOs(String(os));
-        const browser = device['browser'] ?? device['browserName'] ?? device['agent'] ?? d['browser'];
-        if (browser) setVisitorBrowser(String(browser));
-      }).catch(() => {});
+    // /system/support/tickets not in backend API — disabled.
   }, [active]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/system/support/tickets') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const mapped: Ticket[] = arr.map((t, i) => {
-          const status = String(t['status'] ?? 'Open');
-          const priority = String(t['priority'] ?? t['severity'] ?? 'High');
-          return {
-            id: String(t['id'] ?? t['ticketId'] ?? `t${i + 1}`),
-            name: String(t['tenantName'] ?? t['requesterName'] ?? t['name'] ?? 'Unknown'),
-            preview: String(t['subject'] ?? t['title'] ?? t['preview'] ?? ''),
-            badges: [
-              { label: status, tone: 'open' as const },
-              { label: `${priority} priority`, tone: 'priority' as const },
-            ],
-          };
-        });
-        setTickets(mapped);
-        if (mapped.length > 0) setActive(mapped[0].id);
-      })
-      .catch(() => {});
+    // /system/support/tickets not in backend API — disabled.
   }, []);
 
   return (
@@ -253,11 +186,7 @@ export default function SystemSupportPage() {
                 disabled={!reply.trim() || sending}
                 onClick={async () => {
                   if (USE_LIVE_API) {
-                    setSending(true);
-                    try {
-                      await (api.post(`/system/support/tickets/${active}/reply`, { message: reply }) as Promise<unknown>);
-                    } catch { /* keep UX responsive on failure */ }
-                    finally { setSending(false); }
+                    // /system/support/tickets not in backend API — disabled.
                   }
                   setReply('');
                 }}
