@@ -71,6 +71,16 @@ const MOCK_TENANT: SystemTenant = {
   createdAt: 'Jan 10, 2025',
 };
 
+type PaymentGateway = {
+  id: string;
+  gatewayType: string;
+  displayName: string;
+  active: boolean;
+  primaryGateway: boolean;
+  allowCustomerCheckout: boolean;
+  allowSubscriptionBilling: boolean;
+};
+
 export function TenantDetail({ id }: { id: string }) {
   const router = useRouter();
   const back = '/system/tenants';
@@ -80,11 +90,28 @@ export function TenantDetail({ id }: { id: string }) {
   const [tenant, setTenant] = useState<SystemTenant>(
     USE_LIVE_API ? { id: '', name: '', domain: '', status: 'Active', plan: '', members: 0, createdAt: '' } : MOCK_TENANT
   );
+  const [gateways, setGateways] = useState<PaymentGateway[]>([]);
   const stats = buildStats(tenant);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getSystemTenant(id).then((t: SystemTenant | null) => { if (t) setTenant(t); }).catch(() => {});
+    (api.get<unknown>(`/system/tenants/${id}/payment-gateways`) as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data) ? (data as R[]) : Array.isArray((data as R)?.['data']) ? ((data as R)['data'] as R[]) : Array.isArray((data as R)?.['content']) ? ((data as R)['content'] as R[]) : [];
+        const mapped: PaymentGateway[] = arr.map((g) => ({
+          id:                     String(g['id'] ?? ''),
+          gatewayType:            String(g['gatewayType'] ?? ''),
+          displayName:            String(g['displayName'] ?? g['gatewayType'] ?? ''),
+          active:                 Boolean(g['active']),
+          primaryGateway:         Boolean(g['primaryGateway']),
+          allowCustomerCheckout:  Boolean(g['allowCustomerCheckout']),
+          allowSubscriptionBilling: Boolean(g['allowSubscriptionBilling']),
+        }));
+        if (mapped.length > 0) setGateways(mapped);
+      })
+      .catch(() => {});
   }, [id]);
 
   return (
@@ -235,6 +262,36 @@ export function TenantDetail({ id }: { id: string }) {
               />
             </div>
           </div>
+
+          {(USE_LIVE_API ? gateways.length > 0 : true) && (
+            <div className="rounded-[14px] border border-[#eee] p-6 lg:col-span-2">
+              <h2 className="text-[18px] font-bold">Payment Gateways</h2>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[480px] border-collapse text-[12px]">
+                  <thead>
+                    <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
+                      {['Gateway', 'Status', 'Primary', 'Checkout', 'Billing'].map((h) => (
+                        <th key={h} className="pb-2 font-medium">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(USE_LIVE_API ? gateways : [{ id: '1', gatewayType: 'STRIPE', displayName: 'Stripe', active: true, primaryGateway: true, allowCustomerCheckout: true, allowSubscriptionBilling: true }]).map((g) => (
+                      <tr key={g.id} className="border-b border-[#f2f2f2]">
+                        <td className="py-3 font-medium">{g.displayName}</td>
+                        <td className={cn('py-3 font-medium', g.active ? 'text-[#34a853]' : 'text-brand-gray-400')}>
+                          {g.active ? 'Active' : 'Inactive'}
+                        </td>
+                        <td className="py-3">{g.primaryGateway ? 'Yes' : 'No'}</td>
+                        <td className="py-3">{g.allowCustomerCheckout ? 'Yes' : 'No'}</td>
+                        <td className="py-3">{g.allowSubscriptionBilling ? 'Yes' : 'No'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       ) : tab === 'Members' ? (
         <MembersTab id={id} />
