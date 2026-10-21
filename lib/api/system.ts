@@ -6,11 +6,11 @@
  *  - 403 {code:"MFA_ENROLLMENT_REQUIRED", ...}  → admin must enrol MFA first
  *
  * Endpoints (SO-006…009 from the Postman collection):
- *   POST /system/tenants/provision        — provision tenant + first admin (QA v2.0 SO-009)
- *   POST /system/users/provision          — provision SO platform user
- *   GET  /system/dashboard/admin/tenants  — tenant list (500-free workaround for /system/tenants)
- *   GET  /system/dashboard/admin/users    — user list (500-free workaround for /system/users)
- *   GET  /system/dashboard                — aggregate stats
+ *   POST /system/tenants/provision  — provision tenant + first admin (QA v2.0 SO-009)
+ *   POST /system/users/provision    — provision SO platform user
+ *   GET  /system/users              — platform user list (confirmed from live DO HAR)
+ *   GET  /system/billing/plans      — billing plan list (confirmed from live DO HAR)
+ *   GET  /system/dashboard          — aggregate stats
  *
  * Response parsing:
  *   Dashboard endpoints return a wrapper (PageResponse / table format). `fieldOf` +
@@ -170,8 +170,10 @@ function mapRole(row: R): string {
   const first = Array.isArray(codes) && codes.length ? String(codes[0]) : '';
   const userType = first || fieldOf(row, ['userType', 'role', 'roleCode']);
   switch (userType.toUpperCase()) {
+    case 'SUPER_SYSTEM_ADMIN':
     case 'SUPER_ADMIN':
     case 'SYSTEM_SUPER_ADMIN': return 'Super Admin';
+    case 'SYSTEM':
     case 'SYSTEM_ADMIN':       return 'Admin';
     case 'SYSTEM_SUPPORT':     return 'Support';
     case 'SYSTEM_AUDITOR':     return 'Auditor';
@@ -192,7 +194,7 @@ function mapUser(row: R): SystemUser {
 }
 
 export async function getSystemUsers(): Promise<SystemUser[]> {
-  const data = await api.get<unknown>('/system/dashboard/admin/users');
+  const data = await api.get<unknown>('/system/users');
   const rows = findTableRows(data, 'user');
   return rows.map(mapUser).filter((u) => u.name || u.email);
 }
