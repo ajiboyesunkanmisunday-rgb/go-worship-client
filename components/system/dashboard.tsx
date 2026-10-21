@@ -2,8 +2,7 @@
 
 import { StatCard } from '@/components/ministry/shared';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import { getSystemStats, type SystemStats } from '@/lib/api/system';
@@ -11,6 +10,7 @@ import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
 import { getProfile } from '@/lib/api/auth';
+
 
 const MOCK_TREND = [
   { month: 'May', value: 220 },
@@ -38,6 +38,17 @@ const MOCK_STATS: SystemStats = {
   givingVolume: '$2.5M', trialTenants: 30, overduePayments: 130,
 };
 
+const ZERO_STATS: SystemStats = {
+  totalTenants: 0, activeTenants: 0, totalUsers: 0,
+  givingVolume: '$0', trialTenants: 0, overduePayments: 0,
+};
+
+const DASH_TABS = [
+  'Engagement', 'Finance', 'Communications', 'Platform',
+  'Tenant Operations', 'Content', 'Security',
+  'Guest Self Service', 'Customer Self Service', 'Campus Operations',
+];
+
 const MOCK_PLANS = [['Starter', '58'], ['Pro', '54'], ['Enterprise', '18']];
 
 const chartConfig = {
@@ -51,11 +62,12 @@ function fmt(n: number | string): string {
 }
 
 export function SystemDashboard() {
-  const [stats, setStats] = useState<SystemStats>(MOCK_STATS);
-  const [trendData, setTrendData] = useState(MOCK_TREND);
-  const [activity, setActivity] = useState(MOCK_ACTIVITY);
-  const [plans, setPlans] = useState(MOCK_PLANS);
+  const [stats, setStats] = useState<SystemStats>(USE_LIVE_API ? ZERO_STATS : MOCK_STATS);
+  const [trendData, setTrendData] = useState(USE_LIVE_API ? [] : MOCK_TREND);
+  const [activity, setActivity] = useState(USE_LIVE_API ? [] : MOCK_ACTIVITY);
+  const [plans, setPlans] = useState(USE_LIVE_API ? [] : MOCK_PLANS);
   const [adminName, setAdminName] = useState('Super System Administrator');
+  const [dashTab, setDashTab] = useState('Platform');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -65,15 +77,14 @@ export function SystemDashboard() {
       if (name) setAdminName(name);
     }).catch(() => {});
     getUnifiedDashboard().then((u) => {
-      if (u && (u.totalTenants || u.totalUsers)) {
-        setStats({
-          totalTenants:    u.totalTenants,
-          activeTenants:   u.activeTenants,
-          totalUsers:      u.totalUsers,
-          givingVolume:    u.totalGiving,
-          trialTenants:    0,
-          overduePayments: 0,
-        });
+      if (u) {
+        setStats((prev) => ({
+          ...prev,
+          totalTenants:    u.totalTenants ?? prev.totalTenants,
+          activeTenants:   u.activeTenants ?? prev.activeTenants,
+          totalUsers:      u.totalUsers ?? prev.totalUsers,
+          givingVolume:    u.totalGiving ?? prev.givingVolume,
+        }));
       } else {
         getSystemStats().then((s) => { if (s) setStats(s); }).catch(() => {});
       }
@@ -149,22 +160,31 @@ export function SystemDashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] font-bold lg:text-[32px]">
-            Hello, {adminName} 👋
-          </h1>
-          <p className="mt-1 text-[14px] text-brand-gray-500">
-            Go Worship
-          </p>
-        </div>
-        <Link
-          href="/system/tenants/create"
-          className="flex h-10 items-center gap-2 rounded-[8px] bg-[#22a45d] px-4 text-[14px] font-medium text-white no-underline transition-colors hover:bg-[#1c8c4f]"
-        >
-          <Plus className="size-4" />
-          Add Tenants
-        </Link>
+      <div>
+        <h1 className="text-[26px] font-bold lg:text-[32px]">
+          Hello, {adminName} 👋
+        </h1>
+        <p className="mt-1 text-[14px] text-brand-gray-500">
+          Go Worship
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 text-[13px]">
+        {DASH_TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setDashTab(t)}
+            className={cn(
+              'rounded-full border px-4 py-1.5 transition-colors',
+              t === dashTab
+                ? 'border-brand-blue bg-brand-blue text-white'
+                : 'border-[#e5e5e5] text-brand-gray-500 hover:border-brand-blue/40'
+            )}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       <div>

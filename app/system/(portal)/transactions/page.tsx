@@ -55,11 +55,11 @@ const TABS = ['All Transactions', 'Online', 'Offline'];
 /** System → Transactions (board 778:38441). */
 export default function SystemTransactionsPage() {
   const [tab, setTab] = useState(0);
-  const [txns, setTxns] = useState<SysTxn[]>(TXNS);
-  const [totalGiving, setTotalGiving] = useState('$60500');
-  const [failedCount, setFailedCount] = useState(20);
-  const [offlineGiving, setOfflineGiving] = useState('$87,730');
-  const [recurringGivers, setRecurringGivers] = useState('130');
+  const [txns, setTxns] = useState<SysTxn[]>(USE_LIVE_API ? [] : TXNS);
+  const [totalGiving, setTotalGiving] = useState(USE_LIVE_API ? '$0' : '$60,500');
+  const [paidInvoices, setPaidInvoices] = useState(USE_LIVE_API ? 0 : 20);
+  const [pendingAmount, setPendingAmount] = useState(USE_LIVE_API ? '$0' : '$1,200');
+  const [totalTxnCount, setTotalTxnCount] = useState(USE_LIVE_API ? 0 : 4);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -100,7 +100,8 @@ export default function SystemTransactionsPage() {
           channel: String(p['channel'] ?? 'Online'),
         }));
         setTxns(mapped);
-        setFailedCount(mapped.filter((t) => t.status === 'Failed').length);
+        setTotalTxnCount(mapped.length);
+        setPaidInvoices(mapped.filter((t) => t.status === 'Success').length);
       })
       .catch(() => {});
     getUnifiedDashboard()
@@ -109,10 +110,12 @@ export default function SystemTransactionsPage() {
     (api.get<Record<string, unknown>>('/system/finance/stats') as Promise<Record<string, unknown>>)
       .catch(() => api.get<Record<string, unknown>>('/system/transactions/summary') as Promise<Record<string, unknown>>)
       .then((d) => {
-        const og = d['offlineGiving'] ?? d['offline'] ?? d['offlineAmount'];
-        const rg = d['recurringGivers'] ?? d['recurring'] ?? d['recurringCount'];
-        if (og != null) setOfflineGiving(fmtAmt(og, 'USD'));
-        if (rg != null) setRecurringGivers(String(rg));
+        const pi = d['paidInvoices'] ?? d['paidCount'] ?? d['successCount'];
+        const pa = d['pendingAmount'] ?? d['pendingTotal'] ?? d['pending'];
+        const tt = d['totalTransactions'] ?? d['totalCount'] ?? d['total'];
+        if (pi != null) setPaidInvoices(Number(pi));
+        if (pa != null) setPendingAmount(fmtAmt(pa, 'USD'));
+        if (tt != null) setTotalTxnCount(Number(tt));
       })
       .catch(() => {});
   }, []);
@@ -158,9 +161,9 @@ export default function SystemTransactionsPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard title="Total Giving" value={totalGiving} variant="blue" />
-        <StatCard title="Offline Giving" value={offlineGiving} variant="white" />
-        <StatCard title="Recurring Givers" value={recurringGivers} variant="green" />
-        <StatCard title="Failed Transactions" value={String(failedCount)} variant="white" />
+        <StatCard title="Paid Invoices" value={String(paidInvoices)} variant="white" />
+        <StatCard title="Pending" value={pendingAmount} variant="green" />
+        <StatCard title="Total Transactions" value={String(totalTxnCount)} variant="white" />
         <ActionCard
           href="/system/transactions"
           title="Giving List"

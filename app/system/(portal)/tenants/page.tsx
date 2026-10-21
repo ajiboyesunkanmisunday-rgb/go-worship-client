@@ -61,7 +61,7 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
 
 export default function SystemTenantsPage() {
   const [tab, setTab] = useState(0);
-  const [tenants, setTenants] = useState<SystemTenant[]>(MOCK);
+  const [tenants, setTenants] = useState<SystemTenant[]>(USE_LIVE_API ? [] : MOCK);
   const [loading, setLoading] = useState(USE_LIVE_API);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function SystemTenantsPage() {
 
   const rows: SmartRow[] = filtered.map((t) => ({
     group: t.status,
-    text: [t.name, t.domain, t.status, t.plan, String(t.members), t.createdAt],
+    text: [t.name, t.domain, t.status, t.plan, String(t.members), t.totalGiving ?? '', t.createdAt],
     cells: [
       <span key="n">
         <span className="block font-medium">{t.name}</span>
@@ -98,6 +98,7 @@ export default function SystemTenantsPage() {
         {t.plan || '—'}
       </span>,
       t.members || '—',
+      t.totalGiving || '—',
       t.createdAt || '—',
       <TenantActions
         key="a"
@@ -153,7 +154,7 @@ export default function SystemTenantsPage() {
         <p className="py-10 text-center text-[14px] text-[#888]">Loading…</p>
       ) : (
         <SmartTable
-          headers={['Tenant', 'Status', 'Plan', 'Members', 'Joined', 'Action']}
+          headers={['Tenant', 'Status', 'Plan', 'Members', 'Revenue', 'Joined', 'Action']}
           rows={rows}
           filterOptions={['Active', 'Pending', 'Suspended']}
           filterAll="Filter"
