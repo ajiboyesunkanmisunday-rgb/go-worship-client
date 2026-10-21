@@ -7,7 +7,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
 
 const TABS = [
   'General',
@@ -259,7 +259,7 @@ function SecurityPanel() {
         </div>
         <Button
           className="mt-5 h-[44px] px-6"
-          disabled={pwSaving || !newPw || newPw !== confirmPw}
+          disabled={pwSaving}
           onClick={updatePassword}
         >
           {pwSaving ? 'Updating…' : 'Update password'}
@@ -291,15 +291,18 @@ function SecurityPanel() {
                 <p className="text-[13px] font-medium">Primary method</p>
                 <p className="text-[12px] text-brand-gray-500">The method you&apos;ll be asked for first when signing in.</p>
               </div>
-              <select
-                value={mfa.preferredMethod}
-                onChange={(e) => setPreferredMethod(e.target.value)}
-                className="rounded-[8px] border border-[#ddd] bg-white px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand-blue"
-              >
-                {mfa.enrolledMethods.map((m) => (
-                  <option key={m} value={m}>{methodLabel[m] ?? m}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={mfa.preferredMethod}
+                  onChange={(e) => setPreferredMethod(e.target.value)}
+                  className="h-[40px] appearance-none rounded-[8px] border border-[#ddd] bg-white pl-3 pr-8 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                >
+                  {mfa.enrolledMethods.map((m) => (
+                    <option key={m} value={m}>{methodLabel[m] ?? m}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-[#888]" />
+              </div>
             </div>
 
             <div className="mt-4 flex flex-col divide-y divide-[#f2f2f2]">
