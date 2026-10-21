@@ -90,7 +90,7 @@ export const createCheckoutPayment = (payload: CreatePaymentRequest) =>
 /* -------- Token submission (COLLECT_JS only) -------- */
 
 export const submitPaymentToken = (ref: string, paymentToken: string) =>
-  api.post(`/public/checkout/payments/${ref}/token`, { paymentToken });
+  api.post(`/public/checkout/payments/${encodeURIComponent(ref)}/token`, { paymentToken });
 
 /* -------- Payment status polling -------- */
 
@@ -104,7 +104,7 @@ export type PaymentStatus = {
 };
 
 export const getPaymentStatus = (ref: string) =>
-  api.get<PaymentStatus>(`/public/checkout/payments/${ref}`);
+  api.get<PaymentStatus>(`/public/checkout/payments/${encodeURIComponent(ref)}`);
 
 /* -------- Gateway helpers -------- */
 

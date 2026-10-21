@@ -60,7 +60,7 @@ export type PaymentStatusResponse = {
 };
 
 export const getCustomerPaymentById = (id: string) =>
-  api.get<PaymentStatusResponse>(`/customer/payments/${id}`);
+  api.get<PaymentStatusResponse>(`/customer/payments/${encodeURIComponent(id)}`);
 
 /** URL to download/view a payment receipt (PDF document). */
 export function receiptUrl(documentId: string) {
@@ -103,7 +103,7 @@ export const createCustomerPayment = (payload: CustomerPaymentRequest) =>
   api.post<CreatePaymentResponse>('/customer/payments', payload);
 
 export const submitCustomerPaymentToken = (ref: string, paymentToken: string) =>
-  api.post(`/customer/payments/${ref}/token`, { paymentToken });
+  api.post(`/customer/payments/${encodeURIComponent(ref)}/token`, { paymentToken });
 
 export const getCustomerPaymentStatus = (id: string) =>
-  api.get<PaymentStatus>(`/customer/payments/${id}`);
+  api.get<PaymentStatus>(`/customer/payments/${encodeURIComponent(id)}`);
