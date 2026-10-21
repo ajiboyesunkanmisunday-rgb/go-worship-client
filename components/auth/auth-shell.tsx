@@ -48,30 +48,39 @@ export function AuthShell({
       <div className={cn('flex min-h-screen w-full bg-white', mainClassName)}>
         {/* Left: full-bleed system panel — no rounding, no outer padding */}
         <aside className="relative hidden w-[46%] shrink-0 overflow-hidden bg-brand-blue lg:block">
-          <Image
-            src={imgSrc}
-            alt={imgAlt}
-            fill
-            priority
-            sizes="46vw"
-            className={imgClassName ?? 'object-cover'}
-          />
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt={orgName ?? 'Leadremit'}
-              className="absolute top-10 left-10 z-10 h-[30px] w-auto object-contain"
+          {/* Logo at top */}
+          <div className="p-10">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt={orgName ?? 'Leadremit'}
+                className="h-[30px] w-auto object-contain"
+              />
+            ) : (
+              <Image
+                src="/auth/cci-logo-white.svg"
+                alt={orgName ?? 'Celebration Church Canada'}
+                width={160}
+                height={30}
+                className="h-[30px] w-auto"
+              />
+            )}
+          </div>
+          {/* Triangle pattern */}
+          <svg
+            className="pointer-events-none absolute bottom-0 left-0 h-[72%] w-[88%] text-white/[0.14]"
+            viewBox="0 0 640 660"
+            fill="none"
+            preserveAspectRatio="xMinYMax meet"
+            aria-hidden="true"
+          >
+            <path
+              d="M320 90 L610 500 L320 500 Z M320 90 L30 500 L320 500 Z M-40 660 L320 210 L680 660"
+              stroke="currentColor"
+              strokeWidth="1.5"
             />
-          ) : (
-            <Image
-              src="/auth/cci-logo-white.svg"
-              alt={orgName ?? 'Celebration Church Canada'}
-              width={160}
-              height={30}
-              className="absolute top-10 left-10 z-10 h-[30px] w-auto"
-            />
-          )}
+          </svg>
         </aside>
 
         {/* Right: content column */}
