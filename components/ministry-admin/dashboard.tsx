@@ -60,7 +60,7 @@ const RECENT_EVENTS = [
 
 export function GroupLeaderDashboard() {
   const [stats, setStats] = useState<TenantStats | null>(null);
-  const [recentEvents, setRecentEvents] = useState<EventRow[]>(RECENT_EVENTS);
+  const [recentEvents, setRecentEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : RECENT_EVENTS);
   const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church International');
   const [userName, setUserName] = useState('');
 

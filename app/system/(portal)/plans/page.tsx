@@ -128,7 +128,7 @@ export default function SystemPlansPage() {
   const [revenue, setRevenue] = useState(USE_LIVE_API ? '$0' : '$1300');
   const [overdue, setOverdue] = useState(USE_LIVE_API ? '$0' : '$150');
   const [pendingPayments, setPendingPayments] = useState(USE_LIVE_API ? '$0' : '$830');
-  const [plans, setPlans] = useState<Plan[]>(PLANS);
+  const [plans, setPlans] = useState<Plan[]>(USE_LIVE_API ? [] : PLANS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

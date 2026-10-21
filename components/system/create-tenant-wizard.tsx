@@ -132,7 +132,7 @@ export function CreateTenantWizard() {
   const router = useRouter();
   const back = '/system/tenants';
 
-  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
+  const [plans, setPlans] = useState<Plan[]>(USE_LIVE_API ? [] : DEFAULT_PLANS);
   const [step, setStep] = useState(1);
   const [basic, setBasic] = useState<Basic>({
     churchName: '',

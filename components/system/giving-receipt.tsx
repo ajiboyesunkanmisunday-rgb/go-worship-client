@@ -51,7 +51,7 @@ const DEFAULT_RECEIPT: ReceiptData = {
 export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: string }) {
   const router = useRouter();
   const back = '/system/transactions';
-  const [receipt, setReceipt] = useState<ReceiptData>(DEFAULT_RECEIPT);
+  const [receipt, setReceipt] = useState<ReceiptData>(USE_LIVE_API ? { org: '', orgAddress: '', orgPhone: '', orgEmail: '', orgWeb: '', donorName: '', donorEmail: '', donorPhone: '', date: '', amount: '', fund: '', donationType: '', paymentMethod: '', txnId: id ?? '', subtotal: '' } : DEFAULT_RECEIPT);
   const [isFailed, setIsFailed] = useState(failed);
 
   useEffect(() => {

@@ -35,7 +35,7 @@ const MOCK_SERMON: Sermon = {
 export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } = {}) {
   const router = useRouter();
   const back = backTo ?? '/sermon-admin/sermons';
-  const [sermon, setSermon] = useState<Sermon>(MOCK_SERMON);
+  const [sermon, setSermon] = useState<Sermon>(USE_LIVE_API ? { title: '', status: '', speaker: '', series: '', date: '', duration: '', videoUrl: '', description: '', fileName: '' } : MOCK_SERMON);
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;

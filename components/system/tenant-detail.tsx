@@ -303,7 +303,7 @@ async function tryGetTenantResource(id: string, sub: string): Promise<unknown> {
 }
 
 function MembersTab({ id }: { id: string }) {
-  const [members, setMembers] = useState<MemberRow[]>(MEMBERS);
+  const [members, setMembers] = useState<MemberRow[]>(USE_LIVE_API ? [] : MEMBERS);
   const [sub, setSub] = useState<'All Member' | 'Active' | 'Inactive'>('All Member');
   const [openMember, setOpenMember] = useState<string | null>(null);
 
@@ -553,7 +553,7 @@ const TXN_STATUS: Record<string, string> = {
 };
 
 function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
-  const [transactions, setTransactions] = useState<TxnRow[]>(TRANSACTIONS);
+  const [transactions, setTransactions] = useState<TxnRow[]>(USE_LIVE_API ? [] : TRANSACTIONS);
   const [sub, setSub] = useState<'Non Member' | 'Member'>('Non Member');
   const [receipt, setReceipt] = useState<{ failed: boolean; row?: TxnRow } | null>(null);
 
@@ -803,7 +803,7 @@ const GROUPS: GroupRow[] = [
 ];
 
 function GroupsTab({ id }: { id: string }) {
-  const [groups, setGroups] = useState<GroupRow[]>(GROUPS);
+  const [groups, setGroups] = useState<GroupRow[]>(USE_LIVE_API ? [] : GROUPS);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1010,7 +1010,7 @@ const EVENT_STATUS: Record<string, string> = {
 };
 
 function EventsTab({ id }: { id: string }) {
-  const [events, setEvents] = useState<EventRow[]>(EVENTS);
+  const [events, setEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : EVENTS);
   const [openEvent, setOpenEvent] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1200,7 +1200,7 @@ const INVOICES: InvoiceRow[] = [
 ];
 
 function BillingTab({ id }: { id: string }) {
-  const [invoices, setInvoices] = useState<InvoiceRow[]>(INVOICES);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>(USE_LIVE_API ? [] : INVOICES);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
 
   useEffect(() => {

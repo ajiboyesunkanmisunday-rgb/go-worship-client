@@ -35,7 +35,7 @@ export function TagForm({
   const router = useRouter();
   const isEdit = mode === 'edit';
   const back = backTo ?? '/sermon-admin/tags';
-  const [tag, setTag] = useState<TagData>(DEFAULT_TAG);
+  const [tag, setTag] = useState<TagData>(USE_LIVE_API && !isEdit ? { name: '', description: '', status: 'Active' } : DEFAULT_TAG);
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {

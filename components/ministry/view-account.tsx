@@ -62,7 +62,7 @@ export function ViewAccount({ id }: { id?: string } = {}) {
   const router = useRouter();
   const back = '/ministry/admin-management';
   const [del, setDel] = useState(false);
-  const [account, setAccount] = useState<AccountData>(DEFAULT_ACCOUNT);
+  const [account, setAccount] = useState<AccountData>(USE_LIVE_API ? { name: '', email: '', status: '', lastUpdated: '', createdBy: '', createdOn: '', lastEdited: '', assignedUsers: '0', matrix: [] } : DEFAULT_ACCOUNT);
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;

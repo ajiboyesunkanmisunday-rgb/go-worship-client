@@ -43,7 +43,7 @@ export function NotificationsBell({
   tone?: 'light' | 'dark';
 }) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>(USE_LIVE_API ? [] : NOTIFICATIONS);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

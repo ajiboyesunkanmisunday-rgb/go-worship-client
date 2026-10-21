@@ -59,7 +59,7 @@ export function EditTenantForm({ id }: { id: string }) {
   const back = `/system/tenants/${id}`;
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [tenantForm, setTenantForm] = useState<TenantFormData>(DEFAULT_TENANT);
+  const [tenantForm, setTenantForm] = useState<TenantFormData>(USE_LIVE_API ? { name: '', tenantUrl: '', email: '', phone: '', created: '', plan: '', memberCount: '' } : DEFAULT_TENANT);
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {

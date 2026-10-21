@@ -18,7 +18,7 @@ const UPLOADS: UploadRow[] = [
 
 /** Church Admin → Uploaded Media (Figma 530:26345). */
 export default function MinistryUploadedMediaPage() {
-  const [uploads, setUploads] = useState<UploadRow[]>(UPLOADS);
+  const [uploads, setUploads] = useState<UploadRow[]>(USE_LIVE_API ? [] : UPLOADS);
 
   const deleteUpload = (id: string) => {
     if (!USE_LIVE_API || !id) return;

@@ -35,7 +35,7 @@ export function CheckInButton({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [checked, setChecked] = useState<string[]>([]);
-  const [attendees, setAttendees] = useState<string[]>(DEFAULT_ATTENDEES);
+  const [attendees, setAttendees] = useState<string[]>(USE_LIVE_API ? [] : DEFAULT_ATTENDEES);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

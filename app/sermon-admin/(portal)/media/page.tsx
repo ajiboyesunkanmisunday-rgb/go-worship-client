@@ -40,7 +40,7 @@ function UploadMediaCard() {
 }
 
 export default function SermonAdminMediaPage() {
-  const [media, setMedia] = useState<MediaFile[]>(MEDIA);
+  const [media, setMedia] = useState<MediaFile[]>(USE_LIVE_API ? [] : MEDIA);
 
   const deleteMedia = (id: string) => {
     if (!USE_LIVE_API || !id) return;
