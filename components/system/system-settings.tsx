@@ -7,6 +7,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences } from '@/lib/api/auth';
 import { RefreshCw, Check, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
 
 const TABS = [
@@ -174,16 +175,16 @@ function SecurityPanel() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<Record<string, unknown>>('/self/security/mfa') as Promise<Record<string, unknown>>)
+    getMfaSettings()
       .then((res) => {
-        const d = (res['data'] ?? res) as Record<string, unknown>;
+        const d = res.data;
         setMfa({
-          mfaEnabled:        Boolean(d['mfaEnabled']),
-          preferredMethod:   String(d['preferredMethod'] ?? ''),
-          totpEnrolled:      Boolean(d['totpEnrolled']),
-          otpEmailAvailable: Boolean(d['otpEmailAvailable'] ?? true),
-          otpSmsAvailable:   Boolean(d['otpSmsAvailable']),
-          enrolledMethods:   Array.isArray(d['enrolledMethods']) ? (d['enrolledMethods'] as string[]) : [],
+          mfaEnabled:        d.mfaEnabled,
+          preferredMethod:   d.preferredMethod ?? '',
+          totpEnrolled:      d.totpEnrolled,
+          otpEmailAvailable: d.otpEmailAvailable,
+          otpSmsAvailable:   Array.isArray(d.eligibleMethods) ? d.eligibleMethods.includes('OTP_SMS') : false,
+          enrolledMethods:   d.enrolledMethods,
         });
       })
       .catch(() => {});
@@ -193,7 +194,7 @@ function SecurityPanel() {
     if (!newPw || newPw !== confirmPw) return;
     setPwSaving(true);
     try {
-      await (api.put('/self/security/password', { currentPassword: currentPw, newPassword: newPw }) as Promise<unknown>);
+      await apiChangePassword(currentPw, newPw, confirmPw);
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
     } catch { /* keep form */ }
     finally { setPwSaving(false); }
@@ -201,7 +202,7 @@ function SecurityPanel() {
 
   const removeMethod = (method: string) => {
     if (!USE_LIVE_API) return;
-    (api.del(`/self/security/mfa/${method.toLowerCase()}`) as Promise<unknown>)
+    disableMfaEnrollment(method)
       .then(() => setMfa((prev) => prev ? { ...prev, enrolledMethods: prev.enrolledMethods.filter((m) => m !== method), totpEnrolled: method === 'TOTP' ? false : prev.totpEnrolled } : prev))
       .catch(() => {});
   };
@@ -225,7 +226,7 @@ function SecurityPanel() {
 
   const setPreferredMethod = (method: string) => {
     if (!USE_LIVE_API) return;
-    (api.put('/self/security/mfa/preferred', { method }) as Promise<unknown>)
+    updateMfaPreferences({ enabled: mfa?.mfaEnabled ?? true, preferredMethod: method })
       .then(() => setMfa((prev) => prev ? { ...prev, preferredMethod: method } : prev))
       .catch(() => {});
   };
@@ -305,13 +306,13 @@ function SecurityPanel() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-col divide-y divide-[#f2f2f2]">
+            <div className="mt-4 flex flex-col gap-3">
               {allMethods.map((method) => {
                 const enrolled = mfa.enrolledMethods.includes(method);
                 const preferred = mfa.preferredMethod === method;
                 const comingSoon = method === 'OTP_SMS' && !mfa.otpSmsAvailable;
                 return (
-                  <div key={method} className="flex items-start justify-between gap-4 py-4">
+                  <div key={method} className="flex items-start justify-between gap-4 rounded-[10px] border border-[#eee] p-4">
                     <div className="flex items-start gap-3">
                       <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px]', enrolled ? 'bg-[#22a45d]' : 'bg-[#f2f2f2]')}>
                         <MethodIcon method={method} enrolled={enrolled} />
