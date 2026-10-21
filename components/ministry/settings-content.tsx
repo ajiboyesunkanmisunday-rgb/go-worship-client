@@ -569,6 +569,88 @@ function NotificationsTab() {
   );
 }
 
+function PaymentBillingTab() {
+  const [payments, setPayments] = useState<Record<string, unknown>[]>([]);
+  const [loading, setLoading] = useState(USE_LIVE_API);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) { setLoading(false); return; }
+    (api.get<unknown>('/tenant/billing/payments') as Promise<unknown>)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data)
+          ? (data as R[])
+          : Array.isArray((data as R)?.['content'])
+            ? ((data as R)['content'] as R[])
+            : Array.isArray((data as R)?.['data'])
+              ? ((data as R)['data'] as R[])
+              : [];
+        setPayments(arr);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const fmtDate = (iso: string) => {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }); }
+    catch { return iso; }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="size-6 animate-spin text-brand-blue" />
+      </div>
+    );
+  }
+
+  if (!USE_LIVE_API || payments.length === 0) {
+    return (
+      <div className="rounded-[14px] bg-white p-6">
+        <p className="text-[14px] text-brand-gray-500">No billing payment records available.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[14px] bg-white p-6">
+      <h3 className="mb-4 text-[15px] font-semibold">Billing Payments</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] border-collapse text-[12px]">
+          <thead>
+            <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
+              {['Reference', 'Amount', 'Status', 'Date'].map((h) => (
+                <th key={h} className="pb-2 font-medium">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((p, i) => {
+              const ref = String(p['paymentReference'] ?? p['reference'] ?? p['id'] ?? '—');
+              const currency = String(p['currency'] ?? '');
+              const amount = p['amount'] != null ? `${currency} ${p['amount']}` : '—';
+              const status = String(p['status'] ?? '—');
+              const date = fmtDate(String(p['createdAt'] ?? p['paidAt'] ?? ''));
+              const statusColor = status.toLowerCase() === 'success' || status.toLowerCase() === 'paid'
+                ? 'text-[#34a853]' : status.toLowerCase().includes('fail') || status.toLowerCase() === 'failed'
+                ? 'text-[#eb0000]' : 'text-[#ff8d28]';
+              return (
+                <tr key={i} className="border-b border-[#f2f2f2]">
+                  <td className="py-3 font-mono">{ref}</td>
+                  <td className="py-3">{amount}</td>
+                  <td className={cn('py-3 font-medium', statusColor)}>{status}</td>
+                  <td className="py-3">{date}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function TabContent({ tab }: { tab: string }) {
   if (tab === 'Profile') {
     return <ProfileTab />;
@@ -580,6 +662,9 @@ function TabContent({ tab }: { tab: string }) {
   }
   if (tab === 'Notifications') {
     return <NotificationsTab />;
+  }
+  if (tab === 'Payment & Billing') {
+    return <PaymentBillingTab />;
   }
   return (
     <div className="rounded-[14px] bg-white p-6">
