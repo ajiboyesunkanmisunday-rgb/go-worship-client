@@ -4,6 +4,7 @@ import { AllGivings } from '@/components/givings/all-givings';
 import { GivingsChart } from '@/components/givings/givings-chart';
 import { cn } from '@/lib/utils';
 import { Suspense } from 'react';
+import Link from 'next/link';
 
 export default function GivingsPage() {
   return (
@@ -22,7 +23,12 @@ export default function GivingsPage() {
           </p>
         </div>
 
-        {/* filter goes here */}
+        <Link
+          href="/dashboard/givings/recurring"
+          className="flex h-9 items-center rounded-full border border-brand-blue px-5 text-[13px] font-medium text-brand-blue no-underline hover:bg-[#f4f7ff]"
+        >
+          Recurring giving
+        </Link>
       </div>
 
       <Suspense fallback={null}>

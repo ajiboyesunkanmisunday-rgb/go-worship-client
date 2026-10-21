@@ -36,7 +36,7 @@ function QuickCard({
 }
 
 export function QuickAccess() {
-  const [storageSubtitle, setStorageSubtitle] = useState('2.3GB · 40 items');
+  const [storageSubtitle, setStorageSubtitle] = useState('View media library');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
