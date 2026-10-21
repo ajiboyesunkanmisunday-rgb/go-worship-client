@@ -35,10 +35,13 @@ const MOCK_EVENTS: EventRow[] = [
   { name: 'Spring Networking Event', date: 'Apr 5, 2025 • 5PM', location: 'Rooftop Garden', registrations: '150', status: 'Upcoming' },
 ];
 
+const MOCK_TOTAL = MOCK_CHART_DATA.reduce((sum, d) => sum + d.value, 0);
+
 export function AttendanceContent() {
   const [events, setEvents] = useState<EventRow[]>(MOCK_EVENTS);
   const [totalRegistration, setTotalRegistration] = useState(15);
   const [chartData, setChartData] = useState(MOCK_CHART_DATA);
+  const [totalAttendance, setTotalAttendance] = useState(MOCK_TOTAL);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -58,7 +61,9 @@ export function AttendanceContent() {
     getUnifiedDashboard().then((s) => {
       if (s && s.totalEvents > 0) setTotalRegistration(s.totalEvents);
       if (s && s.trend.length > 0) {
-        setChartData(s.trend.map((p) => ({ month: p.label, value: p.value })));
+        const live = s.trend.map((p) => ({ month: p.label, value: p.value }));
+        setChartData(live);
+        setTotalAttendance(live.reduce((sum, d) => sum + d.value, 0));
       }
     }).catch(() => {});
   }, []);
@@ -70,7 +75,7 @@ export function AttendanceContent() {
           <div className="mb-2 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-[24px] font-medium">Attendance</h2>
-              <p className="text-[32px] font-bold text-brand-blue">1000</p>
+              <p className="text-[32px] font-bold text-brand-blue">{totalAttendance.toLocaleString()}</p>
             </div>
             <span className="rounded-[6px] bg-[#f4f7ff] px-3 py-1.5 text-[12px] text-brand-gray-500">
               Dec 31, 2024 - Dec 31, 2025
