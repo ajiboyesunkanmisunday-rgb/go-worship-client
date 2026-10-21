@@ -359,13 +359,13 @@ const MOCK_STATS: UnifiedDashboardStats = {
   totalGiving: '$6500', totalMembers: 830, totalGroups: 150,
   totalEvents: 100, upcomingEvents: 0,
   totalTenants: 0, activeTenants: 0, totalUsers: 0,
-  trend: [], availableFamilies: [],
+  trend: [], availableFamilies: [], rawSections: [],
 };
 
 export function MinistryDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats>(
     USE_LIVE_API
-      ? { totalGiving: '$0', totalMembers: 0, totalGroups: 0, totalEvents: 0, upcomingEvents: 0, totalTenants: 0, activeTenants: 0, totalUsers: 0, trend: [], availableFamilies: [] }
+      ? { totalGiving: '$0', totalMembers: 0, totalGroups: 0, totalEvents: 0, upcomingEvents: 0, totalTenants: 0, activeTenants: 0, totalUsers: 0, trend: [], availableFamilies: [], rawSections: [] }
       : MOCK_STATS
   );
   const [txns, setTxns] = useState<Transaction[]>(USE_LIVE_API ? [] : DEFAULT_TXNS);

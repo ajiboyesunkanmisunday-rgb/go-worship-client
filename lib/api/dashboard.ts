@@ -60,7 +60,16 @@ function sectionSeries(sections: R[], sectionType: string): { label: string; val
   return [];
 }
 
+export type DashboardSection = {
+  type: string;
+  title: string;
+  metrics: Array<{ code: string; label: string; value: number; formattedValue: string }>;
+  series: Array<{ points: Array<{ timestamp?: string; label?: string; value: number }> }>;
+};
+
 export type UnifiedDashboardStats = {
+  /* raw sections from the API — used by system dashboard to render dynamically */
+  rawSections: DashboardSection[];
   /* tenant/ministry — TENANT_OPERATIONS family */
   totalGiving: string;
   totalMembers: number;
@@ -239,7 +248,26 @@ export async function getUnifiedDashboard(
     const flatTotalEvents  = num(fieldOf(d, ['totalEvents', 'eventCount', 'events']));
     const flatUpcoming     = num(fieldOf(d, ['upcomingEvents', 'upcoming']));
 
+    const rawSections: DashboardSection[] = sections.map((sec) => ({
+      type: String(sec['type'] ?? ''),
+      title: String(sec['title'] ?? sec['type'] ?? ''),
+      metrics: (Array.isArray(sec['metrics']) ? sec['metrics'] as R[] : []).map((m) => ({
+        code: String(m['code'] ?? ''),
+        label: String(m['label'] ?? m['code'] ?? ''),
+        value: num(m['value']),
+        formattedValue: str(m['formattedValue'] as unknown) || String(num(m['value'])),
+      })),
+      series: (Array.isArray(sec['series']) ? sec['series'] as R[] : []).map((s) => ({
+        points: (Array.isArray(s['points']) ? s['points'] as R[] : []).map((pt) => ({
+          timestamp: str(pt['timestamp'] as unknown),
+          label: str(pt['label'] as unknown),
+          value: num(pt['value']),
+        })),
+      })),
+    }));
+
     return {
+      rawSections,
       totalGiving,
       totalMembers:   tenantTotalMembers || flatTotalMembers,
       totalGroups:    flatTotalGroups,

@@ -4,9 +4,9 @@ import { StatCard } from '@/components/ministry/shared';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
-import { Area, AreaChart, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { type SystemStats } from '@/lib/api/system';
-import { getUnifiedDashboard } from '@/lib/api/dashboard';
+import { getUnifiedDashboard, type DashboardSection } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
 
@@ -31,133 +31,6 @@ const MOCK_STATS: SystemStats = {
   givingVolume: '$2.5M', trialTenants: 30, overduePayments: 130,
 };
 
-const ZERO_STATS: SystemStats = {
-  totalTenants: 0, activeTenants: 0, totalUsers: 0,
-  givingVolume: '$0', trialTenants: 0, overduePayments: 0,
-};
-
-type StatVariant = 'blue' | 'green' | 'white';
-
-type FamilySection = {
-  title: string;
-  subtitle: string;
-  stats: Array<{ label: string; value: (s: SystemStats) => string | number; variant: StatVariant }>;
-};
-
-const FAMILY_SECTIONS: Record<string, FamilySection> = {
-  TENANT_OPERATIONS: {
-    title: 'Overview',
-    subtitle: 'Authorized tenant and campus operational summary.',
-    stats: [
-      { label: 'Active campuses',       value: (s) => fmt(s.totalCampuses ?? 0),               variant: 'white' },
-      { label: 'Active users',          value: (s) => fmt(s.activeUsers ?? s.totalUsers),       variant: 'white' },
-      { label: 'New users',             value: (s) => fmt(s.newUsers ?? 0),                     variant: 'white' },
-      { label: 'Received donations',    value: (s) => s.givingVolume ?? '$0',                   variant: 'white' },
-      { label: 'Successful payments',   value: (s) => fmt(s.successfulAuths ?? 0),              variant: 'white' },
-      { label: 'Upcoming events',       value: (s) => fmt(s.upcomingEvents ?? 0),               variant: 'white' },
-      { label: 'Attendance records',    value: (s) => fmt(s.attendanceRecords ?? 0),            variant: 'white' },
-      { label: 'Visitor follow-ups due',value: (s) => fmt(s.visitorFollowUps ?? 0),             variant: 'white' },
-      { label: 'Published sermons',     value: (s) => fmt(s.publishedSermons ?? 0),             variant: 'white' },
-    ],
-  },
-  PLATFORM: {
-    title: 'Platform overview',
-    subtitle: 'Current platform tenant, user, campus and session health.',
-    stats: [
-      { label: 'Total tenants',   value: (s) => fmt(s.totalTenants),                         variant: 'blue'  },
-      { label: 'Active tenants',  value: (s) => fmt(s.activeTenants),                        variant: 'green' },
-      { label: 'New tenants',     value: (s) => fmt(s.newTenants ?? 0),                      variant: 'white' },
-      { label: 'Total campuses',  value: (s) => fmt(s.totalCampuses ?? 0),                   variant: 'white' },
-      { label: 'Active users',    value: (s) => fmt(s.activeUsers ?? s.totalUsers),          variant: 'white' },
-      { label: 'New users',       value: (s) => fmt(s.newUsers ?? 0),                        variant: 'white' },
-      { label: 'Active sessions', value: (s) => fmt(s.activeSessions ?? 0),                  variant: 'white' },
-      { label: 'Risky sessions',  value: (s) => fmt(s.riskySessions ?? 0),                   variant: 'white' },
-    ],
-  },
-  SECURITY: {
-    title: 'Security',
-    subtitle: 'Authentication, session, MFA and audit health.',
-    stats: [
-      { label: 'Successful authentications', value: (s) => fmt(s.successfulAuths ?? 0), variant: 'green' },
-      { label: 'Failed authentications',     value: (s) => fmt(s.failedAuths ?? 0),     variant: 'white' },
-      { label: 'Active sessions',            value: (s) => fmt(s.activeSessions ?? 0),  variant: 'white' },
-      { label: 'Risky sessions',             value: (s) => fmt(s.riskySessions ?? 0),   variant: 'white' },
-      { label: 'Locked accounts',            value: (s) => fmt(s.lockedAccounts ?? 0),  variant: 'white' },
-      { label: 'MFA-enabled users',          value: (s) => fmt(s.mfaEnabledUsers ?? 0), variant: 'white' },
-      { label: 'Audit failures',             value: (s) => fmt(s.auditFailures ?? 0),   variant: 'white' },
-    ],
-  },
-  FINANCE: {
-    title: 'Finance',
-    subtitle: 'Platform revenue, giving and billing health.',
-    stats: [
-      { label: 'Giving volume',      value: (s) => s.givingVolume ?? '$0',    variant: 'blue'  },
-      { label: 'Total tenants',      value: (s) => fmt(s.totalTenants),       variant: 'white' },
-      { label: 'Active tenants',     value: (s) => fmt(s.activeTenants),      variant: 'green' },
-      { label: 'Trial tenants',      value: (s) => fmt(s.trialTenants ?? 0),  variant: 'white' },
-      { label: 'Overdue payments',   value: (s) => fmt(s.overduePayments ?? 0), variant: 'white' },
-    ],
-  },
-  ENGAGEMENT: {
-    title: 'Engagement',
-    subtitle: 'Member, group and event engagement across tenants.',
-    stats: [
-      { label: 'Active users',    value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'blue'  },
-      { label: 'New users',       value: (s) => fmt(s.newUsers ?? 0),               variant: 'white' },
-      { label: 'Active sessions', value: (s) => fmt(s.activeSessions ?? 0),          variant: 'white' },
-      { label: 'Total tenants',   value: (s) => fmt(s.totalTenants),                 variant: 'white' },
-    ],
-  },
-  COMMUNICATIONS: {
-    title: 'Communications',
-    subtitle: 'Messaging and notification health across the platform.',
-    stats: [
-      { label: 'Active tenants', value: (s) => fmt(s.activeTenants),                variant: 'blue'  },
-      { label: 'Active users',   value: (s) => fmt(s.activeUsers ?? s.totalUsers),  variant: 'white' },
-      { label: 'New users',      value: (s) => fmt(s.newUsers ?? 0),                variant: 'white' },
-    ],
-  },
-  CONTENT: {
-    title: 'Content',
-    subtitle: 'Published sermons, media and content across tenants.',
-    stats: [
-      { label: 'Published sermons', value: (s) => fmt(s.publishedSermons ?? 0),   variant: 'white' },
-      { label: 'Active tenants',    value: (s) => fmt(s.activeTenants),            variant: 'blue'  },
-      { label: 'Active users',      value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
-    ],
-  },
-  GUEST_SELF_SERVICE: {
-    title: 'Guest Self Service',
-    subtitle: 'Guest registrations and self-service activity.',
-    stats: [
-      { label: 'Active tenants', value: (s) => fmt(s.activeTenants),               variant: 'blue'  },
-      { label: 'Total campuses', value: (s) => fmt(s.totalCampuses ?? 0),          variant: 'white' },
-      { label: 'Active users',   value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
-    ],
-  },
-  CUSTOMER_SELF_SERVICE: {
-    title: 'Customer Self Service',
-    subtitle: 'Customer portal and self-service activity.',
-    stats: [
-      { label: 'Active tenants', value: (s) => fmt(s.activeTenants),               variant: 'blue'  },
-      { label: 'Active users',   value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
-      { label: 'New users',      value: (s) => fmt(s.newUsers ?? 0),               variant: 'white' },
-    ],
-  },
-  CAMPUS_OPERATIONS: {
-    title: 'Campus Operations',
-    subtitle: 'Campus events, attendance and operations.',
-    stats: [
-      { label: 'Active campuses',    value: (s) => fmt(s.totalCampuses ?? 0),          variant: 'blue'  },
-      { label: 'Active users',       value: (s) => fmt(s.activeUsers ?? s.totalUsers), variant: 'white' },
-      { label: 'Upcoming events',    value: (s) => fmt(s.upcomingEvents ?? 0),         variant: 'white' },
-      { label: 'Attendance records', value: (s) => fmt(s.attendanceRecords ?? 0),      variant: 'white' },
-    ],
-  },
-};
-
-const MOCK_PLANS = [['Starter', '58'], ['Pro', '54'], ['Enterprise', '18']];
-
 /* Family codes from the API map to human-readable tab labels. */
 const FAMILY_LABELS: Record<string, string> = {
   ENGAGEMENT:           'Engagement',
@@ -174,9 +47,35 @@ const FAMILY_LABELS: Record<string, string> = {
 
 const DEFAULT_FAMILIES = Object.keys(FAMILY_LABELS);
 
-const chartConfig = {
+/* Section subtitles (not in API response, matched to DO). */
+const SECTION_SUBTITLES: Record<string, string> = {
+  PLATFORM_OVERVIEW:   'Current platform tenant, user, campus and session health.',
+  SECURITY:            'Authentication, session, MFA and audit health.',
+  TENANT_GROWTH:       'Tenants created during the selected period.',
+  COMPLIANCE:          'Authentication, session, MFA and audit health.',
+  AUDIT:               'Authentication, session, MFA and audit health.',
+  SUBSCRIPTIONS:       'Platform subscription and invoice health.',
+  TENANTS:             'Authorized tenant and campus operational summary.',
+  OVERVIEW:            'Tenant operational overview.',
+  MEMBERS:             'Member and user summary.',
+  CAMPUSES:            'Campus operations summary.',
+  USERS:               'User account summary.',
+  SUBSCRIPTION:        'Subscription and billing details.',
+  EVENTS:              'Events and attendance summary.',
+  CONTENT:             'Published content summary.',
+  GIVING:              'Giving and donation summary.',
+  ENGAGEMENT_OVERVIEW: 'Member engagement summary.',
+};
+
+const areaConfig = {
   value: { label: 'Trend', color: '#5a4fe0' },
 } satisfies ChartConfig;
+
+const barConfig = {
+  value: { label: 'Count', color: '#243f84' },
+} satisfies ChartConfig;
+
+const MOCK_PLANS = [['Starter', '58'], ['Pro', '54'], ['Enterprise', '18']];
 
 function fmt(n: number | string): string {
   if (typeof n === 'string' && n) return n;
@@ -184,16 +83,112 @@ function fmt(n: number | string): string {
   return Number(n).toLocaleString();
 }
 
+/** Render a single API section block */
+function SectionBlock({ section }: { section: DashboardSection }) {
+  const subtitle = SECTION_SUBTITLES[section.type] ?? '';
+  const hasMetrics = section.metrics.length > 0;
+  const chartPoints = section.series.flatMap((s) =>
+    s.points.map((pt) => {
+      const label = pt.timestamp
+        ? new Date(pt.timestamp).toLocaleDateString('en-US', { month: 'short' })
+        : (pt.label ?? '');
+      return { month: label, value: pt.value };
+    })
+  );
+  const hasChart = chartPoints.length > 0;
+
+  if (!hasMetrics && !hasChart) return null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="text-[16px] font-bold">{section.title}</p>
+        {subtitle && <p className="mt-0.5 text-[13px] text-brand-gray-500">{subtitle}</p>}
+      </div>
+      {hasMetrics && (
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          {section.metrics.map((m, i) => (
+            <StatCard
+              key={m.code}
+              title={m.label}
+              value={m.formattedValue || fmt(m.value)}
+              variant={i === 0 ? 'blue' : 'white'}
+            />
+          ))}
+        </div>
+      )}
+      {hasChart && (
+        <div className="rounded-[14px] bg-white p-6">
+          <ChartContainer config={barConfig} className="h-[200px] w-full">
+            <BarChart data={chartPoints} margin={{ top: 8, right: 8, bottom: 4, left: 4 }}>
+              <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11 }} interval={0} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={40} />
+              <Bar dataKey="value" fill="#243f84" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive={false} />
+            </BarChart>
+          </ChartContainer>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Fallback mock sections when USE_LIVE_API is false */
+const MOCK_SECTIONS: DashboardSection[] = [
+  {
+    type: 'PLATFORM_OVERVIEW',
+    title: 'Platform overview',
+    metrics: [
+      { code: 'TOTAL_TENANTS',   label: 'Total tenants',   value: 130, formattedValue: '130' },
+      { code: 'ACTIVE_TENANTS',  label: 'Active tenants',  value: 830, formattedValue: '830' },
+      { code: 'NEW_TENANTS',     label: 'New tenants',     value: 30,  formattedValue: '30'  },
+      { code: 'TOTAL_CAMPUSES',  label: 'Total campuses',  value: 12,  formattedValue: '12'  },
+      { code: 'ACTIVE_USERS',    label: 'Active users',    value: 1850,formattedValue: '1,850' },
+      { code: 'NEW_USERS',       label: 'New users',       value: 240, formattedValue: '240' },
+      { code: 'ACTIVE_SESSIONS', label: 'Active sessions', value: 42,  formattedValue: '42'  },
+      { code: 'RISKY_SESSIONS',  label: 'Risky sessions',  value: 3,   formattedValue: '3'   },
+    ],
+    series: [],
+  },
+  {
+    type: 'SECURITY',
+    title: 'Security',
+    metrics: [
+      { code: 'SUCCESSFUL_AUTHENTICATIONS', label: 'Successful authentications', value: 4210, formattedValue: '4,210' },
+      { code: 'FAILED_AUTHENTICATIONS',     label: 'Failed authentications',     value: 64,   formattedValue: '64'   },
+      { code: 'ACTIVE_SESSIONS',            label: 'Active sessions',            value: 42,   formattedValue: '42'   },
+      { code: 'RISKY_SESSIONS',             label: 'Risky sessions',             value: 3,    formattedValue: '3'    },
+      { code: 'LOCKED_ACCOUNTS',            label: 'Locked accounts',            value: 1,    formattedValue: '1'    },
+      { code: 'MFA_ENABLED_USERS',          label: 'MFA-enabled users',          value: 120,  formattedValue: '120'  },
+      { code: 'AUDIT_FAILURES',             label: 'Audit failures',             value: 12,   formattedValue: '12'   },
+    ],
+    series: [],
+  },
+  {
+    type: 'SUBSCRIPTIONS',
+    title: 'Subscriptions',
+    metrics: [
+      { code: 'TOTAL_SUBSCRIPTIONS',    label: 'Total subscriptions', value: 130, formattedValue: '130' },
+      { code: 'ACTIVE_SUBSCRIPTIONS',   label: 'Active',              value: 105, formattedValue: '105' },
+      { code: 'TRIALING_SUBSCRIPTIONS', label: 'Trialing',            value: 18,  formattedValue: '18'  },
+      { code: 'PAST_DUE_SUBSCRIPTIONS', label: 'Past due',            value: 7,   formattedValue: '7'   },
+      { code: 'SUSPENDED_SUBSCRIPTIONS',label: 'Suspended',           value: 0,   formattedValue: '0'   },
+      { code: 'PAST_DUE_INVOICES',      label: 'Past-due invoices',   value: 7,   formattedValue: '7'   },
+    ],
+    series: [],
+  },
+];
+
 export function SystemDashboard() {
-  const [stats, setStats] = useState<SystemStats>(USE_LIVE_API ? ZERO_STATS : MOCK_STATS);
+  const [rawSections, setRawSections] = useState<DashboardSection[]>(USE_LIVE_API ? [] : MOCK_SECTIONS);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>(
     USE_LIVE_API ? [] : MOCK_TREND
   );
   const [activity, setActivity] = useState(USE_LIVE_API ? [] : MOCK_ACTIVITY);
-  const [plans, setPlans] = useState(USE_LIVE_API ? [] : MOCK_PLANS);
+  const [plans, setPlans] = useState(USE_LIVE_API ? [] as [string, string][] : MOCK_PLANS as [string, string][]);
   const [adminName, setAdminName] = useState(USE_LIVE_API ? '' : 'Super System Administrator');
-  const [dashFamily, setDashFamily] = useState('TENANT_OPERATIONS');
+  const [dashFamily, setDashFamily] = useState('PLATFORM');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
+  const [stats, setStats] = useState<SystemStats>(MOCK_STATS);
 
   const loadFamily = useCallback(async (family: string) => {
     if (!USE_LIVE_API) return;
@@ -203,22 +198,15 @@ export function SystemDashboard() {
     if (u.adminDisplayName) setAdminName(u.adminDisplayName);
     if (u.availableFamilies.length > 0) setFamilies(u.availableFamilies);
 
+    setRawSections(u.rawSections);
+
+    // Keep stats for bottom panels
     setStats((prev) => ({
       ...prev,
       totalTenants:    u.totalTenants,
       activeTenants:   u.activeTenants,
-      newTenants:      u.newTenants,
-      totalCampuses:   u.totalCampuses,
-      totalUsers:      u.totalUsers,
-      activeUsers:     u.activeUsers,
-      newUsers:        u.newUsers,
-      activeSessions:  u.activeSessions,
-      riskySessions:   u.riskySessions,
-      successfulAuths: u.successfulAuths,
-      failedAuths:     u.failedAuths,
-      lockedAccounts:  u.lockedAccounts,
-      mfaEnabledUsers: u.mfaEnabledUsers,
-      auditFailures:   u.auditFailures,
+      trialTenants:    u.newTenants ?? prev.trialTenants,
+      overduePayments: prev.overduePayments,
     }));
 
     if (u.trend.length > 0) {
@@ -229,7 +217,7 @@ export function SystemDashboard() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
-    loadFamily('TENANT_OPERATIONS');
+    loadFamily('PLATFORM');
 
     // Recent audit activity
     (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
@@ -314,25 +302,19 @@ export function SystemDashboard() {
         })}
       </div>
 
-      {(() => {
-        const section = FAMILY_SECTIONS[dashFamily] ?? FAMILY_SECTIONS['PLATFORM'];
-        return (
-          <div>
-            <p className="mb-3 text-[16px] font-bold">{section.title}</p>
-            <p className="mb-4 text-[13px] text-brand-gray-500">{section.subtitle}</p>
-            <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-              {section.stats.map((s) => (
-                <StatCard key={s.label} title={s.label} value={String(s.value(stats))} variant={s.variant} />
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {/* Dynamic sections from API */}
+      {rawSections.length > 0 ? (
+        <div className="flex flex-col gap-6">
+          {rawSections.map((section) => (
+            <SectionBlock key={section.type} section={section} />
+          ))}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.7fr_1fr]">
         <div className="rounded-[14px] bg-white p-6">
           <h2 className="text-[18px] font-bold">Giving Volume Trend</h2>
-          <ChartContainer config={chartConfig} className="mt-4 h-[260px] w-full">
+          <ChartContainer config={areaConfig} className="mt-4 h-[260px] w-full">
             <AreaChart
               data={trendData}
               margin={{ top: 10, right: 8, bottom: 4, left: 4 }}
