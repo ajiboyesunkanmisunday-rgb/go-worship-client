@@ -4,7 +4,8 @@ import { StatCard } from '@/components/ministry/shared';
 import type { SmartRow } from '@/components/shared/smart-table';
 import { DataCard, QuickAccess, StatusText, ViewEditButton } from './shared';
 import { useEffect, useState } from 'react';
-import { getTenantStats, getTenantBranding, type TenantStats } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
+import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
@@ -50,14 +51,14 @@ export function seriesRows(): SmartRow[] {
 type SeriesItem = { name: string; desc: string; count: string; status: string; date: string };
 
 export function SermonAdminDashboard() {
-  const [stats, setStats] = useState<TenantStats | null>(null);
+  const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
   const [series, setSeries] = useState<SeriesItem[]>(USE_LIVE_API ? [] : SERIES);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Go Worship');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('TENANT').then((s) => { if (s) setStats(s); }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -133,10 +134,10 @@ export function SermonAdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Series" value={stats ? String(stats.totalGroups) : String(series.length || 24)} variant="blue" />
-        <StatCard title="Total Sermons" value={stats ? String(stats.totalEvents) : '43'} variant="white" />
-        <StatCard title="Published Sermons" value={String(publishedCount || 15)} variant="white" />
-        <StatCard title="Draft Sermons" value={String(draftCount || 10)} variant="white" />
+        <StatCard title="Total Series" value={stats ? String(stats.totalGroups) : (USE_LIVE_API ? String(series.length) : '24')} variant="blue" />
+        <StatCard title="Total Sermons" value={stats ? String(stats.totalEvents) : (USE_LIVE_API ? '0' : '43')} variant="white" />
+        <StatCard title="Published Sermons" value={String(publishedCount || (USE_LIVE_API ? 0 : 15))} variant="white" />
+        <StatCard title="Draft Sermons" value={String(draftCount || (USE_LIVE_API ? 0 : 10))} variant="white" />
       </div>
 
       <DataCard

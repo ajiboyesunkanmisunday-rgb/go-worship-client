@@ -4,7 +4,8 @@ import { StatCard } from '@/components/ministry/shared';
 import { ClipboardList, Plus, SquareCheckBig } from 'lucide-react';
 import { DataPanel, QuickAccessCard, type TableRow } from './shared';
 import { useState, useEffect } from 'react';
-import { getTenantMembers, getTenantStats, getTenantBranding, type TenantMember, type TenantStats } from '@/lib/api/tenant';
+import { getTenantMembers, getTenantBranding, type TenantMember } from '@/lib/api/tenant';
+import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 
@@ -63,14 +64,14 @@ const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, () => ({
 
 export function GroupLeaderDashboard() {
   const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
-  const [stats, setStats] = useState<TenantStats | null>(null);
+  const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Go Worship');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => {});
-    getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('TENANT').then((s) => { if (s) setStats(s); }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -102,10 +103,10 @@ export function GroupLeaderDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : '24'} variant="blue" />
-        <StatCard title="Total Member" value={stats ? String(stats.totalMembers) : String(members.length)} variant="white" />
-        <StatCard title="New Members" value={stats ? String(stats.newMembers ?? 0) : (USE_LIVE_API ? '0' : '15')} variant="white" />
-        <StatCard title="Recent Attendance" value={stats ? String(stats.recentAttendance ?? 0) : (USE_LIVE_API ? '0' : '10')} variant="white" />
+        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : (USE_LIVE_API ? '0' : '24')} variant="blue" />
+        <StatCard title="Total Member" value={stats ? String(stats.totalMembers) : (USE_LIVE_API ? String(members.length) : '15')} variant="white" />
+        <StatCard title="New Members" value={USE_LIVE_API ? '0' : '15'} variant="white" />
+        <StatCard title="Recent Attendance" value={USE_LIVE_API ? '0' : '10'} variant="white" />
       </div>
 
       <DataPanel

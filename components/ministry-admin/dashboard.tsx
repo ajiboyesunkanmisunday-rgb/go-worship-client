@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getTenantStats, getTenantEvents, getTenantBranding, type TenantStats, type TenantEvent } from '@/lib/api/tenant';
+import { getTenantEvents, getTenantBranding, type TenantEvent } from '@/lib/api/tenant';
+import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { EventsTable, QuickAccessCard, StatCard, type EventRow } from './shared';
@@ -59,7 +60,7 @@ const RECENT_EVENTS = [
 ];
 
 export function GroupLeaderDashboard() {
-  const [stats, setStats] = useState<TenantStats | null>(null);
+  const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
   const [recentEvents, setRecentEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : RECENT_EVENTS);
   const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church International');
   const [userName, setUserName] = useState('');
@@ -73,7 +74,7 @@ export function GroupLeaderDashboard() {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
     }).catch(() => {});
-    getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('TENANT').then((s) => { if (s) setStats(s); }).catch(() => {});
     getTenantEvents().then((events) => {
       const mapped: EventRow[] = events.slice(0, 5).map((e: TenantEvent) => ({
         name: e.name,
@@ -96,10 +97,10 @@ export function GroupLeaderDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Events" value={stats ? String(stats.totalEvents) : '24'} variant="purple" />
-        <StatCard title="Total Registrations" value={stats ? String(stats.totalMembers) : '43'} />
-        <StatCard title="Upcoming Events" value={stats ? String(stats.upcomingEvents) : '15'} />
-        <StatCard title="Total Checkin" value={stats ? String(stats.activeMembers) : '10'} />
+        <StatCard title="Total Events" value={stats ? String(stats.totalEvents) : (USE_LIVE_API ? '0' : '24')} variant="purple" />
+        <StatCard title="Total Registrations" value={stats ? String(stats.totalMembers) : (USE_LIVE_API ? '0' : '43')} />
+        <StatCard title="Upcoming Events" value={stats ? String(stats.upcomingEvents) : (USE_LIVE_API ? '0' : '15')} />
+        <StatCard title="Total Checkin" value={USE_LIVE_API ? '0' : '10'} />
       </div>
 
       <EventsTable title="Recent Events" rows={recentEvents} />
