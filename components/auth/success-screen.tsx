@@ -3,9 +3,7 @@
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { getTenantBranding } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
+import { useSiteContext } from '@/lib/site-context';
 
 type SuccessScreenProps = {
   title?: string;
@@ -20,15 +18,9 @@ export function SuccessScreen({
   actionLabel = 'Go to dashboard',
   actionHref = '/dashboard',
 }: SuccessScreenProps) {
-  const [defaultSubtitle, setDefaultSubtitle] = useState(USE_LIVE_API ? '' : 'Welcome to Celebration Church International Go worship Platform');
-
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    getTenantBranding().then((b) => {
-      if (b.organizationName) setDefaultSubtitle(`Welcome to ${b.organizationName} Go worship Platform`);
-    }).catch(() => {});
-  }, []);
-
+  const { context } = useSiteContext();
+  const orgName = context?.branding?.organizationName ?? context?.displayName ?? 'Go Worship';
+  const defaultSubtitle = `Welcome to the ${orgName} Platform`;
   const displaySubtitle = subtitle ?? defaultSubtitle;
 
   return (
