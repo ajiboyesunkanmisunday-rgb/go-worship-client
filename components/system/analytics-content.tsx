@@ -213,7 +213,7 @@ export function SystemAnalyticsContent() {
       .catch(() => {});
 
     const loadUsers = async () => {
-      for (const p of ['/system/users?page=0&size=10']) {
+      for (const p of ['/system/dashboard/admin/users?page=0&size=10']) {
         try { return await (api.get<unknown>(p) as Promise<unknown>); } catch { /* try next */ }
       }
       return null;
