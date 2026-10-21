@@ -7,8 +7,8 @@ import { ReactNode, Suspense } from 'react';
 import { Toaster } from '@/components/ui/sonner';
 
 export const metadata: Metadata = {
-  title: 'Go Worship',
-  description: 'Go Worship',
+  title: 'GoWorship',
+  description: 'GoWorship',
 };
 
 type Props = Readonly<{
