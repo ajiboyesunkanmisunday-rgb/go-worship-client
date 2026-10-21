@@ -8,14 +8,14 @@ import type { SmartRow } from '@/components/shared/smart-table';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-type Series = { name: string; desc: string; count: string; status: string; date: string };
+type Series = { id: string; name: string; desc: string; count: string; status: string; date: string };
 
 const SERIES_MOCK: Series[] = [
-  { name: 'Faith in Action', desc: 'Weekly faith teaching', count: '12', status: 'Published', date: 'Jan 10, 2025' },
-  { name: 'Hope in Motion', desc: 'Monthly outreach program', count: '30', status: 'Uploading', date: 'Feb 15, 2025' },
-  { name: 'Unity in Diversity', desc: 'Quarterly community gathering', count: '50', status: 'Published', date: 'Mar 20, 2025' },
-  { name: 'Love as a Verb', desc: 'Annual charity event', count: '100', status: 'Scheduled', date: 'Apr 25, 2025' },
-  { name: 'Service Above Self', desc: 'Weekly volunteer opportunity', count: '20', status: 'Draft', date: 'May 30, 2025' },
+  { id: '1', name: 'Faith in Action', desc: 'Weekly faith teaching', count: '12', status: 'Published', date: 'Jan 10, 2025' },
+  { id: '2', name: 'Hope in Motion', desc: 'Monthly outreach program', count: '30', status: 'Uploading', date: 'Feb 15, 2025' },
+  { id: '3', name: 'Unity in Diversity', desc: 'Quarterly community gathering', count: '50', status: 'Published', date: 'Mar 20, 2025' },
+  { id: '4', name: 'Love as a Verb', desc: 'Annual charity event', count: '100', status: 'Scheduled', date: 'Apr 25, 2025' },
+  { id: '5', name: 'Service Above Self', desc: 'Weekly volunteer opportunity', count: '20', status: 'Draft', date: 'May 30, 2025' },
 ];
 
 export default function SermonAdminSeriesPage() {
@@ -44,6 +44,7 @@ export default function SermonAdminSeriesPage() {
             : st.includes('UPLOAD') || st.includes('PROCESS') ? 'Uploading'
             : 'Draft';
           return {
+            id: String(s['id'] ?? s['seriesId'] ?? ''),
             name: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
             desc: String(s['description'] ?? s['desc'] ?? ''),
             count: String(s['sermonCount'] ?? s['totalSermons'] ?? s['count'] ?? '0'),
@@ -58,6 +59,21 @@ export default function SermonAdminSeriesPage() {
 
   const draftCount = series.filter((s) => s.status === 'Draft').length;
 
+  const togglePublish = (idx: number) => {
+    const s = series[idx];
+    if (!USE_LIVE_API || !s.id) return;
+    const endpoint = s.status === 'Published'
+      ? `/tenant/admin/content/series/${s.id}/unpublish`
+      : `/tenant/admin/content/series/${s.id}/publish`;
+    (api.patch<unknown>(endpoint, {}) as Promise<unknown>)
+      .then(() => {
+        setSeries((prev) => prev.map((item, i) =>
+          i === idx ? { ...item, status: item.status === 'Published' ? 'Draft' : 'Published' } : item
+        ));
+      })
+      .catch(() => {});
+  };
+
   const rows: SmartRow[] = series.map((s, i) => ({
     group: s.status,
     text: [s.name, s.desc, s.count, s.status, s.date],
@@ -67,15 +83,25 @@ export default function SermonAdminSeriesPage() {
       s.count,
       <StatusText key="s" value={s.status} />,
       s.date,
-      <ViewEditButton
-        key="a"
-        variant={s.status === 'Published' ? 'view' : 'edit'}
-        href={
-          s.status === 'Published'
-            ? `/sermon-admin/sermons/${i + 1}`
-            : `/sermon-admin/sermons/${i + 1}/edit`
-        }
-      />,
+      <div key="a" className="flex items-center gap-1.5">
+        <ViewEditButton
+          variant={s.status === 'Published' ? 'view' : 'edit'}
+          href={
+            s.status === 'Published'
+              ? `/sermon-admin/sermons/${s.id || i + 1}`
+              : `/sermon-admin/sermons/${s.id || i + 1}/edit`
+          }
+        />
+        {USE_LIVE_API && s.id && (s.status === 'Published' || s.status === 'Draft') && (
+          <button
+            type="button"
+            onClick={() => togglePublish(i)}
+            className={`flex h-8 min-w-[64px] items-center justify-center rounded-[6px] text-[11px] text-white ${s.status === 'Published' ? 'bg-brand-gray-400' : 'bg-green-600'}`}
+          >
+            {s.status === 'Published' ? 'Unpublish' : 'Publish'}
+          </button>
+        )}
+      </div>,
     ],
   }));
 

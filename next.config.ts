@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   // Emit a self-contained server bundle (.next/standalone) for Docker/DigitalOcean.
   output: 'standalone',
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+  },
   async redirects() {
     return [
       ...MOVED_TO_MINISTRY_ADMIN.map((path) => ({

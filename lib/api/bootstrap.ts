@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { upstreamFetch, UPSTREAM } from './server';
 
 export type SiteBranding = {
@@ -49,10 +50,9 @@ function bool(v: unknown): boolean | undefined {
  * Fetches the public site context for the current host.
  * Authorized by go-worship-frontend-spec.md — GET /public/site?templateType=WEB.
  * Returns null on any error or non-2xx response (caller falls back to defaults).
+ * Cached per host for 60 s — avoids hitting the backend on every SSR render.
  */
-export async function fetchSiteContext(
-  upstreamBase: string = UPSTREAM
-): Promise<SiteContext | null> {
+async function _fetchSiteContextRaw(upstreamBase: string): Promise<SiteContext | null> {
   try {
     const res = await upstreamFetch(
       '/public/site?templateType=WEB',
@@ -115,3 +115,9 @@ export async function fetchSiteContext(
     return null;
   }
 }
+
+export const fetchSiteContext = unstable_cache(
+  _fetchSiteContextRaw,
+  ['go-worship-site-context'],
+  { revalidate: 60 }
+);
