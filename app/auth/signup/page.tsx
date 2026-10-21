@@ -6,12 +6,8 @@ import { MessageIcon } from '@/icons/message';
 import { GoogleIcon } from '@/icons/socials';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSiteContext } from '@/lib/site-context';
 
 export default function SignupPage() {
-  const { context } = useSiteContext();
-  const orgName = context?.branding?.organizationName ?? 'Celebration Church International';
-
   return (
     <AuthShell>
       <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
@@ -28,7 +24,7 @@ export default function SignupPage() {
             Create a free account
           </h1>
           <p className="max-w-[320px] font-poppins text-[16px] font-light lg:text-[17px]">
-            Welcome to {orgName} Go worship Platform
+            Go-Worship church administration and giving platform.
           </p>
         </div>
 

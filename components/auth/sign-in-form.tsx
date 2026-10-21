@@ -91,11 +91,7 @@ function SignInFormInner({
     disableGoogle
       ? false
       : (context?.authentication?.customerGoogleLogin ?? true);
-  const orgContextName =
-    context?.branding?.organizationName ??
-    context?.displayName ??
-    'Celebration Church International';
-  const subtitleText = subtitle ?? `Welcome to ${orgContextName}`;
+  const subtitleText = subtitle ?? 'Go-Worship church administration and giving platform.';
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
