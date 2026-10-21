@@ -217,7 +217,7 @@ function SecurityPanel() {
     OTP_SMS: 'Receive a one-time code by text message to your phone.',
   };
   const MethodIcon = ({ method, enrolled }: { method: string; enrolled: boolean }) => {
-    const color = enrolled ? 'text-[#22a45d]' : 'text-[#555]';
+    const color = enrolled ? 'text-white' : 'text-[#555]';
     if (method === 'TOTP') return <Smartphone className={`size-5 ${color}`} />;
     if (method === 'OTP_EMAIL') return <Mail className={`size-5 ${color}`} />;
     return <MessageSquare className="size-5 text-[#555]" />;
@@ -273,8 +273,8 @@ function SecurityPanel() {
           <h2 className="text-[16px] font-bold">Two-factor authentication</h2>
           {mfa && (
             <span className={cn(
-              'rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-              mfa.mfaEnabled ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#fde8e8] text-[#eb0000]'
+              'rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
+              mfa.mfaEnabled ? 'border-[#22a45d] text-[#22a45d]' : 'border-[#eb0000] text-[#eb0000]'
             )}>
               {mfa.mfaEnabled ? 'On' : 'Off'}
             </span>
@@ -313,7 +313,7 @@ function SecurityPanel() {
                 return (
                   <div key={method} className="flex items-start justify-between gap-4 py-4">
                     <div className="flex items-start gap-3">
-                      <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px]', enrolled ? 'bg-[#e7f7ee]' : 'bg-[#f2f2f2]')}>
+                      <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px]', enrolled ? 'bg-[#22a45d]' : 'bg-[#f2f2f2]')}>
                         <MethodIcon method={method} enrolled={enrolled} />
                       </span>
                       <div>
