@@ -10,6 +10,7 @@ export default function MinistryLoginPage() {
   return (
     <MinistrySignInForm
       redirectTo="/ministry/dashboard"
+      portalKind="ministry"
     />
   );
 }

@@ -28,9 +28,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { portalForRoles } from '@/lib/portal';
+import { portalForRoles, isRoleAllowedForPortal, type PortalKind } from '@/lib/portal';
 import { executeRecaptcha } from '@/lib/recaptcha';
-import { login, googleLogin } from '@/lib/api/auth';
+import { login, logout, googleLogin } from '@/lib/api/auth';
 import { signInWithGoogle } from '@/lib/google-identity';
 import { useSiteContext } from '@/lib/site-context';
 
@@ -67,6 +67,16 @@ type Props = {
   hideBrandLogo?: boolean;
   /** System/admin portal variant: full-bleed aside shell, centered form, system heading sizes. */
   flat?: boolean;
+  /**
+   * Role gate for this portal.  After a successful login the user's returned
+   * roles are checked; if they don't match, the session is invalidated and an
+   * error is shown.
+   *   'system'   – SYSTEM_* roles only
+   *   'ministry' – TENANT_* / ministry roles only (no system, no pure member)
+   *   'member'   – everyone except SYSTEM_*
+   * Omit to skip role gating (e.g. development / mock mode pages).
+   */
+  portalKind?: PortalKind;
 };
 
 function SignInFormInner({
@@ -82,6 +92,7 @@ function SignInFormInner({
   mfaBasePath = '/auth',
   hideBrandLogo = false,
   flat = false,
+  portalKind,
 }: Props) {
   const { context } = useSiteContext();
   // Google login rules (spec: sign-in-form.tsx, go-worship-frontend-spec.md):
@@ -157,6 +168,14 @@ function SignInFormInner({
         router.push(`${mfaBasePath}/verify-otp?${qs.toString()}`);
         return;
       }
+      if (portalKind) {
+        const gate = isRoleAllowedForPortal(res.roles, portalKind);
+        if (!gate.allowed) {
+          logout().catch(() => {});
+          setFormError(gate.message);
+          return;
+        }
+      }
       router.push(nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : redirectTo));
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Google sign-in failed');
@@ -224,6 +243,14 @@ function SignInFormInner({
       }
       // Honour ?next= from the route proxy, then role-based routing, then
       // the page's own redirectTo default.
+      if (portalKind) {
+        const gate = isRoleAllowedForPortal(res.roles, portalKind);
+        if (!gate.allowed) {
+          logout().catch(() => {});
+          setFormError(gate.message);
+          return;
+        }
+      }
       router.push(nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : redirectTo));
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Sign in failed');

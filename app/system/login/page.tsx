@@ -13,6 +13,7 @@ export default function SystemLoginPage() {
       hideBrandLogo
       mfaBasePath="/system"
       flat
+      portalKind="system"
     />
   );
 }

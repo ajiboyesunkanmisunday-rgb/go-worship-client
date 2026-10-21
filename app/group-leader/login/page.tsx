@@ -2,6 +2,6 @@ import { MinistrySignInForm } from '@/components/auth/sign-in-form';
 
 export default function GroupLeaderLoginPage() {
   return (
-    <MinistrySignInForm redirectTo="/group-leader/dashboard" />
+    <MinistrySignInForm redirectTo="/group-leader/dashboard" portalKind="ministry" />
   );
 }
