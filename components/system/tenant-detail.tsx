@@ -792,7 +792,7 @@ function ReceiptRow({
  * Groups tab — the "Recent Groups" table from the design (Group Name /
  * Category / Leader / Meeting Day & Time / Members / Status + View).
  */
-type GroupRow = { name: string; cat: string; leader: string; status: string };
+type GroupRow = { name: string; cat: string; leader: string; status: string; meetingTime?: string; memberCount?: string; description?: string; venueName?: string; onlineMeetingLink?: string; meetingFrequency?: string; meetingDays?: string };
 
 const GROUPS: GroupRow[] = [
   { name: 'Faith Builders Fellowship', cat: 'Small Group', leader: 'John Samuel', status: 'Active' },
@@ -804,7 +804,7 @@ const GROUPS: GroupRow[] = [
 
 function GroupsTab({ id }: { id: string }) {
   const [groups, setGroups] = useState<GroupRow[]>(USE_LIVE_API ? [] : GROUPS);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [openGroup, setOpenGroup] = useState<GroupRow | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -823,11 +823,22 @@ function GroupsTab({ id }: { id: string }) {
         const mapped: GroupRow[] = arr.map((g) => {
           const rawStatus = String(g['status'] ?? 'Active');
           const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
+          const days = Array.isArray(g['meetingDays'])
+            ? (g['meetingDays'] as string[]).join(', ')
+            : String(g['meetingDay'] ?? g['meetingDays'] ?? '');
+          const time = String(g['meetingTime'] ?? g['time'] ?? '');
           return {
             name: String(g['name'] ?? g['groupName'] ?? ''),
             cat: String(g['category'] ?? g['type'] ?? g['groupType'] ?? 'Small Group'),
             leader: String(g['leaderName'] ?? g['leader'] ?? g['createdBy'] ?? ''),
             status,
+            meetingTime: time ? `${days ? `${days} at ` : ''}${time}` : undefined,
+            memberCount: String(g['memberCount'] ?? g['members'] ?? g['totalMembers'] ?? ''),
+            description: String(g['description'] ?? g['about'] ?? ''),
+            venueName: String(g['venueName'] ?? g['venue'] ?? g['location'] ?? ''),
+            onlineMeetingLink: String(g['onlineMeetingLink'] ?? g['meetingLink'] ?? g['zoomLink'] ?? ''),
+            meetingFrequency: String(g['meetingFrequency'] ?? g['frequency'] ?? ''),
+            meetingDays: days,
           };
         }).filter((g) => g.name);
         if (mapped.length > 0) setGroups(mapped);
@@ -875,8 +886,8 @@ function GroupsTab({ id }: { id: string }) {
                 <td className="py-4 font-medium">{g.name}</td>
                 <td className="py-4">{g.cat}</td>
                 <td className="py-4">{g.leader}</td>
-                <td className="py-4">Tuesdays at 6:00 PM</td>
-                <td className="py-4">25</td>
+                <td className="py-4">{g.meetingTime || '—'}</td>
+                <td className="py-4">{g.memberCount || '—'}</td>
                 <td
                   className={cn(
                     'py-4 font-medium',
@@ -888,7 +899,7 @@ function GroupsTab({ id }: { id: string }) {
                 <td className="py-4">
                   <button
                     type="button"
-                    onClick={() => setOpenGroup(g.name)}
+                    onClick={() => setOpenGroup(g)}
                     className="rounded-full bg-[#eef1f6] px-5 py-1.5 text-[12px] font-medium text-brand-blue hover:bg-[#e2e7f0]"
                   >
                     View
@@ -900,21 +911,21 @@ function GroupsTab({ id }: { id: string }) {
         </table>
       </div>
 
-      <GroupOverviewSheet name={openGroup} onClose={() => setOpenGroup(null)} />
+      <GroupOverviewSheet group={openGroup} onClose={() => setOpenGroup(null)} />
     </div>
   );
 }
 
 /** Group Overview slide-over (Groups-tab View). */
 function GroupOverviewSheet({
-  name,
+  group,
   onClose,
 }: {
-  name: string | null;
+  group: GroupRow | null;
   onClose(): void;
 }) {
   return (
-    <Dialog.Root open={!!name} onOpenChange={(v) => !v && onClose()}>
+    <Dialog.Root open={!!group} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content className="fixed top-0 right-0 z-50 flex h-full w-[92%] max-w-[440px] flex-col gap-5 overflow-y-auto bg-white px-7 py-6 data-[state=open]:animate-in data-[state=open]:slide-in-from-right">
@@ -932,15 +943,15 @@ function GroupOverviewSheet({
           <div>
             <p className="text-[10px] text-brand-gray-500">Group Name:</p>
             <p className="text-[20px] font-bold text-brand-blue">
-              {name ?? 'Faith Builders Fellowship'}
+              {group?.name ?? ''}
             </p>
             <p className="text-[12px] text-brand-gray-500">
-              Category: Small Group / Bible Study
+              Category: {group?.cat ?? '—'}
             </p>
             <p className="flex items-center gap-1.5 text-[12px] text-brand-gray-500">
-              Created on June 10, 2025
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-[#22a45d]" /> Active
+                <span className={cn('size-2 rounded-full', group?.status === 'Active' ? 'bg-[#22a45d]' : 'bg-[#eb0000]')} />
+                {group?.status ?? 'Active'}
               </span>
             </p>
           </div>
@@ -949,16 +960,16 @@ function GroupOverviewSheet({
           <div className="flex flex-col gap-4">
             <ReadonlyField
               label="Group Description*"
-              value="A weekly small group for spiritual growth and fellowship."
+              value={group?.description || '—'}
             />
-            <ReadonlyField label="Meeting Frequency*" value="Every Tuesdays" />
-            <ReadonlyField label="Meeting Day*" value="Tuesdays" />
-            <ReadonlyField label="Meeting Time*" value="6:00 PM" />
-            <ReadonlyField label="Group Leader*" value="Isaiah Christian" />
-            <ReadonlyField label="Venue Name*" value="Canada Ontario" />
+            <ReadonlyField label="Meeting Frequency*" value={group?.meetingFrequency || '—'} />
+            <ReadonlyField label="Meeting Day*" value={group?.meetingDays || '—'} />
+            <ReadonlyField label="Meeting Time*" value={group?.meetingTime || '—'} />
+            <ReadonlyField label="Group Leader*" value={group?.leader || '—'} />
+            <ReadonlyField label="Venue Name*" value={group?.venueName || '—'} />
             <ReadonlyField
               label="Online Meeting Link*"
-              value="http://zoom/canadachurch.com"
+              value={group?.onlineMeetingLink || '—'}
             />
           </div>
 

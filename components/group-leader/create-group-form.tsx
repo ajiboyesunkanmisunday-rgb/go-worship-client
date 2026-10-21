@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
-import { getTenantGroup, createTenantGroup, updateTenantGroup, type TenantGroup } from '@/lib/api/tenant';
+import { getTenantGroup, createTenantGroup, updateTenantGroup, getTenantMembers, type TenantGroup, type TenantMember } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
@@ -69,11 +69,25 @@ export function CreateGroupForm({
   const router = useRouter();
   const isEdit = mode === 'edit';
   const [group, setGroup] = useState<TenantGroup | null>(null);
+  const MOCK_LEADERS = [
+    { id: '1', name: 'Pastor Val Ejima' },
+    { id: '2', name: 'Isreal Marcelo' },
+    { id: '3', name: 'Mary Napoleon' },
+  ];
+  const [leaders, setLeaders] = useState<{ id: string; name: string }[]>(USE_LIVE_API ? [] : MOCK_LEADERS);
 
   useEffect(() => {
     if (!isEdit || !USE_LIVE_API || !id) return;
     getTenantGroup(id).then((g: TenantGroup | null) => { if (g) setGroup(g); }).catch(() => {});
   }, [id, isEdit]);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantMembers().then((members: TenantMember[]) => {
+      const mapped = members.filter((m) => m.name).map((m) => ({ id: m.id, name: m.name }));
+      if (mapped.length > 0) setLeaders(mapped);
+    }).catch(() => {});
+  }, []);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -161,9 +175,9 @@ export function CreateGroupForm({
           <Field label={<>Group Leader&#42;</>}>
             <NativeSelect name="leaderId" className={H} defaultValue="">
               <NativeSelectOption value="">Select group leader</NativeSelectOption>
-              <NativeSelectOption value="1">Pastor Val Ejima</NativeSelectOption>
-              <NativeSelectOption value="2">Isreal Marcelo</NativeSelectOption>
-              <NativeSelectOption value="3">Mary Napoleon</NativeSelectOption>
+              {leaders.map((l) => (
+                <NativeSelectOption key={l.id} value={l.id}>{l.name}</NativeSelectOption>
+              ))}
             </NativeSelect>
           </Field>
 

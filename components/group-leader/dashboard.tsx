@@ -104,8 +104,8 @@ export function GroupLeaderDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : '24'} variant="blue" />
         <StatCard title="Total Member" value={stats ? String(stats.totalMembers) : String(members.length)} variant="white" />
-        <StatCard title="New Members" value="15" variant="white" />
-        <StatCard title="Recent Attendance" value="10" variant="white" />
+        <StatCard title="New Members" value={stats ? String(stats.newMembers ?? 0) : (USE_LIVE_API ? '0' : '15')} variant="white" />
+        <StatCard title="Recent Attendance" value={stats ? String(stats.recentAttendance ?? 0) : (USE_LIVE_API ? '0' : '10')} variant="white" />
       </div>
 
       <DataPanel

@@ -95,12 +95,12 @@ export function ViewGroup({ id }: { id?: string }) {
         <div className="flex flex-col gap-5">
           <h2 className="text-[15px] font-bold">Group Information</h2>
           <ReadonlyField label="Group Description*" value={group.description} />
-          <ReadonlyField label="Meeting Frequency*" value="Every Tuesdays" />
-          <ReadonlyField label="Meeting Day*" value="Tuesdays" />
-          <ReadonlyField label="Meeting Time*" value="6:00 PM" />
+          <ReadonlyField label="Meeting Frequency*" value={group.meetingFrequency || '—'} />
+          <ReadonlyField label="Meeting Day*" value={group.meetingDays?.join(', ') || '—'} />
+          <ReadonlyField label="Meeting Time*" value={group.meetingTime || '—'} />
           <ReadonlyField label="Group Leader*" value={group.leaderName} />
-          <ReadonlyField label="Venue Name*" value="Canada Ontario" />
-          <ReadonlyField label="Online Meeting Link*" value="http://zoom/canadachurch.com" />
+          <ReadonlyField label="Venue Name*" value={group.venueName || '—'} />
+          <ReadonlyField label="Online Meeting Link*" value={group.onlineMeetingLink || '—'} />
         </div>
 
         <div className="flex flex-col gap-3">

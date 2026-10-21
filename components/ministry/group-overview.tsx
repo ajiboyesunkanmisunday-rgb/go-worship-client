@@ -135,9 +135,9 @@ export function GroupOverview({ id }: { id?: string }) {
             label="Group Description*"
             value={group.description || '—'}
           />
-          <ReadonlyField label="Meeting Frequency*" value="Every Tuesdays" />
-          <ReadonlyField label="Meeting Day*" value="Tuesdays" />
-          <ReadonlyField label="Meeting Time*" value="6:00 PM" />
+          <ReadonlyField label="Meeting Frequency*" value={group.meetingFrequency || '—'} />
+          <ReadonlyField label="Meeting Day*" value={group.meetingDays?.join(', ') || '—'} />
+          <ReadonlyField label="Meeting Time*" value={group.meetingTime || '—'} />
           <ReadonlyField label="Group Leader*" value={group.leaderName || '—'} />
           <ReadonlyField label="Members" value={String(group.memberCount)} />
 

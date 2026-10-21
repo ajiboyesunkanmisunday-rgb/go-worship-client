@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { EventsTable, StatCard, type EventRow } from './shared';
-import { getTenantEvents } from '@/lib/api/tenant';
+import { getTenantEvents, getTenantStats } from '@/lib/api/tenant';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 
@@ -42,6 +42,7 @@ export function AttendanceContent() {
   const [totalRegistration, setTotalRegistration] = useState(USE_LIVE_API ? 0 : 15);
   const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
   const [totalAttendance, setTotalAttendance] = useState(USE_LIVE_API ? 0 : MOCK_TOTAL);
+  const [checkInsToday, setCheckInsToday] = useState(USE_LIVE_API ? 0 : 45);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -65,6 +66,9 @@ export function AttendanceContent() {
         setChartData(live);
         setTotalAttendance(live.reduce((sum, d) => sum + d.value, 0));
       }
+    }).catch(() => {});
+    getTenantStats().then((s) => {
+      if (s && s.checkInsToday !== undefined) setCheckInsToday(s.checkInsToday);
     }).catch(() => {});
   }, []);
 
@@ -105,7 +109,7 @@ export function AttendanceContent() {
 
         <div className="flex flex-col gap-5">
           <StatCard title="Total Registration" value={String(totalRegistration)} variant="purple" />
-          <StatCard title="Check-ins Today" value="45" />
+          <StatCard title="Check-ins Today" value={String(checkInsToday)} />
         </div>
       </div>
 

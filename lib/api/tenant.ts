@@ -189,6 +189,8 @@ export type TenantGroup = {
   meetingDays?: string[];
   meetingTime?: string;
   meetingFrequency?: string;
+  venueName?: string;
+  onlineMeetingLink?: string;
 };
 
 function mapGroup(row: R): TenantGroup {
@@ -204,6 +206,8 @@ function mapGroup(row: R): TenantGroup {
     meetingDays: Array.isArray(row['meetingDays']) ? (row['meetingDays'] as string[]) : undefined,
     meetingTime: fieldOf(row, ['meetingTime', 'time']) || undefined,
     meetingFrequency: fieldOf(row, ['meetingFrequency', 'frequency', 'schedule']) || undefined,
+    venueName: fieldOf(row, ['venueName', 'venue', 'location']) || undefined,
+    onlineMeetingLink: fieldOf(row, ['onlineMeetingLink', 'meetingLink', 'zoomLink', 'onlineLink']) || undefined,
   };
 }
 
@@ -261,6 +265,9 @@ export type TenantStats = {
   upcomingEvents: number;
   totalGroups: number;
   totalGiving: string;
+  newMembers?: number;
+  recentAttendance?: number;
+  checkInsToday?: number;
 };
 
 export async function getTenantStats(): Promise<TenantStats | null> {
@@ -275,6 +282,9 @@ export async function getTenantStats(): Promise<TenantStats | null> {
       upcomingEvents: Number(fieldOf(inner, ['upcomingEvents', 'upcoming'])) || 0,
       totalGroups:    Number(fieldOf(inner, ['totalGroups', 'groupCount', 'groups'])) || 0,
       totalGiving:    fieldOf(inner, ['totalGiving', 'givingVolume', 'totalRevenue', 'volume']),
+      newMembers:     Number(fieldOf(inner, ['newMembers', 'newMemberCount', 'membersThisMonth'])) || undefined,
+      recentAttendance: Number(fieldOf(inner, ['recentAttendance', 'attendanceCount', 'lastAttendance'])) || undefined,
+      checkInsToday:  Number(fieldOf(inner, ['checkInsToday', 'todayCheckIns', 'dailyCheckIns', 'checkInCount'])) || undefined,
     };
   } catch {
     return null;
