@@ -23,8 +23,20 @@ const dummyUser: UserProfile = {
   role: 'Member',
 };
 
+const emptyProfile: UserProfile = {
+  id: 'me',
+  firstName: '',
+  lastName: '',
+  email: '',
+  phoneNumber: '',
+  church: '',
+  gender: '',
+  location: '',
+  role: '',
+};
+
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserProfile>(dummyUser);
+  const [user, setUser] = useState<UserProfile>(USE_LIVE_API ? emptyProfile : dummyUser);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

@@ -22,7 +22,7 @@ export function EventDetail({ isIntercepted = false, id }: Props) {
     [isIntercepted]
   );
 
-  const mockEvent = useMemo(() => fetchEvent(id), [id]);
+  const mockEvent = useMemo(() => (USE_LIVE_API ? null : fetchEvent(id)), [id]);
   const [event, setEvent] = useState<Event | null>(mockEvent ?? null);
 
   useEffect(() => {

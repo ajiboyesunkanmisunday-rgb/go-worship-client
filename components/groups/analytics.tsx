@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSelfGroups, type TenantGroup } from '@/lib/api/tenant';
+import { getSelfGroups, getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
@@ -10,6 +10,13 @@ import { HandshakeIcon } from '@/icons/socials';
 import { PlusIcon } from 'lucide-react';
 
 function DiscoverGroupsCard() {
+  const [count, setCount] = useState<number>(USE_LIVE_API ? 0 : 9);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantGroups().then((g) => setCount(g.length)).catch(() => {});
+  }, []);
+
   return (
     <div
       className={cn(
@@ -24,7 +31,7 @@ function DiscoverGroupsCard() {
       </span>
 
       <p className="font-extrabold leading-[100%] tracking-[0%] text-[20px] lg:text-[40px] relative z-1 w-full truncate">
-        9
+        {count}
       </p>
 
       <div className="w-full flex justify-end items-center">
