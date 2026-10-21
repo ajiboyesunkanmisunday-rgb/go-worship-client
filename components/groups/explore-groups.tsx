@@ -21,7 +21,7 @@ const MOCK_GROUPS: TenantGroup[] = Array.from({ length: 6 }, (_, i) => ({
 
 export function ExploreGroups() {
   const router = useRouter();
-  const [groups, setGroups] = useState<TenantGroup[]>(MOCK_GROUPS);
+  const [groups, setGroups] = useState<TenantGroup[]>(USE_LIVE_API ? [] : MOCK_GROUPS);
   const [search, setSearch] = useState('');
 
   useEffect(() => {

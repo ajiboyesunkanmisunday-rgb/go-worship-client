@@ -163,7 +163,7 @@ function parseHealth(data: unknown): ServiceHealth[] {
 }
 
 function SystemHealthPanel() {
-  const [services, setServices] = useState<ServiceHealth[]>(MOCK_HEALTH);
+  const [services, setServices] = useState<ServiceHealth[]>(USE_LIVE_API ? [] : MOCK_HEALTH);
   const [loading, setLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
 

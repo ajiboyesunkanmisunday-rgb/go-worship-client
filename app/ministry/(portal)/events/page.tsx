@@ -35,7 +35,7 @@ function toRow(e: TenantEvent): EventRow {
 }
 
 export default function MinistryEventsPage() {
-  const [events, setEvents] = useState<EventRow[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

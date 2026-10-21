@@ -31,7 +31,7 @@ const config = {
 
 function EngagementChart() {
   const [stats, setStats] = useState<TenantStats | null>(null);
-  const [chartData, setChartData] = useState(MOCK_CHART_DATA);
+  const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
   const [engagementScore, setEngagementScore] = useState('78%');
 
   useEffect(() => {

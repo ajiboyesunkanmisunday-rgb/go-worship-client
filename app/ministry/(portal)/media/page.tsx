@@ -45,7 +45,7 @@ const folderIcon = (
 );
 
 export default function MinistryMediaPage() {
-  const [series, setSeries] = useState<Series[]>(SERIES);
+  const [series, setSeries] = useState<Series[]>(USE_LIVE_API ? [] : SERIES);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

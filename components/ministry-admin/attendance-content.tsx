@@ -38,10 +38,10 @@ const MOCK_EVENTS: EventRow[] = [
 const MOCK_TOTAL = MOCK_CHART_DATA.reduce((sum, d) => sum + d.value, 0);
 
 export function AttendanceContent() {
-  const [events, setEvents] = useState<EventRow[]>(MOCK_EVENTS);
-  const [totalRegistration, setTotalRegistration] = useState(15);
-  const [chartData, setChartData] = useState(MOCK_CHART_DATA);
-  const [totalAttendance, setTotalAttendance] = useState(MOCK_TOTAL);
+  const [events, setEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
+  const [totalRegistration, setTotalRegistration] = useState(USE_LIVE_API ? 0 : 15);
+  const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
+  const [totalAttendance, setTotalAttendance] = useState(USE_LIVE_API ? 0 : MOCK_TOTAL);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

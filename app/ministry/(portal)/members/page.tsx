@@ -16,7 +16,7 @@ const MOCK_MEMBERS: TenantMember[] = [
 ];
 
 export default function MinistryMembersPage() {
-  const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

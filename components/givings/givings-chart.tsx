@@ -34,7 +34,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function GivingsChart() {
-  const [chartData, setChartData] = useState(MOCK_CHART_DATA);
+  const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

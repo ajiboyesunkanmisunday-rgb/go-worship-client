@@ -33,7 +33,7 @@ export function UpcomingEvents({ isIntercepted = false }: Props) {
     () => (isIntercepted ? undefined : '/dashboard/events'),
     [isIntercepted]
   );
-  const [events, setEvents] = useState<Event[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<Event[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

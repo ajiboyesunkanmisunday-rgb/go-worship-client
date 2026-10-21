@@ -30,7 +30,7 @@ const FILTERS = ['All member', 'Youth Fellowship', 'Music Group', 'Prayer Group'
 export function GroupMembers() {
   const router = useRouter();
   const [filter, setFilter] = useState(FILTERS[0]);
-  const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

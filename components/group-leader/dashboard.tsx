@@ -62,7 +62,7 @@ const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, () => ({
 }));
 
 export function GroupLeaderDashboard() {
-  const [members, setMembers] = useState<TenantMember[]>(MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('Go Worship');

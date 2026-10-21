@@ -21,8 +21,8 @@ const MESSAGES: Message[] = [
 ];
 
 export default function MinistryCommunicationPage() {
-  const [messages, setMessages] = useState<Message[]>(MESSAGES);
-  const [activeRecipients, setActiveRecipients] = useState('260');
+  const [messages, setMessages] = useState<Message[]>(USE_LIVE_API ? [] : MESSAGES);
+  const [activeRecipients, setActiveRecipients] = useState(USE_LIVE_API ? '0' : '260');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

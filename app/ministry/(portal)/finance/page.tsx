@@ -27,10 +27,10 @@ function mapStatus(s?: string): Transaction['status'] {
 }
 
 export default function MinistryFinancePage() {
-  const [totalGiving, setTotalGiving] = useState(MOCK.totalGiving);
-  const [offlineGiving, setOfflineGiving] = useState(MOCK.offlineGiving);
-  const [recurringGivers, setRecurringGivers] = useState(MOCK.recurringGivers);
-  const [failedTransactions, setFailedTransactions] = useState(MOCK.failedTransactions);
+  const [totalGiving, setTotalGiving] = useState(USE_LIVE_API ? '$0' : MOCK.totalGiving);
+  const [offlineGiving, setOfflineGiving] = useState(USE_LIVE_API ? '$0' : MOCK.offlineGiving);
+  const [recurringGivers, setRecurringGivers] = useState(USE_LIVE_API ? '0' : MOCK.recurringGivers);
+  const [failedTransactions, setFailedTransactions] = useState(USE_LIVE_API ? '0' : MOCK.failedTransactions);
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {

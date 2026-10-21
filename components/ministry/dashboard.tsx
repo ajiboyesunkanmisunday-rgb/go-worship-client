@@ -363,9 +363,13 @@ const MOCK_STATS: UnifiedDashboardStats = {
 };
 
 export function MinistryDashboard() {
-  const [stats, setStats] = useState<UnifiedDashboardStats>(MOCK_STATS);
-  const [txns, setTxns] = useState<Transaction[]>(DEFAULT_TXNS);
-  const [activity, setActivity] = useState<ActivityItem[]>(DEFAULT_ACTIVITY);
+  const [stats, setStats] = useState<UnifiedDashboardStats>(
+    USE_LIVE_API
+      ? { totalGiving: '$0', totalMembers: 0, totalGroups: 0, totalEvents: 0, upcomingEvents: 0, totalTenants: 0, activeTenants: 0, totalUsers: 0, trend: [], availableFamilies: [] }
+      : MOCK_STATS
+  );
+  const [txns, setTxns] = useState<Transaction[]>(USE_LIVE_API ? [] : DEFAULT_TXNS);
+  const [activity, setActivity] = useState<ActivityItem[]>(USE_LIVE_API ? [] : DEFAULT_ACTIVITY);
   const [storageSubtitle, setStorageSubtitle] = useState('2.3GB · 40 items');
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('');

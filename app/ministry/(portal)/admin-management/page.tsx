@@ -31,7 +31,7 @@ const ROLES: Role[] = [
 ];
 
 export default function MinistryAdminManagementPage() {
-  const [roles, setRoles] = useState<Role[]>(ROLES);
+  const [roles, setRoles] = useState<Role[]>(USE_LIVE_API ? [] : ROLES);
 
   const deleteRole = (apiId: string) => {
     if (!USE_LIVE_API || !apiId) return;

@@ -33,7 +33,7 @@ function toGroupRow(g: TenantGroup): GroupRow {
 }
 
 export default function MinistryGroupsPage() {
-  const [groups, setGroups] = useState<GroupRow[]>(MOCK_GROUPS);
+  const [groups, setGroups] = useState<GroupRow[]>(USE_LIVE_API ? [] : MOCK_GROUPS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

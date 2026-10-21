@@ -33,7 +33,7 @@ export function RegisteredEvents({ isIntercepted = false }: Props) {
     () => (isIntercepted ? undefined : '/dashboard/events'),
     [isIntercepted]
   );
-  const [events, setEvents] = useState<Event[]>(MOCK_EVENTS.filter((ev) => ev.registered));
+  const [events, setEvents] = useState<Event[]>(USE_LIVE_API ? [] : MOCK_EVENTS.filter((ev) => ev.registered));
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
