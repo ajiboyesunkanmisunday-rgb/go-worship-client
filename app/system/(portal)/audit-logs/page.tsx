@@ -150,16 +150,12 @@ export default function SystemAuditLogsPage() {
   const [logs, setLogs] = useState<Log[]>(USE_LIVE_API ? [] : LOGS);
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
-  const TAB_ENDPOINT: Record<AuditTab, string> = {
-    'All activity':        '/system/audit/events/recent',
-    'Sensitive actions':   '/system/audit/sensitive-actions/recent',
-    'Roles & permissions': '/system/audit/role-permission-changes/recent',
-    'Payment gateways':    '/system/audit/payment-gateway-changes/recent',
-  };
-
   const loadLogs = (tab: AuditTab) => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>(TAB_ENDPOINT[tab]) as Promise<unknown>)
+    // Only /system/audit/events/recent confirmed in spec — other tab-specific paths
+    // are absent; load the full list once and filter client-side via matchesTab.
+    if (tab !== 'All activity') return;
+    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
       .then((data) => {
         const rows = parseArr(data).map(mapLogRow).filter((l) => l.action || l.resource);
         if (rows.length > 0) setLogs(rows);
@@ -174,7 +170,6 @@ export default function SystemAuditLogsPage() {
 
   const handleTab = (tab: AuditTab) => {
     setActiveTab(tab);
-    loadLogs(tab);
   };
 
   const visibleLogs = logs.filter((l) => matchesTab(l, activeTab));
