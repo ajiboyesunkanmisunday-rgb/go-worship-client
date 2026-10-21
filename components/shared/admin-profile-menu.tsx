@@ -104,13 +104,25 @@ export function AdminProfileMenu({
         >
           {initials || <UserRound className="size-4" />}
         </span>
-        <span
-          className={cn(
-            'hidden text-[13px] font-medium md:inline',
-            tone === 'dark' ? 'text-white' : 'text-[#1a1a1a]'
+        <span className="hidden flex-col items-start md:flex">
+          <span
+            className={cn(
+              'text-[13px] font-medium leading-tight',
+              tone === 'dark' ? 'text-white' : 'text-[#1a1a1a]'
+            )}
+          >
+            {displayName}
+          </span>
+          {displayRole && (
+            <span
+              className={cn(
+                'text-[11px] leading-tight',
+                tone === 'dark' ? 'text-white/60' : 'text-brand-gray-400'
+              )}
+            >
+              {displayRole}
+            </span>
           )}
-        >
-          {displayName}
         </span>
       </button>
 

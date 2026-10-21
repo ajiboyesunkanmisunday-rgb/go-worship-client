@@ -170,9 +170,11 @@ function mapRole(row: R): string {
   const first = Array.isArray(codes) && codes.length ? String(codes[0]) : '';
   const userType = first || fieldOf(row, ['userType', 'role', 'roleCode']);
   switch (userType.toUpperCase()) {
-    case 'SYSTEM_ADMIN':   return 'Admin';
-    case 'SYSTEM_SUPPORT': return 'Support';
-    case 'SYSTEM_AUDITOR': return 'Auditor';
+    case 'SUPER_ADMIN':
+    case 'SYSTEM_SUPER_ADMIN': return 'Super Admin';
+    case 'SYSTEM_ADMIN':       return 'Admin';
+    case 'SYSTEM_SUPPORT':     return 'Support';
+    case 'SYSTEM_AUDITOR':     return 'Auditor';
     default: return userType || 'Admin';
   }
 }

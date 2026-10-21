@@ -238,7 +238,7 @@ function SecurityPanel() {
       <div className="rounded-[14px] border border-[#eee] p-6">
         <div className="flex items-center gap-2">
           <KeyRound className="size-5 text-[#555]" />
-          <h2 className="text-[16px] font-bold">Password</h2>
+          <h2 className="text-[16px] font-bold">Password &amp; Authentication</h2>
         </div>
         <p className="mt-1 text-[13px] text-brand-gray-500">
           Use a strong password you don&apos;t reuse anywhere else.
