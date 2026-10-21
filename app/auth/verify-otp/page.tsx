@@ -3,8 +3,9 @@
 import { AuthLayout } from '@/components/auth/layout';
 import { OtpForm } from '@/components/auth/otp-form';
 import { ResetProgress } from '@/components/auth/reset-progress';
-import { beginLoginMfa, verifyLoginMfa } from '@/lib/api/auth';
+import { beginLoginMfa, forgotPassword, verifyLoginMfa } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { executeRecaptcha } from '@/lib/recaptcha';
 import { toast } from 'sonner';
 import { portalForRoles } from '@/lib/portal';
 import Link from 'next/link';
@@ -214,12 +215,28 @@ function LoginMfaPage({
   );
 }
 
-function ForgotPasswordOtpPage() {
+function ForgotPasswordOtpPage({ email }: { email?: string | null }) {
   const router = useRouter();
+
+  const handleResend = email
+    ? async () => {
+        if (!USE_LIVE_API) return;
+        try {
+          const captchaToken = await executeRecaptcha('forgot_password');
+          if (captchaToken) await forgotPassword(email, captchaToken);
+          toast.success('Code resent. Check your inbox.', { position: 'bottom-right', duration: 4000 });
+        } catch {
+          toast.error('Failed to resend code. Try again.', { position: 'bottom-right', duration: 4000 });
+        }
+      }
+    : undefined;
+
   return (
     <AuthLayout imgSrc="/auth/church.jpg" imgAlt="Celebration Church">
       <OtpForm
+        email={email ?? undefined}
         onVerify={(otp) => router.push(`/auth/set-password?token=${encodeURIComponent(otp)}`)}
+        onResend={handleResend}
         header={<ResetProgress step={2} />}
         footer={
           <p className="text-[15px] font-light">
@@ -240,6 +257,7 @@ function VerifyOtpPageInner({ shellProps }: { shellProps?: ShellProps }) {
   const rawMethods = params.get('methods') ?? '';
   const primaryFactor = params.get('primary') ?? null;
   const nextPath = params.get('next');
+  const email = params.get('email');
 
   if (mfaSessionId) {
     // OTP_SMS is not yet available — strip it to keep only TOTP and OTP_EMAIL.
@@ -257,7 +275,7 @@ function VerifyOtpPageInner({ shellProps }: { shellProps?: ShellProps }) {
     );
   }
 
-  return <ForgotPasswordOtpPage />;
+  return <ForgotPasswordOtpPage email={email} />;
 }
 
 export default function VerifyOTPPage({ shellProps }: { shellProps?: ShellProps } = {}) {
