@@ -128,12 +128,11 @@ export const resetPassword = (token: string, newPassword: string, tenantId?: str
 export const changePassword = (
   currentPassword: string,
   newPassword: string,
-  confirmPassword: string
+  _confirmPassword?: string
 ) =>
   api.post('/auth/password/change', {
     currentPassword,
     newPassword,
-    confirmPassword,
   });
 
 /* ---------------- Self profile ---------------- */
@@ -151,6 +150,22 @@ export type Profile = {
 export const getProfile = () => api.get<Profile>('/self/profile');
 export const updateProfile = (payload: Partial<Profile>) =>
   api.put<Profile>('/self/profile', payload);
+
+/* ---------------- Active sessions (confirmed: DO chunk) ---------------- */
+
+export type SessionInfo = {
+  id?: string;
+  sessionId?: string;
+  deviceInfo?: string;
+  ipAddress?: string;
+  lastActive?: string;
+  createdAt?: string;
+  current?: boolean;
+};
+
+export const listSessions = () => api.get<SessionInfo[]>('/self/sessions');
+export const revokeSession = (id: string) =>
+  api.post(`/self/sessions/${id}/revoke`);
 
 /* ---------------- MFA self-service (Bearer via /bff/gw) ---------------- */
 
