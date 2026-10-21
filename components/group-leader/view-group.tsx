@@ -35,7 +35,9 @@ const MOCK_GROUP: TenantGroup = {
 export function ViewGroup({ id }: { id?: string }) {
   const router = useRouter();
   const back = '/group-leader/groups';
-  const [group, setGroup] = useState<TenantGroup>(MOCK_GROUP);
+  const [group, setGroup] = useState<TenantGroup>(
+    USE_LIVE_API ? { id: '', name: '', description: '', memberCount: 0, leaderId: '', leaderName: '', status: 'Active', createdAt: '' } : MOCK_GROUP
+  );
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;

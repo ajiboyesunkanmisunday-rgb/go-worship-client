@@ -35,7 +35,9 @@ const MOCK_MEMBER: TenantMember = {
 export function MemberOverview({ id }: { id?: string }) {
   const router = useRouter();
   const back = '/ministry/members';
-  const [member, setMember] = useState<TenantMember>(MOCK_MEMBER);
+  const [member, setMember] = useState<TenantMember>(
+    USE_LIVE_API ? { id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] } : MOCK_MEMBER
+  );
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;

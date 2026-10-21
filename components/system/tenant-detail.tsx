@@ -77,7 +77,9 @@ export function TenantDetail({ id }: { id: string }) {
   const [tab, setTab] = useState<Tab>('Overview');
   const [menu, setMenu] = useState(false);
   const [del, setDel] = useState(false);
-  const [tenant, setTenant] = useState<SystemTenant>(MOCK_TENANT);
+  const [tenant, setTenant] = useState<SystemTenant>(
+    USE_LIVE_API ? { id: '', name: '', domain: '', status: 'Active', plan: '', members: 0, createdAt: '' } : MOCK_TENANT
+  );
   const stats = buildStats(tenant);
 
   useEffect(() => {
