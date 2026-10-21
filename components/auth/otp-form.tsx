@@ -8,7 +8,7 @@ import {
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FormEvent, useState, type ReactNode } from 'react';
+import { FormEvent, useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 type OtpFormProps = {
@@ -45,6 +45,17 @@ export function OtpForm({
   const [otp, setOtp] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(onResend ? 60 : 0);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timeLeft]);
+
+  const handleResend = onResend
+    ? () => { onResend(); setTimeLeft(60); }
+    : undefined;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -122,13 +133,17 @@ export function OtpForm({
         <div className="flex w-full items-center justify-between gap-4">
           <button
             type="button"
-            onClick={onResend}
-            disabled={!onResend}
-            className={`text-[15px] font-medium text-brand-blue ${onResend ? 'hover:underline' : 'cursor-default opacity-50'}`}
+            onClick={handleResend}
+            disabled={!handleResend || timeLeft > 0}
+            className={`text-[15px] font-medium text-brand-blue ${handleResend && timeLeft === 0 ? 'hover:underline' : 'cursor-default opacity-50'}`}
           >
             Resend code
           </button>
-          <span className="text-[15px] text-brand-gray-500">01:00</span>
+          {timeLeft > 0 && (
+            <span className="text-[15px] text-brand-gray-500">
+              {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+            </span>
+          )}
         </div>
 
         {footer === undefined ? (

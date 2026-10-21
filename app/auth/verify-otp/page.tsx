@@ -5,6 +5,7 @@ import { OtpForm } from '@/components/auth/otp-form';
 import { ResetProgress } from '@/components/auth/reset-progress';
 import { beginLoginMfa, verifyLoginMfa } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 import { portalForRoles } from '@/lib/portal';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -99,6 +100,11 @@ function LoginMfaPage({
         const tid = res.tokenId ?? (res.payloadJson?.tokenId ?? null);
         setTokenId(tid ?? null);
         setPhase('enter_code');
+        if (method === 'OTP_EMAIL') {
+          toast.success('We sent a code via email code.', { position: 'bottom-right', duration: 4000 });
+        } else if (method === 'OTP_SMS') {
+          toast.success('We sent a code via SMS.', { position: 'bottom-right', duration: 4000 });
+        }
       } catch (e) {
         setBeginError(e instanceof Error ? e.message : 'Failed to start verification');
         setPhase('enter_code');
@@ -191,6 +197,7 @@ function LoginMfaPage({
         <OtpForm
           digits={6}
           onVerify={handleVerify}
+          onResend={['OTP_EMAIL', 'OTP_SMS'].includes(selectedMethod) ? () => begin(selectedMethod) : undefined}
           header={methodTabsHeader}
           title="Two-step verification"
           footer={
