@@ -23,7 +23,7 @@ const MOCK: SystemUser[] = [
   { id: '4', name: 'System Owner',            email: 'support@go-worship.com',     role: 'Super Admin', status: 'Active',   lastLogin: 'Jun 09, 2025', createdAt: 'Apr 09, 2024' },
 ];
 
-const TABS = ['Super Admin', 'Admin', 'Support'];
+const TABS = ['Super Admin', 'Admin', 'Support', 'Finance'];
 
 /** System → Platform Users (board 778:38441). */
 export default function SystemPlatformUsersPage() {
@@ -131,7 +131,7 @@ export default function SystemPlatformUsersPage() {
         <SmartTable
           headers={['Users', 'Role', 'Status', 'Last Login', 'Created', 'Action']}
           rows={rows}
-          filterOptions={['Super Admin', 'Admin', 'Support']}
+          filterOptions={['Super Admin', 'Admin', 'Support', 'Finance']}
           filterAll="Role: All"
         />
       )}

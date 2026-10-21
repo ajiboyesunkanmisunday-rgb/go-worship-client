@@ -74,7 +74,7 @@ function EmptyState({ label }: { label: string }) {
 export default function SystemRolesPage() {
   const [activeTab, setActiveTab] = useState<'Roles' | 'Permissions'>('Roles');
   const [roles, setRoles] = useState<Role[]>(USE_LIVE_API ? [] : MOCK_ROLES);
-  const [permissions, setPermissions] = useState<Permission[]>(MOCK_PERMISSIONS);
+  const [permissions, setPermissions] = useState<Permission[]>(USE_LIVE_API ? [] : MOCK_PERMISSIONS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
