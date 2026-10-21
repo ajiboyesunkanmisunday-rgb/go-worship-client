@@ -25,7 +25,7 @@ const MOCK: Role[] = [
 
 /** System → Roles (system-level permission roles for platform users). */
 export default function SystemRolesPage() {
-  const [roles, setRoles] = useState<Role[]>(MOCK);
+  const [roles, setRoles] = useState<Role[]>(USE_LIVE_API ? [] : MOCK);
 
   const deleteRole = (id: string) => {
     if (!USE_LIVE_API || !id) return;

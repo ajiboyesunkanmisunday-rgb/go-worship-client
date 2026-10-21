@@ -74,11 +74,11 @@ function fmtLogDate(iso?: string): string {
 
 export default function SystemAuditLogsPage() {
   const [selected, setSelected] = useState<Log | null>(null);
-  const [logs, setLogs] = useState<Log[]>(LOGS);
+  const [logs, setLogs] = useState<Log[]>(USE_LIVE_API ? [] : LOGS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/system/audit-logs') as Promise<unknown>)
+    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)

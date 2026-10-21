@@ -125,9 +125,9 @@ function PlanCard({ plan }: { plan: Plan }) {
 /** System → Plans & Billing (board 778:38441). */
 export default function SystemPlansPage() {
   const [tab, setTab] = useState(0);
-  const [revenue, setRevenue] = useState('$1300');
-  const [overdue, setOverdue] = useState('$150');
-  const [pendingPayments, setPendingPayments] = useState('$830');
+  const [revenue, setRevenue] = useState(USE_LIVE_API ? '$0' : '$1300');
+  const [overdue, setOverdue] = useState(USE_LIVE_API ? '$0' : '$150');
+  const [pendingPayments, setPendingPayments] = useState(USE_LIVE_API ? '$0' : '$830');
   const [plans, setPlans] = useState<Plan[]>(PLANS);
 
   useEffect(() => {

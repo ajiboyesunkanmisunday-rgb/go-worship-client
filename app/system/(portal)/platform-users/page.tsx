@@ -29,7 +29,7 @@ const TABS = ['Admin', 'Support', 'Auditor'];
 /** System → Platform Users (board 778:38441). */
 export default function SystemPlatformUsersPage() {
   const [tab, setTab] = useState(-1);
-  const [users, setUsers] = useState<SystemUser[]>(MOCK);
+  const [users, setUsers] = useState<SystemUser[]>(USE_LIVE_API ? [] : MOCK);
   const [loading, setLoading] = useState(USE_LIVE_API);
 
   useEffect(() => {

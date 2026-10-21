@@ -178,7 +178,7 @@ function mapUser(row: R): SystemUser {
 }
 
 export async function getSystemUsers(): Promise<SystemUser[]> {
-  const data = await api.get<unknown>('/system/dashboard/admin/users');
+  const data = await api.get<unknown>('/system/users');
   const rows = findTableRows(data, 'user');
   return rows.map(mapUser).filter((u) => u.name || u.email);
 }
