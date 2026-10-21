@@ -58,7 +58,7 @@ export default function MinistryCommunicationPage() {
       .catch(() => {});
   }, []);
 
-  const sentCount = messages.filter((m) => m.status === 'Sent' || m.status === 'SENT').length;
+  const unreadCount = messages.filter((m) => !m.title.includes('READ') && (m.rate === 0 || m.rate == null)).length;
   const scheduledCount = messages.filter((m) => m.status === 'Scheduled' || m.status === 'SCHEDULED').length;
 
   return (
@@ -68,7 +68,7 @@ export default function MinistryCommunicationPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard title="Total Messages" value={String(messages.length)} variant="white" subtitle="12% from last week" />
         <StatCard title="Active Recipients" value={activeRecipients} variant="green" subtitle="5% from last week" />
-        <StatCard title="Sent Messages" value={String(sentCount)} variant="white" subtitle="Click here to create group" />
+        <StatCard title="Unread Messages" value={String(unreadCount)} variant="white" subtitle="Click here to create group" />
         <StatCard title="Scheduled" value={String(scheduledCount)} variant="white" subtitle="Click here to create group" />
         <ActionCard
           variant="blue"
