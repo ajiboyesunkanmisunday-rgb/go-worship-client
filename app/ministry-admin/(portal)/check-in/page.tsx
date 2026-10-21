@@ -19,7 +19,7 @@ const MOCK_EVENTS: EventRow[] = [
 ];
 
 export default function MinistryAdminCheckInPage() {
-  const [rows, setRows] = useState<EventRow[]>(MOCK_EVENTS);
+  const [rows, setRows] = useState<EventRow[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

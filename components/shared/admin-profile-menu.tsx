@@ -35,8 +35,8 @@ export function AdminProfileMenu({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const [displayName, setDisplayName] = useState('Admin');
-  const [displayRole, setDisplayRole] = useState('Admin');
+  const [displayName, setDisplayName] = useState(USE_LIVE_API ? '' : 'Admin');
+  const [displayRole, setDisplayRole] = useState(USE_LIVE_API ? '' : 'Admin');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

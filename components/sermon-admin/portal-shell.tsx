@@ -63,8 +63,8 @@ function Sidebar() {
 }
 
 function Topbar() {
-  const [orgName, setOrgName] = useState('Celebration Church Int.');
-  const [orgLocation, setOrgLocation] = useState('Ontario Canada, Canada City');
+  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church Int.');
+  const [orgLocation, setOrgLocation] = useState(USE_LIVE_API ? '' : 'Ontario Canada, Canada City');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

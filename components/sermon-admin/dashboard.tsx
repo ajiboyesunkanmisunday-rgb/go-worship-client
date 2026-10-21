@@ -51,9 +51,9 @@ type SeriesItem = { name: string; desc: string; count: string; status: string; d
 
 export function SermonAdminDashboard() {
   const [stats, setStats] = useState<TenantStats | null>(null);
-  const [series, setSeries] = useState<SeriesItem[]>(SERIES);
+  const [series, setSeries] = useState<SeriesItem[]>(USE_LIVE_API ? [] : SERIES);
   const [userName, setUserName] = useState('');
-  const [orgName, setOrgName] = useState('Go Worship');
+  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Go Worship');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

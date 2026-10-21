@@ -370,7 +370,7 @@ export function MinistryDashboard() {
   );
   const [txns, setTxns] = useState<Transaction[]>(USE_LIVE_API ? [] : DEFAULT_TXNS);
   const [activity, setActivity] = useState<ActivityItem[]>(USE_LIVE_API ? [] : DEFAULT_ACTIVITY);
-  const [storageSubtitle, setStorageSubtitle] = useState('2.3GB · 40 items');
+  const [storageSubtitle, setStorageSubtitle] = useState(USE_LIVE_API ? '' : '2.3GB · 40 items');
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('');
 
