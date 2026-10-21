@@ -209,12 +209,12 @@ export function TenantDetail({ id }: { id: string }) {
           <div className="rounded-[14px] border border-[#eee] p-6">
             <h2 className="text-[18px] font-bold">Contact Information</h2>
             <div className="mt-5 flex flex-col gap-5">
-              <DetailRow icon={Mail} label="Email" value={tenant.email ?? 'admin@gracecommunity.org'} />
-              <DetailRow icon={Phone} label="Phone" value={tenant.phone ?? '+1 555-0101'} />
+              <DetailRow icon={Mail} label="Email" value={tenant.email ?? (USE_LIVE_API ? '—' : 'admin@gracecommunity.org')} />
+              <DetailRow icon={Phone} label="Phone" value={tenant.phone ?? (USE_LIVE_API ? '—' : '+1 555-0101')} />
               <DetailRow
                 icon={Globe}
                 label="Custom Domain"
-                value={tenant.domain || 'gracecommunity.churchapp.com'}
+                value={tenant.domain || (USE_LIVE_API ? '—' : 'gracecommunity.churchapp.com')}
               />
             </div>
           </div>
@@ -474,10 +474,10 @@ function GroupMemberSheet({
             <div>
               <p className="text-[11px] text-brand-gray-500">Member Details</p>
               <p className="text-[16px] font-bold text-brand-blue">
-                {name ?? 'John Samuel Doe'}
+                {name ?? (USE_LIVE_API ? '—' : 'John Samuel Doe')}
               </p>
               <p className="text-[12px] text-brand-gray-500">
-                johnsamuel@email.com · +234 812 345 6789
+                {USE_LIVE_API ? '—' : 'johnsamuel@email.com · +234 812 345 6789'}
               </p>
             </div>
           </div>
@@ -487,12 +487,12 @@ function GroupMemberSheet({
             <DetailRow
               icon={Users}
               label="Active Groups"
-              value="Men's Fellowship · Choir"
+              value={USE_LIVE_API ? '—' : "Men's Fellowship · Choir"}
             />
             <DetailRow
               icon={CalendarClock}
               label="Last Attendance Date"
-              value="July 30th 2024"
+              value={USE_LIVE_API ? '—' : 'July 30th 2024'}
             />
             <div className="flex items-start gap-3">
               <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f6f8fb]">
@@ -501,7 +501,7 @@ function GroupMemberSheet({
               <div className="w-full">
                 <p className="text-[12px] text-brand-gray-500">Attendance Rate</p>
                 <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#eef0f4]">
-                  <div className="h-full w-[78%] rounded-full bg-[#22a45d]" />
+                  <div className={`h-full rounded-full bg-[#22a45d] ${USE_LIVE_API ? 'w-0' : 'w-[78%]'}`} />
                 </div>
               </div>
             </div>
@@ -510,9 +510,9 @@ function GroupMemberSheet({
           <div className="rounded-[12px] border border-[#eee] p-4">
             <p className="text-[13px] font-semibold">Notes for follow-up</p>
             <p className="mt-1 text-[13px] text-[#333]">
-              Absent for 2 weeks, follow up
+              {USE_LIVE_API ? '—' : 'Absent for 2 weeks, follow up'}
             </p>
-            <p className="mt-2 text-[11px] text-brand-gray-500">Added by Leader</p>
+            <p className="mt-2 text-[11px] text-brand-gray-500">{USE_LIVE_API ? '' : 'Added by Leader'}</p>
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-2">
@@ -586,7 +586,7 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
             type: String(t['fundName'] ?? t['offeringType'] ?? t['type'] ?? 'Giving'),
             name: String(t['donorName'] ?? t['memberName'] ?? t['name'] ?? 'Anonymous'),
             date: rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-            method: String(t['paymentMethod'] ?? t['method'] ?? 'Bank transfer'),
+            method: String(t['paymentMethod'] ?? t['method'] ?? ''),
             id: String(t['transactionId'] ?? t['paymentReference'] ?? t['reference'] ?? t['id'] ?? ''),
           };
         });
@@ -645,13 +645,13 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
               >
-                <td className="py-4 font-medium">{t.name ?? 'John Christain'}</td>
+                <td className="py-4 font-medium">{t.name ?? (USE_LIVE_API ? '—' : 'John Christain')}</td>
                 <td className={cn('py-4 font-medium', TXN_STATUS[t.status] ?? 'text-[#ff8d28]')}>
                   {t.status}
                 </td>
-                <td className="py-4">{t.date ?? 'June 12, 2025'}</td>
+                <td className="py-4">{t.date ?? (USE_LIVE_API ? '—' : 'June 12, 2025')}</td>
                 <td className="py-4">{t.amount}</td>
-                <td className="py-4">{t.method ?? 'Bank transfer'}</td>
+                <td className="py-4">{t.method ?? (USE_LIVE_API ? '—' : 'Bank transfer')}</td>
                 <td className="py-4">{t.type}</td>
                 <td className="py-4">
                   <button
@@ -713,7 +713,7 @@ function GivingReceiptSheet({
           </div>
 
           <div className="text-center">
-            <p className="text-[13px] font-semibold">{tenantName ?? 'Celebration Church Int.'}</p>
+            <p className="text-[13px] font-semibold">{tenantName ?? (USE_LIVE_API ? '—' : 'Celebration Church Int.')}</p>
           </div>
 
           {row?.name && (
@@ -1147,14 +1147,14 @@ function EventDetailSheet({
           <div>
             <p className="text-[12px] text-brand-gray-500">Overview of Event</p>
             <Dialog.Title className="text-[22px] font-bold text-brand-blue">
-              {name ?? 'Midweek Recharge'}
+              {name ?? (USE_LIVE_API ? '—' : 'Midweek Recharge')}
             </Dialog.Title>
             <p className="mt-1 flex items-center gap-2 text-[12px] text-brand-gray-500">
               <span className="inline-flex items-center gap-1">
                 <span className="size-2 rounded-full bg-brand-blue" /> Upcoming
                 Event
               </span>
-              · Host: Pst John
+              {USE_LIVE_API ? '' : ' · Host: Pst John'}
             </p>
           </div>
 
@@ -1162,26 +1162,24 @@ function EventDetailSheet({
             <DetailRow
               icon={CalendarClock}
               label="Date & Time"
-              value="Wednesday, February 21, 2025 · 6:00 PM – 7:30 PM"
+              value={USE_LIVE_API ? '—' : 'Wednesday, February 21, 2025 · 6:00 PM – 7:30 PM'}
             />
             <DetailRow
               icon={Users}
               label="Event Type"
-              value="Online & Onsite (Hybrid) · Registration Required"
+              value={USE_LIVE_API ? '—' : 'Online & Onsite (Hybrid) · Registration Required'}
             />
             <DetailRow
               icon={Globe}
               label="Location"
-              value="Celebration Church International Main Auditorium, Lekki Lagos"
+              value={USE_LIVE_API ? '—' : 'Celebration Church International Main Auditorium, Lekki Lagos'}
             />
           </div>
 
           <div>
             <p className="text-[13px] font-semibold">Event summary</p>
             <p className="mt-1 text-[13px] text-brand-gray-500">
-              Midweek Recharge is a refreshing midweek gathering designed to
-              strengthen your faith, renew your spirit, and equip you for the
-              rest of the week.
+              {USE_LIVE_API ? '—' : 'Midweek Recharge is a refreshing midweek gathering designed to strengthen your faith, renew your spirit, and equip you for the rest of the week.'}
             </p>
           </div>
 

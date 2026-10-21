@@ -85,7 +85,7 @@ export function ReceiptButton({
               <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#e5e9f0] pt-3">
                 <span className="text-[13px] font-semibold">Total</span>
                 <span className="text-[16px] font-bold text-brand-blue">
-                  {amount ?? '$2000'}
+                  {amount ?? (USE_LIVE_API ? '—' : '$2000')}
                 </span>
               </div>
             </div>

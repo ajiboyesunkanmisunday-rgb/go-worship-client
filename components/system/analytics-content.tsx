@@ -295,10 +295,10 @@ export function SystemAnalyticsContent() {
         headers: ['Name/Email', 'Status', 'Date', 'Amount', 'Method', 'Type', 'Action'],
         rows: liveTxns.map((t) => ({
           group: t.status,
-          text: [t.name, t.status, '—', t.amount, 'Bank transfer', t.type],
+          text: [t.name, t.status, '—', t.amount, '—', t.type],
           cells: [
             <span key="n" className="font-medium">{t.name}</span>,
-            <Badge key="s" value={t.status} />, '—', t.amount, 'Bank transfer', t.type,
+            <Badge key="s" value={t.status} />, '—', t.amount, '—', t.type,
             <span key="a" className="text-brand-gray-500">•••</span>,
           ],
         })),
@@ -334,7 +334,13 @@ export function SystemAnalyticsContent() {
         })),
       };
     }
-    return tableFor(tab);
+    if (!USE_LIVE_API) return tableFor(tab);
+    const emptyHeaders = tab === 'Tenants' ? ['Tenant', 'Status', 'Plan', 'Users', 'Members', 'Giving Volume', 'Created', 'Action']
+      : tab === 'Users' ? ['Name', 'Email', 'Role', 'Status', 'Joined', 'Action']
+      : tab === 'Subscription' ? ['Tenant', 'Plan', 'Status', 'Amount', 'Renewal', 'Action']
+      : ['Name/Email', 'Status', 'Date', 'Amount', 'Method', 'Type', 'Action'];
+    const emptyTitle = tab === 'Tenants' ? 'Recent Tenants' : tab === 'Users' ? 'Recent Users' : tab === 'Subscription' ? 'Recent Subscriptions' : 'Recent Transactions';
+    return { title: emptyTitle, headers: emptyHeaders, rows: [] };
   })();
 
   return (

@@ -28,8 +28,8 @@ export function ProfileMenu({
   const [deactivate, setDeactivate] = useState(false);
   const [logout, setLogout] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const [displayName, setDisplayName] = useState(nameProp ?? 'Natashia Khalerira');
-  const [displayEmail, setDisplayEmail] = useState(emailProp ?? 'Khalerira002@gmail.com');
+  const [displayName, setDisplayName] = useState(nameProp ?? (USE_LIVE_API ? '' : 'Natashia Khalerira'));
+  const [displayEmail, setDisplayEmail] = useState(emailProp ?? (USE_LIVE_API ? '' : 'Khalerira002@gmail.com'));
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
