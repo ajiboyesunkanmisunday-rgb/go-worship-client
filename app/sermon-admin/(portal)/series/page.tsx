@@ -21,7 +21,7 @@ const SERIES_MOCK: Series[] = [
 ];
 
 export default function SermonAdminSeriesPage() {
-  const [series, setSeries] = useState<Series[]>(SERIES_MOCK);
+  const [series, setSeries] = useState<Series[]>(USE_LIVE_API ? [] : SERIES_MOCK);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

@@ -31,7 +31,9 @@ export default function MinistryEditMemberPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [member, setMember] = useState<TenantMember>(MOCK);
+  const [member, setMember] = useState<TenantMember>(
+    USE_LIVE_API ? { id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] } : MOCK
+  );
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {

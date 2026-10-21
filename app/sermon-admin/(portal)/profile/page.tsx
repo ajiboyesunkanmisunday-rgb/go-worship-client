@@ -24,7 +24,7 @@ const MOCK: UserProfile = {
 };
 
 export default function SermonAdminProfilePage() {
-  const [user, setUser] = useState<UserProfile>(MOCK);
+  const [user, setUser] = useState<UserProfile>(USE_LIVE_API ? { id: '', firstName: '', lastName: '', email: '', phoneNumber: '', church: '', gender: '', location: '', role: '' } : MOCK);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
