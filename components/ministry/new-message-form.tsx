@@ -67,7 +67,11 @@ export function NewMessageForm() {
         scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
       };
       try {
-        await (api.post('/tenant/admin/notifications/campaigns', payload) as Promise<unknown>);
+        const created = await (api.post('/tenant/admin/notifications/campaigns', payload) as Promise<Record<string, unknown>>);
+        const campaignId = created?.['id'] ?? created?.['campaignId'];
+        if (campaignId && !schedule) {
+          await (api.post(`/tenant/admin/notifications/campaigns/${campaignId}/send`, {}) as Promise<unknown>);
+        }
       } catch {}
     }
     router.push(back);
