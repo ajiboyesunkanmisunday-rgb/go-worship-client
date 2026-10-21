@@ -40,38 +40,13 @@ export function TagForm({
 
   useEffect(() => {
     if (!USE_LIVE_API || !isEdit || !id) return;
-    (api.get<unknown>(`/tenant/admin/sermon/tags/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const rawStatus = String(d['status'] ?? '').toUpperCase();
-        const status = rawStatus === 'ACTIVE' ? 'Active' : rawStatus === 'INACTIVE' ? 'Inactive' : DEFAULT_TAG.status;
-        setTag({
-          name: String(d['name'] ?? d['tagName'] ?? DEFAULT_TAG.name),
-          description: String(d['description'] ?? d['desc'] ?? DEFAULT_TAG.description),
-          status,
-        });
-        setFormKey((k) => k + 1);
-      })
-      .catch(() => {});
+    // /tenant/admin/sermon/tags not in backend API — disabled.
   }, [isEdit, id]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const payload = {
-      name: String(fd.get('tagName') ?? ''),
-      description: String(fd.get('description') ?? ''),
-      status: String(fd.get('status') ?? ''),
-    };
     if (USE_LIVE_API) {
-      try {
-        if (isEdit && id) {
-          await (api.put(`/tenant/admin/sermon/tags/${id}`, payload) as Promise<unknown>);
-        } else {
-          await (api.post('/tenant/admin/sermon/tags', payload) as Promise<unknown>);
-        }
-      } catch {}
+      // /tenant/admin/sermon/tags not in backend API — disabled.
     }
     router.push(back);
   };

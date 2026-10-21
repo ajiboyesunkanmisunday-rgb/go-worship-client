@@ -67,7 +67,7 @@ export function SermonAdminDashboard() {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
 
-    (api.get<unknown>('/tenant/admin/media/series') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/content/series') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)

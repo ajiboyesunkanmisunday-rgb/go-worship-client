@@ -44,43 +44,13 @@ export default function SermonAdminMediaPage() {
 
   const deleteMedia = (id: string) => {
     if (!USE_LIVE_API || !id) return;
-    (api.del(`/tenant/admin/media/${id}`) as Promise<unknown>)
-      .then(() => setMedia((prev) => prev.filter((m) => m.id !== id)))
-      .catch(() => {});
+    // /tenant/admin/media not in backend API — disabled.
+    setMedia((prev) => prev.filter((m) => m.id !== id));
   };
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/media') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const mapped: MediaFile[] = arr.map((m) => {
-          const rawDate = String(m['uploadedAt'] ?? m['createdAt'] ?? m['date'] ?? '');
-          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          const rawSize = Number(m['fileSize'] ?? m['size'] ?? 0);
-          const size = rawSize ? `${Math.round(rawSize / (1024 * 1024))}mb` : String(m['sizeLabel'] ?? m['size'] ?? '');
-          const mimeType = String(m['mimeType'] ?? m['fileType'] ?? m['type'] ?? '');
-          const type = mimeType.includes('video') || mimeType.toUpperCase().includes('MP4') ? 'MP4 File' : 'MP3 File';
-          return {
-            id: String(m['id'] ?? m['mediaId'] ?? m['uuid'] ?? ''),
-            name: String(m['name'] ?? m['title'] ?? m['fileName'] ?? ''),
-            type,
-            size,
-            used: String(m['seriesName'] ?? m['linkedSeries'] ?? m['usedIn'] ?? ''),
-            date,
-          };
-        }).filter((m) => m.name);
-        if (mapped.length > 0) setMedia(mapped);
-      })
-      .catch(() => {});
+    // /tenant/admin/media not in backend API — disabled.
   }, []);
 
   const rows: SmartRow[] = media.map((m, i) => ({

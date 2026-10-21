@@ -48,40 +48,13 @@ export default function SermonAdminTagsPage() {
 
   const deleteTag = (id: string) => {
     if (!USE_LIVE_API || !id) return;
-    (api.del(`/tenant/admin/sermon/tags/${id}`) as Promise<unknown>)
-      .then(() => setTags((prev) => prev.filter((t) => t.id !== id)))
-      .catch(() => {});
+    // /tenant/admin/sermon/tags not in backend API — disabled.
+    setTags((prev) => prev.filter((t) => t.id !== id));
   };
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/sermon/tags') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        if (arr.length === 0) return;
-        const mapped: Tag[] = arr.map((t) => {
-          const rawDate = String(t['createdAt'] ?? t['date'] ?? '');
-          const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          const rawStatus = String(t['status'] ?? 'Active');
-          const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
-          return {
-            id: String(t['id'] ?? t['tagId'] ?? t['uuid'] ?? ''),
-            name: String(t['name'] ?? t['tagName'] ?? t['label'] ?? ''),
-            count: String(t['sermonCount'] ?? t['usageCount'] ?? t['count'] ?? '0'),
-            status,
-            date,
-          };
-        }).filter((t) => t.name);
-        if (mapped.length > 0) setTags(mapped);
-      })
-      .catch(() => {});
+    // /tenant/admin/sermon/tags not in backend API — disabled.
   }, []);
 
   const rows: SmartRow[] = tags.map((t, i) => ({

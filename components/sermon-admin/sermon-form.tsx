@@ -129,7 +129,7 @@ export function SermonForm({
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
-    (api.get<unknown>('/tenant/admin/media/series') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/content/series') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
@@ -150,7 +150,7 @@ export function SermonForm({
       .catch(() => {});
 
     if (isEdit && id) {
-      (api.get<unknown>(`/tenant/admin/sermons/${id}`) as Promise<unknown>)
+      (api.get<unknown>(`/tenant/admin/content/sermons/${id}`) as Promise<unknown>)
         .then((data) => {
           type R = Record<string, unknown>;
           const d = data as R;
@@ -183,10 +183,10 @@ export function SermonForm({
       };
       try {
         if (isEdit && id) {
-          await (api.put(`/tenant/admin/sermons/${id}`, payload) as Promise<unknown>)
-            .catch(() => api.patch(`/tenant/admin/sermons/${id}`, payload) as Promise<unknown>);
+          await (api.put(`/tenant/admin/content/sermons/${id}`, payload) as Promise<unknown>)
+            .catch(() => api.patch(`/tenant/admin/content/sermons/${id}`, payload) as Promise<unknown>);
         } else {
-          await (api.post('/tenant/admin/sermons', payload) as Promise<unknown>);
+          await (api.post('/tenant/admin/content/sermons', payload) as Promise<unknown>);
         }
       } catch {
         // fall through to navigate regardless

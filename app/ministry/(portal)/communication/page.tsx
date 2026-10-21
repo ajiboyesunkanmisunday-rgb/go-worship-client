@@ -26,7 +26,7 @@ export default function MinistryCommunicationPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/communications') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/notifications/campaigns') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
@@ -49,12 +49,7 @@ export default function MinistryCommunicationPage() {
         if (mapped.length > 0) setMessages(mapped);
       })
       .catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/admin/members/count') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const count = d['activeCount'] ?? d['active'] ?? d['count'] ?? d['total'] ?? d['activeRecipients'];
-        if (count != null) setActiveRecipients(String(count));
-      })
-      .catch(() => {});
+    // /tenant/admin/members/count not in backend API — disabled.
   }, []);
 
   const unreadCount = messages.filter((m) => !m.title.includes('READ') && (m.rate === 0 || m.rate == null)).length;

@@ -62,22 +62,7 @@ export default function MinistryFinancePage() {
       })
       .catch(() => {});
 
-    (api.get<unknown>('/tenant/admin/finance/summary') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const rawOffline = d['offlineGiving'] ?? d['offlineDonations'] ?? d['cashGiving'];
-        const rawRecurring = d['recurringGivers'] ?? d['recurringDonors'] ?? d['recurringCount'];
-        const rawFailed = d['failedTransactions'] ?? d['failedCount'] ?? d['failedPayments'];
-        const fmtAmt = (v: unknown) => {
-          const n = Number(v);
-          return n ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n) : String(v ?? '');
-        };
-        if (rawOffline != null) setOfflineGiving(fmtAmt(rawOffline));
-        if (rawRecurring != null) setRecurringGivers(String(rawRecurring));
-        if (rawFailed != null) setFailedTransactions(String(rawFailed));
-      })
-      .catch(() => {});
+    // /tenant/admin/finance/summary not in backend API — disabled.
   }, []);
 
   return (

@@ -39,7 +39,7 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
-    (api.get<unknown>(`/tenant/admin/sermons/${id}`) as Promise<unknown>)
+    (api.get<unknown>(`/tenant/admin/content/sermons/${id}`) as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const d = data as R;

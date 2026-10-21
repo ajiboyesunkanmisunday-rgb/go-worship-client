@@ -27,7 +27,7 @@ export default function SermonAdminSermonsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/sermons') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/content/sermons') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
