@@ -16,10 +16,16 @@ import {
   deleteBrandingAsset,
   getTenantSubscription,
   getTenantInvoices,
+  getTenantNotificationSettings,
+  updateTenantNotificationSettings,
+  getTenantSecuritySettings,
+  updateTenantSecuritySettings,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
   type TenantInvoice,
+  type TenantNotificationSettings,
+  type TenantSecuritySettings,
 } from '@/lib/api/tenant';
 import { getProfile, type Profile } from '@/lib/api/auth';
 import { api } from '@/lib/api/client';
@@ -83,23 +89,25 @@ function Field({
   );
 }
 
-function Toggle({ label, on = true }: { label: string; on?: boolean }) {
+function Toggle({ label, on = true, onChange }: { label: string; on?: boolean; onChange?: () => void }) {
   const [checked, setChecked] = useState(on);
+  const isControlled = onChange !== undefined;
+  const value = isControlled ? on : checked;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-[#f0f0f0] py-4 last:border-0">
       <p className="text-[14px] font-medium">{label}</p>
       <button
         type="button"
-        onClick={() => setChecked((c) => !c)}
+        onClick={() => { if (isControlled) onChange(); else setChecked((c) => !c); }}
         className={cn(
           'flex h-6 w-11 items-center rounded-full p-0.5 transition-colors',
-          checked ? 'bg-[#22a45d]' : 'bg-brand-gray-300'
+          value ? 'bg-[#22a45d]' : 'bg-brand-gray-300'
         )}
       >
         <span
           className={cn(
             'size-5 rounded-full bg-white transition-transform',
-            checked && 'translate-x-5'
+            value && 'translate-x-5'
           )}
         />
       </button>
@@ -109,6 +117,34 @@ function Toggle({ label, on = true }: { label: string; on?: boolean }) {
 
 function SecurityTab() {
   const [twoFactor, setTwoFactor] = useState(false);
+  const [settings, setSettings] = useState<TenantSecuritySettings | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) return;
+    getTenantSecuritySettings().then(setSettings).catch(() => {});
+  }, []);
+
+  const toggle = (key: keyof TenantSecuritySettings) => {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      return { ...prev, [key]: !prev[key] };
+    });
+  };
+
+  const save = async () => {
+    if (!USE_LIVE_API || !settings) return;
+    setSaving(true);
+    try {
+      await updateTenantSecuritySettings(settings);
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const loginAlerts = USE_LIVE_API ? (settings?.notifyAdminOnHighRiskLogin ?? false) : false;
+  const mfaRequired = USE_LIVE_API ? (settings?.mfaRequired ?? false) : false;
 
   return (
     <div className="rounded-[14px] bg-white p-6">
@@ -130,7 +166,25 @@ function SecurityTab() {
         </button>
       </div>
 
-      <Toggle label="Login alerts" on={false} />
+      <Toggle
+        label="Require MFA for all members"
+        on={mfaRequired}
+        onChange={USE_LIVE_API && settings ? () => toggle('mfaRequired') : undefined}
+      />
+      <Toggle
+        label="Login alerts"
+        on={loginAlerts}
+        onChange={USE_LIVE_API && settings ? () => toggle('notifyAdminOnHighRiskLogin') : undefined}
+      />
+
+      {USE_LIVE_API && settings && (
+        <div className="mt-4 flex justify-end">
+          <Button size="sm" onClick={save} disabled={saving} className="gap-1.5">
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
+            Save
+          </Button>
+        </div>
+      )}
 
       <TwoFactorModal open={twoFactor} onOpenChange={setTwoFactor} />
     </div>
@@ -452,6 +506,69 @@ function ProfileTab() {
   );
 }
 
+function NotificationsTab() {
+  const [settings, setSettings] = useState<TenantNotificationSettings | null>(null);
+  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!USE_LIVE_API) { setLoading(false); return; }
+    getTenantNotificationSettings()
+      .then(setSettings)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggle = (key: 'subscriptionExpiryRemindersEnabled' | 'inactiveTenantRemindersEnabled') => {
+    setSettings((prev) => prev ? { ...prev, [key]: !prev[key] } : prev);
+  };
+
+  const save = async () => {
+    if (!USE_LIVE_API || !settings) return;
+    setSaving(true);
+    try {
+      await updateTenantNotificationSettings(settings);
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="size-6 animate-spin text-brand-blue" />
+      </div>
+    );
+  }
+
+  const expiryOn = USE_LIVE_API ? (settings?.subscriptionExpiryRemindersEnabled ?? false) : true;
+  const inactiveOn = USE_LIVE_API ? (settings?.inactiveTenantRemindersEnabled ?? false) : false;
+
+  return (
+    <div className="rounded-[14px] bg-white p-6">
+      <Toggle
+        label="Subscription expiry reminders"
+        on={expiryOn}
+        onChange={USE_LIVE_API && settings ? () => toggle('subscriptionExpiryRemindersEnabled') : undefined}
+      />
+      <Toggle
+        label="Inactive account reminders"
+        on={inactiveOn}
+        onChange={USE_LIVE_API && settings ? () => toggle('inactiveTenantRemindersEnabled') : undefined}
+      />
+      {USE_LIVE_API && settings && (
+        <div className="mt-4 flex justify-end">
+          <Button size="sm" onClick={save} disabled={saving} className="gap-1.5">
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
+            Save
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabContent({ tab }: { tab: string }) {
   if (tab === 'Profile') {
     return <ProfileTab />;
@@ -462,13 +579,7 @@ function TabContent({ tab }: { tab: string }) {
     return <SecurityTab />;
   }
   if (tab === 'Notifications') {
-    return (
-      <div className="rounded-[14px] bg-white p-6">
-        <Toggle label="Email notifications" on />
-        <Toggle label="SMS notifications" on={false} />
-        <Toggle label="Push notifications" on />
-      </div>
-    );
+    return <NotificationsTab />;
   }
   return (
     <div className="rounded-[14px] bg-white p-6">

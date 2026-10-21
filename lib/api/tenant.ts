@@ -494,3 +494,71 @@ export async function getTenantInvoices(): Promise<TenantInvoice[]> {
     paidAt:    fmtDate(fieldOf(row, ['paidAt', 'paymentDate'])),
   }));
 }
+
+/* -------- Notification settings -------- */
+
+export type TenantNotificationSettings = {
+  subscriptionExpiryRemindersEnabled: boolean;
+  subscriptionExpiryChannel: string;
+  inactiveTenantRemindersEnabled: boolean;
+  inactiveTenantChannel: string;
+  daysBeforeExpiryPrimary: number | null;
+  inactiveDaysThreshold: number | null;
+};
+
+export async function getTenantNotificationSettings(): Promise<TenantNotificationSettings | null> {
+  try {
+    const data = await api.get<R>('/tenant/notifications/settings');
+    const d = ((data as R)?.['data'] ?? data) as R;
+    return {
+      subscriptionExpiryRemindersEnabled: Boolean(d['subscriptionExpiryRemindersEnabled']),
+      subscriptionExpiryChannel: fieldOf(d, ['subscriptionExpiryChannel']) || 'EMAIL',
+      inactiveTenantRemindersEnabled: Boolean(d['inactiveTenantRemindersEnabled']),
+      inactiveTenantChannel: fieldOf(d, ['inactiveTenantChannel']) || 'EMAIL',
+      daysBeforeExpiryPrimary: d['daysBeforeExpiryPrimary'] != null ? Number(d['daysBeforeExpiryPrimary']) : null,
+      inactiveDaysThreshold: d['inactiveDaysThreshold'] != null ? Number(d['inactiveDaysThreshold']) : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function updateTenantNotificationSettings(settings: TenantNotificationSettings): Promise<void> {
+  await api.put('/tenant/notifications/settings', settings);
+}
+
+/* -------- Security settings -------- */
+
+export type TenantSecuritySettings = {
+  mfaRequired: boolean;
+  captchaEnabled: boolean;
+  adaptiveAuthenticationEnabled: boolean;
+  rememberDeviceAllowed: boolean;
+  lockAccountOnFailedAttempts: boolean;
+  maxFailedLoginAttempts: number | null;
+  sessionTimeoutMinutes: number | null;
+  notifyAdminOnHighRiskLogin: boolean;
+};
+
+export async function getTenantSecuritySettings(): Promise<TenantSecuritySettings | null> {
+  try {
+    const data = await api.get<R>('/tenant/admin/security/settings');
+    const d = ((data as R)?.['data'] ?? data) as R;
+    return {
+      mfaRequired:                    Boolean(d['mfaRequired']),
+      captchaEnabled:                 Boolean(d['captchaEnabled']),
+      adaptiveAuthenticationEnabled:  Boolean(d['adaptiveAuthenticationEnabled']),
+      rememberDeviceAllowed:          Boolean(d['rememberDeviceAllowed']),
+      lockAccountOnFailedAttempts:    Boolean(d['lockAccountOnFailedAttempts']),
+      maxFailedLoginAttempts:         d['maxFailedLoginAttempts'] != null ? Number(d['maxFailedLoginAttempts']) : null,
+      sessionTimeoutMinutes:          d['sessionTimeoutMinutes'] != null ? Number(d['sessionTimeoutMinutes']) : null,
+      notifyAdminOnHighRiskLogin:     Boolean(d['notifyAdminOnHighRiskLogin']),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function updateTenantSecuritySettings(settings: Partial<TenantSecuritySettings>): Promise<void> {
+  await api.put('/tenant/admin/security/settings', settings);
+}
