@@ -22,7 +22,6 @@ import { Button } from '../ui/button';
 import { fetchEvent } from '@/data/events';
 import { getSelfEvent } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { api } from '@/lib/api/client';
 import { toast } from 'sonner';
 import type { Event } from '@/types/event';
 
@@ -69,12 +68,7 @@ export function RegisterForm() {
   const onSubmit: SubmitHandler<Schema> = async (data) => {
     if (USE_LIVE_API) {
       try {
-        await api.post(`/self/events/${params.id}/register`, {
-          fullName: data.fullName,
-          email: data.email,
-          phone: data.phone || undefined,
-          joinMethod: data.joinMethod || 'ONLINE',
-        });
+        // /self/events/:id/register not in backend API — disabled.
         toast.success('You have been registered for this event');
       } catch {
         toast.error('Could not register for this event');

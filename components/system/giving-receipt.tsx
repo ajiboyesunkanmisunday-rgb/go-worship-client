@@ -69,43 +69,7 @@ export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: s
   useEffect(() => {
     if (!USE_LIVE_API) return;
     if (!id || id === 'failed') return;
-    (api.get<unknown>(`/system/transactions/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const cur = String(d['currency'] ?? 'USD');
-        const safeCur = cur.length === 3 ? cur : 'USD';
-        const fmtAmt = (v: unknown) => {
-          const n = Number(v);
-          if (!n) return '';
-          return new Intl.NumberFormat('en-US', { style: 'currency', currency: safeCur }).format(n);
-        };
-        const rawDate = String(d['createdAt'] ?? d['paymentDate'] ?? d['transactionDate'] ?? '');
-        const date = rawDate
-          ? new Date(rawDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-          : DEFAULT_RECEIPT.date;
-        const rawStatus = String(d['status'] ?? '').toUpperCase();
-        const statusFailed = rawStatus === 'FAILED' || rawStatus === 'CANCELED' || rawStatus === 'EXPIRED';
-        setIsFailed(statusFailed);
-        setReceipt({
-          org: String(d['organizationName'] ?? d['tenantName'] ?? d['churchName'] ?? DEFAULT_RECEIPT.org),
-          orgAddress: String(d['organizationAddress'] ?? d['address'] ?? DEFAULT_RECEIPT.orgAddress),
-          orgPhone: String(d['organizationPhone'] ?? d['phone'] ?? DEFAULT_RECEIPT.orgPhone),
-          orgEmail: String(d['organizationEmail'] ?? d['email'] ?? DEFAULT_RECEIPT.orgEmail),
-          orgWeb: String(d['organizationWebsite'] ?? d['website'] ?? DEFAULT_RECEIPT.orgWeb),
-          donorName: String(d['donorName'] ?? d['payerName'] ?? d['customerName'] ?? DEFAULT_RECEIPT.donorName),
-          donorEmail: String(d['donorEmail'] ?? d['payerEmail'] ?? d['customerEmail'] ?? DEFAULT_RECEIPT.donorEmail),
-          donorPhone: String(d['donorPhone'] ?? d['payerPhone'] ?? d['customerPhone'] ?? DEFAULT_RECEIPT.donorPhone),
-          date,
-          amount: fmtAmt(d['amount'] ?? d['amountPaid']) || DEFAULT_RECEIPT.amount,
-          fund: String(d['fund'] ?? d['campaign'] ?? d['purpose'] ?? DEFAULT_RECEIPT.fund),
-          donationType: String(d['donationType'] ?? d['type'] ?? d['frequency'] ?? DEFAULT_RECEIPT.donationType),
-          paymentMethod: String(d['paymentMethod'] ?? d['method'] ?? d['paymentChannel'] ?? DEFAULT_RECEIPT.paymentMethod),
-          txnId: String(d['transactionId'] ?? d['reference'] ?? d['id'] ?? DEFAULT_RECEIPT.txnId),
-          subtotal: fmtAmt(d['subtotal'] ?? d['totalAmount'] ?? d['grossAmount']) || DEFAULT_RECEIPT.subtotal,
-        });
-      })
-      .catch(() => {});
+    // /system/transactions/:id not in backend API — disabled.
   }, [id]);
 
   return (

@@ -27,7 +27,7 @@ export const getPaymentMethods = () =>
   api.get<PaymentMethod[]>('/customer/payment-methods');
 
 export const setDefaultPaymentMethod = (id: string) =>
-  api.put(`/customer/payment-methods/${id}/default`);
+  api.patch(`/customer/payment-methods/${id}/default`, {});
 
 export const deletePaymentMethod = (id: string) =>
   api.del(`/customer/payment-methods/${id}`);
@@ -85,13 +85,13 @@ export const createRecurringGiving = (payload: CreateRecurringGivingRequest) =>
   api.post<RecurringGiving>('/customer/recurring-giving', payload);
 
 export const pauseRecurringGiving = (id: string) =>
-  api.post(`/customer/recurring-giving/${id}/pause`);
+  api.patch(`/customer/recurring-giving/${id}/pause`, {});
 
 export const resumeRecurringGiving = (id: string) =>
-  api.post(`/customer/recurring-giving/${id}/resume`);
+  api.patch(`/customer/recurring-giving/${id}/resume`, {});
 
 export const cancelRecurringGiving = (id: string) =>
-  api.post(`/customer/recurring-giving/${id}/cancel`);
+  api.patch(`/customer/recurring-giving/${id}/cancel`, {});
 
 /** Human-readable frequency label. */
 export function frequencyLabel(f: RecurringGivingFrequency): string {
