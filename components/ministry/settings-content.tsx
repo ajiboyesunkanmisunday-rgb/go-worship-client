@@ -580,7 +580,7 @@ function PaymentBillingTab() {
 
   useEffect(() => {
     if (!USE_LIVE_API) { setLoading(false); return; }
-    (api.get<unknown>('/tenant/billing/payments') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/billing/invoices') as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)

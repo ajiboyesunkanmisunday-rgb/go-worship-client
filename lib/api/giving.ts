@@ -4,9 +4,19 @@
  * Recurring giving requires a saved paymentMethodId — cards are only saved as a
  * side effect of completing a one-time payment (no standalone add-card endpoint).
  *
- * So the typical flow is:
- *   Complete one-time gift → card saved → GET /customer/payment-methods →
- *   use paymentMethodId in CreateRecurringGivingRequest
+ * Backend (CustomerPaymentMethodController at /api/v1/customer/payment-methods):
+ *   GET  /customer/payment-methods       → list
+ *   GET  /customer/payment-methods/{id}  → single
+ *   NOTE: no PATCH/DELETE endpoints exist — setDefaultPaymentMethod and
+ *   deletePaymentMethod are stubs until the backend adds mutation endpoints.
+ *
+ * Backend (CustomerRecurringGivingController at /api/v1/customer/recurring-giving):
+ *   GET  /customer/recurring-giving
+ *   GET  /customer/recurring-giving/summary
+ *   POST /customer/recurring-giving
+ *   POST /customer/recurring-giving/{scheduleId}/pause    (POST not PATCH)
+ *   POST /customer/recurring-giving/{scheduleId}/resume   (POST not PATCH)
+ *   POST /customer/recurring-giving/{scheduleId}/cancel   (POST not PATCH)
  */
 
 import { api } from './client';
@@ -26,11 +36,13 @@ export type PaymentMethod = {
 export const getPaymentMethods = () =>
   api.get<PaymentMethod[]>('/customer/payment-methods');
 
-export const setDefaultPaymentMethod = (id: string) =>
-  api.patch(`/customer/payment-methods/${id}/default`, {});
+/** No PATCH/default endpoint in backend — stub until backend adds it. */
+export const setDefaultPaymentMethod = (_id: string): Promise<unknown> =>
+  Promise.resolve(null);
 
-export const deletePaymentMethod = (id: string) =>
-  api.del(`/customer/payment-methods/${id}`);
+/** No DELETE endpoint in backend — stub until backend adds it. */
+export const deletePaymentMethod = (_id: string): Promise<unknown> =>
+  Promise.resolve(null);
 
 /** Short display label for a saved card, e.g. "Visa ending 4242". */
 export function cardLabel(method: PaymentMethod) {
@@ -85,13 +97,13 @@ export const createRecurringGiving = (payload: CreateRecurringGivingRequest) =>
   api.post<RecurringGiving>('/customer/recurring-giving', payload);
 
 export const pauseRecurringGiving = (id: string) =>
-  api.patch(`/customer/recurring-giving/${id}/pause`, {});
+  api.post(`/customer/recurring-giving/${id}/pause`, {});
 
 export const resumeRecurringGiving = (id: string) =>
-  api.patch(`/customer/recurring-giving/${id}/resume`, {});
+  api.post(`/customer/recurring-giving/${id}/resume`, {});
 
 export const cancelRecurringGiving = (id: string) =>
-  api.patch(`/customer/recurring-giving/${id}/cancel`, {});
+  api.post(`/customer/recurring-giving/${id}/cancel`, {});
 
 /** Human-readable frequency label. */
 export function frequencyLabel(f: RecurringGivingFrequency): string {

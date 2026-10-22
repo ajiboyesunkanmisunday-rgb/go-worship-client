@@ -184,30 +184,9 @@ export function SystemAnalyticsContent() {
     // Users: /system/dashboard/admin/users returned 404; use /system/users directly
     // via getSystemUsers() on the platform-users page instead.
 
-    (api.get<unknown>('/system/subscriptions') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        const mapped: LiveSub[] = arr.map((s) => {
-          const amt = Number(s['amount'] ?? s['price'] ?? s['monthlyPrice'] ?? 0);
-          const renewal = s['renewalDate'] ?? s['nextBillingDate'] ?? s['expiresAt'] ?? s['endDate'];
-          return {
-            tenant: String(s['tenantName'] ?? s['tenant'] ?? s['organizationName'] ?? ''),
-            plan: String(s['planName'] ?? s['plan'] ?? s['subscriptionPlan'] ?? ''),
-            status: String(s['status'] ?? 'Active').charAt(0).toUpperCase() + String(s['status'] ?? 'Active').slice(1).toLowerCase(),
-            amount: amt ? `$${amt.toLocaleString()}` : '—',
-            renewal: renewal ? new Date(String(renewal)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
-          };
-        }).filter((s) => s.tenant);
-        if (mapped.length > 0) setLiveSubs(mapped);
-      })
-      .catch(() => {});
+    // No generic GET /system/subscriptions endpoint exists.
+    // Per-tenant subscription data is at /system/subscriptions/lifecycle/tenants/{tenantId}/snapshot
+    // which requires a tenantId. Subscription list is disabled until a list endpoint is added.
   }, []);
 
   const chartData = tab === 'Finances' && financeTrend.length > 0 ? financeTrend : trend;

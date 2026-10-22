@@ -131,13 +131,13 @@ export default function MinistryAuditLogsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/audit/events/recent') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/audit/events/recent') as Promise<unknown>)
       .then((data) => {
         const rows = parseArr(data).map(mapRow).filter((r) => r.action);
         if (rows.length > 0) setAllLogs(rows);
       })
       .catch(() => {});
-    (api.get<unknown>('/tenant/audit/security-events') as Promise<unknown>)
+    (api.get<unknown>('/tenant/admin/audit/security-events') as Promise<unknown>)
       .then((data) => {
         const rows = parseArr(data).map(mapRow).filter((r) => r.action);
         if (rows.length > 0) setSecurityLogs(rows);
