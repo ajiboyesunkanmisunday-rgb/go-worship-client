@@ -51,6 +51,8 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
   const countdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const heartbeatInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const warningActive = useRef(false);
+  // Set when the backend already expired the session (401 IDLE_TIMEOUT received).
+  const sessionExpiredOnServer = useRef(false);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -116,10 +118,21 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
       }
     }, HEARTBEAT_MS);
 
+    // When the API client receives a 401 IDLE_TIMEOUT it dispatches this event
+    // instead of hard-redirecting, so we can show the countdown first.
+    const handleServerExpired = () => {
+      if (warningActive.current) return; // countdown already visible
+      sessionExpiredOnServer.current = true;
+      clearTimers();
+      startCountdown();
+    };
+    window.addEventListener('gw:session-expired', handleServerExpired);
+
     return () => {
       clearTimers();
       if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
       ACTIVITY_EVENTS.forEach((e) => window.removeEventListener(e, reset));
+      window.removeEventListener('gw:session-expired', handleServerExpired);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loginPath]);
@@ -128,11 +141,20 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
     warningActive.current = false;
     setWarning(false);
     if (countdownInterval.current) clearInterval(countdownInterval.current);
+
+    if (sessionExpiredOnServer.current) {
+      // Backend session is already gone — redirect straight to login.
+      sessionExpiredOnServer.current = false;
+      router.replace(`${loginPath}?reason=idle`);
+      return;
+    }
+
     // Refresh server lastActivity so the backend doesn't expire us.
     try {
       await getProfile();
     } catch {
-      // Ignore — if we're already expired the router will handle it.
+      // Session expired between the warning and the click — redirect now.
+      router.replace(`${loginPath}?reason=idle`);
     }
   };
 

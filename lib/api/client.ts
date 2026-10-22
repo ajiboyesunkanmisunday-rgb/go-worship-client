@@ -63,12 +63,19 @@ export async function apiFetch<T = unknown>(
       // Derive the portal login path from the current URL pathname.
       const { pathname } = window.location;
       let loginPath = '/auth/login';
-      if (pathname.startsWith('/system'))         loginPath = '/system/login';
+      if (pathname.startsWith('/system'))             loginPath = '/system/login';
       else if (pathname.startsWith('/ministry-admin')) loginPath = '/ministry-admin/login';
-      else if (pathname.startsWith('/ministry'))  loginPath = '/ministry/login';
-      else if (pathname.startsWith('/sermon-admin')) loginPath = '/sermon-admin/login';
-      else if (pathname.startsWith('/group-leader')) loginPath = '/group-leader/login';
-      window.location.replace(`${loginPath}?reason=${reason}`);
+      else if (pathname.startsWith('/ministry'))       loginPath = '/ministry/login';
+      else if (pathname.startsWith('/sermon-admin'))   loginPath = '/sermon-admin/login';
+      else if (pathname.startsWith('/group-leader'))   loginPath = '/group-leader/login';
+
+      if (reason === 'idle') {
+        // Let the IdleTimeout component show the countdown before redirecting,
+        // mirroring the DO deployment behaviour where the user can click Stay.
+        window.dispatchEvent(new CustomEvent('gw:session-expired'));
+      } else {
+        window.location.replace(`${loginPath}?reason=${reason}`);
+      }
       // Throw so the caller's error boundary handles the in-flight state.
       throw new ApiError(message, res.status, errBody);
     }

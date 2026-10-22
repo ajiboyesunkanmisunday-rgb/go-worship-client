@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { ShieldCheck, Smartphone, Mail, MessageSquare, QrCode } from 'lucide-react';
+import { Check, ShieldCheck, Smartphone, Mail, MessageSquare, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import {
@@ -35,16 +35,16 @@ const METHOD_DESCRIPTIONS: Record<string, string> = {
 };
 
 function MethodIcon({ method, enrolled }: { method: string; enrolled: boolean }) {
-  const bg = enrolled ? 'bg-[#22c55e]' : 'bg-[#9ca3af]';
+  const bg = enrolled ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#f2f2f2] text-brand-gray-500';
   const icon =
-    method === 'TOTP' ? <Smartphone className="size-[18px] text-white" /> :
-    method === 'OTP_EMAIL' ? <Mail className="size-[18px] text-white" /> :
-    method === 'OTP_SMS' ? <MessageSquare className="size-[18px] text-white" /> :
-    <QrCode className="size-[18px] text-white" />;
+    method === 'TOTP' ? <Smartphone className="size-5" aria-hidden="true" /> :
+    method === 'OTP_EMAIL' ? <Mail className="size-5" aria-hidden="true" /> :
+    method === 'OTP_SMS' ? <MessageSquare className="size-5" aria-hidden="true" /> :
+    <QrCode className="size-5" aria-hidden="true" />;
   return (
-    <div className={`flex size-[36px] shrink-0 items-center justify-center rounded-[8px] ${bg}`}>
+    <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full ${bg}`}>
       {icon}
-    </div>
+    </span>
   );
 }
 
@@ -168,13 +168,13 @@ export function MfaManager() {
       {/* Heading */}
       <div>
         <div className="flex items-center gap-2">
-          <ShieldCheck className="size-[18px]" />
-          <h3 className="text-[17px] font-bold">Two-factor authentication</h3>
+          <ShieldCheck className="size-5 text-[#22a45d]" aria-hidden="true" />
+          <h2 className="text-[18px] font-bold">Two-factor authentication</h2>
           {!loading && (
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
                 settings?.mfaEnabled
-                  ? 'bg-[#dcfce7] text-[#16a34a]'
+                  ? 'bg-[#e7f7ee] text-[#34a853]'
                   : 'bg-[#f3f4f6] text-[#6b7280]'
               }`}
             >
@@ -182,7 +182,7 @@ export function MfaManager() {
             </span>
           )}
         </div>
-        <p className="mt-1 text-[13px] text-[#666]">
+        <p className="mt-1 text-[13px] text-brand-gray-500">
           Add a second step when signing in, so a password alone isn&apos;t enough.
         </p>
       </div>
@@ -193,25 +193,28 @@ export function MfaManager() {
         <>
           {/* Primary method selector */}
           {settings?.mfaEnabled && settings.enrolledMethods.length > 0 && step === 'idle' && (
-            <div className="flex items-center justify-between rounded-[10px] border border-[#e5e7eb] px-4 py-3">
-              <div>
-                <p className="text-[14px] font-medium">Primary method</p>
-                <p className="text-[12px] text-[#888]">
+            <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[#dfe6ff] bg-[#f7f9ff] p-4">
+              <div className="min-w-[180px]">
+                <p className="text-[14px] font-semibold">Primary method</p>
+                <p className="max-w-[300px] text-[12px] text-brand-gray-500">
                   The method you&apos;ll be asked for first when signing in.
                 </p>
               </div>
-              <NativeSelect
-                value={settings.preferredMethod ?? settings.enrolledMethods[0]}
-                onChange={(e) => handleSetPreferred(e.target.value)}
-                disabled={busy}
-                className="w-[210px] text-[13px] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#d1d5db]"
-              >
-                {settings.enrolledMethods.map((m) => (
-                  <NativeSelectOption key={m} value={m}>
-                    {METHOD_LABELS[m] ?? m}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <div className="ml-auto">
+                <NativeSelect
+                  value={settings.preferredMethod ?? settings.enrolledMethods[0]}
+                  onChange={(e) => handleSetPreferred(e.target.value)}
+                  disabled={busy}
+                  aria-label="Primary two-factor method"
+                  className="h-[42px] min-w-[190px] bg-white"
+                >
+                  {settings.enrolledMethods.map((m) => (
+                    <NativeSelectOption key={m} value={m}>
+                      {METHOD_LABELS[m] ?? m}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
             </div>
           )}
 
@@ -225,35 +228,39 @@ export function MfaManager() {
                 return (
                   <div
                     key={m}
-                    className="flex items-center gap-3 rounded-[10px] border border-[#e5e7eb] px-4 py-3"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4"
                   >
-                    <MethodIcon method={m} enrolled />
-                    <div className="flex flex-1 flex-col gap-0.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[14px] font-semibold">
+                    <div className="flex items-start gap-3">
+                      <MethodIcon method={m} enrolled />
+                      <div>
+                        <p className="flex items-center gap-2 text-[15px] font-semibold">
                           {METHOD_LABELS[m] ?? m}
-                        </span>
-                        <span className="flex items-center gap-1 rounded-full bg-[#dcfce7] px-2 py-0.5 text-[11px] font-semibold text-[#16a34a]">
-                          ✓ Enrolled
-                        </span>
-                        {isPreferred && (
-                          <span className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-[11px] font-semibold text-[#1e40af]">
-                            Preferred
+                          <span className="flex items-center gap-1 text-[11px] font-medium text-[#22a45d]">
+                            <Check className="size-3" aria-hidden="true" /> Enrolled
                           </span>
+                          {isPreferred && (
+                            <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[10px] font-medium text-brand-blue">
+                              Preferred
+                            </span>
+                          )}
+                        </p>
+                        {METHOD_DESCRIPTIONS[m] && (
+                          <p className="max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
+                            {METHOD_DESCRIPTIONS[m]}
+                          </p>
                         )}
                       </div>
-                      {METHOD_DESCRIPTIONS[m] && (
-                        <p className="text-[12px] text-[#888]">{METHOD_DESCRIPTIONS[m]}</p>
-                      )}
                     </div>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => handleDisable(m)}
-                      className="shrink-0 rounded-[6px] border border-[#ef4444] px-3 py-1 text-[12px] font-medium text-[#ef4444] transition-colors hover:bg-[#fef2f2] disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleDisable(m)}
+                        className="min-h-[24px] rounded-[5px] border-[0.5px] border-[#3E3E3E] bg-transparent px-3 py-1 text-[14px] font-medium leading-[150%] tracking-[0%] text-destructive transition-colors hover:bg-brand-gray-100 disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -281,21 +288,27 @@ export function MfaManager() {
 
           {/* SMS Coming soon — always shown at idle */}
           {step === 'idle' && (
-            <div className="flex items-start gap-3 rounded-[10px] border border-[#e5e7eb] px-4 py-3">
-              <MethodIcon method="OTP_SMS" enrolled={false} />
-              <div className="flex flex-1 flex-col gap-0.5">
-                <span className="text-[14px] font-semibold">Text message (SMS)</span>
-                <p className="text-[12px] text-[#888]">
-                  Receive a one-time code by text message to your phone.
-                </p>
-                <p className="text-[12px] text-[#888]">
-                  Coming soon — text-message codes aren&apos;t enabled yet. Set up another
-                  method now and switch when SMS is available.
-                </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4">
+              <div className="flex items-start gap-3">
+                <MethodIcon method="OTP_SMS" enrolled={false} />
+                <div>
+                  <p className="flex items-center gap-2 text-[15px] font-semibold">
+                    Text message (SMS)
+                  </p>
+                  <p className="max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
+                    Receive a one-time code by text message to your phone.
+                  </p>
+                  <p className="mt-1 max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
+                    Coming soon — text-message codes aren&apos;t enabled yet. Set up another
+                    method now and switch when SMS is available.
+                  </p>
+                </div>
               </div>
-              <span className="shrink-0 rounded-full bg-[#ffedd5] px-2.5 py-1 text-[11px] font-semibold text-[#c2410c]">
-                Coming soon
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[#fff4e5] px-3 py-1.5 text-[11px] font-medium text-[#ff8d28]">
+                  Coming soon
+                </span>
+              </div>
             </div>
           )}
 
