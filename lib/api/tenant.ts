@@ -471,9 +471,9 @@ export async function getTenantSubscription(): Promise<TenantSubscription | null
   }
 }
 
-/** GET /tenant/admin/billing/invoices */
+/** GET /tenant/billing/invoices */
 export async function getTenantInvoices(): Promise<TenantInvoice[]> {
-  const data = await api.get<unknown>('/tenant/admin/billing/invoices');
+  const data = await api.get<unknown>('/tenant/billing/invoices');
   return (findTableRows(data, 'invoice') as R[]).map((row) => ({
     id:        fieldOf(row, ['id', 'invoiceId']),
     reference: fieldOf(row, ['reference', 'invoiceNumber', 'paymentReference']),
