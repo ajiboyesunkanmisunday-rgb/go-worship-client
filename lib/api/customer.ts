@@ -1,11 +1,20 @@
 /**
- * Customer (member) giving history.
+ * Customer (member) giving history and donation intents.
  *
- * NOTE: GET /customer/donations is gone in the 177-path spec — that endpoint
- * was removed in the backend refactor. Member giving history now uses:
- *   GET /customer/payments  (paged PaymentResponse list)
- *   GET /customer/payments/{id}  (PaymentStatusResponse for detail/receipt)
- *   GET /customer/documents/{id}  via /bff/gw  → receipt download
+ * Backend (CustomerDonationController at /api/v1/customer/donations):
+ *   GET  /customer/donations           → List<ContributionResponse>
+ *   GET  /customer/donations/{id}      → ContributionResponse
+ *   POST /customer/donations/intents   → ContributionResponse
+ *
+ * ContributionResponse: { donationId, tenantId, fundId, amount, currency,
+ *   status, donorName, donorEmail, userProfileId, receivedAt }
+ *
+ * Backend (CustomerReceiptController at /api/v1/customer/receipts):
+ *   GET  /customer/receipts/{id}       → GivingReceipt
+ *   GET  /customer/receipts/{id}/pdf   → FileReferenceResponse (MinIO PDF link)
+ *
+ * NOTE: No /customer/payments endpoint exists. Payment is embedded in the
+ * contribution intent; the hosted checkout redirect is via LeadRemit.
  */
 
 import { api } from './client';
@@ -14,10 +23,9 @@ export type PaymentResponse = {
   id: string;
   paymentReference: string;
   purpose?: string;
-  status?: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED' | 'EXPIRED';
+  status?: string;
   amount?: number;
   currency?: string;
-  gatewayType?: string;
   requestedAt?: string;
   paidAt?: string;
   [key: string]: unknown;
@@ -31,6 +39,25 @@ export type CustomerPaymentsPage = {
   size?: number;
 };
 
+type R = Record<string, unknown>;
+
+function mapContribution(c: R): PaymentResponse {
+  const receivedAt = c['receivedAt'] as string | undefined;
+  return {
+    id: String(c['donationId'] ?? ''),
+    paymentReference: String(c['donationId'] ?? ''),
+    status: String(c['status'] ?? ''),
+    amount: c['amount'] != null ? Number(c['amount']) : undefined,
+    currency: String(c['currency'] ?? 'USD'),
+    paidAt: receivedAt,
+    requestedAt: receivedAt,
+    fundId: c['fundId'],
+    donorName: c['donorName'],
+    donorEmail: c['donorEmail'],
+    tenantId: c['tenantId'],
+  };
+}
+
 /** Map a PaymentResponse to the giving display shape used in the UI. */
 export function paymentToGiving(p: PaymentResponse) {
   return {
@@ -38,16 +65,27 @@ export function paymentToGiving(p: PaymentResponse) {
     reference: p.paymentReference,
     amount: p.amount ?? 0,
     currency: p.currency ?? 'USD',
-    purpose: p.purpose ?? 'Donation',
+    purpose: (p['fundId'] as string) ?? p.purpose ?? 'Donation',
     status: p.status ?? 'UNKNOWN',
     date: p.paidAt ?? p.requestedAt ?? '',
   };
 }
 
-export const getCustomerPayments = (page = 0, size = 20) =>
-  api.get<CustomerPaymentsPage>(
-    `/customer/payments?page=${page}&size=${size}`
-  );
+/** GET /customer/donations — returns list; client-side paged for component compatibility. */
+export const getCustomerPayments = async (page = 0, size = 20): Promise<CustomerPaymentsPage> => {
+  const data = await api.get<unknown>('/customer/donations');
+  const arr: R[] = Array.isArray(data) ? (data as R[]) : [];
+  const all = arr.map(mapContribution);
+  const start = page * size;
+  const content = all.slice(start, start + size);
+  return {
+    content,
+    totalElements: all.length,
+    totalPages: Math.ceil(all.length / size) || 1,
+    page,
+    size,
+  };
+};
 
 export type PaymentStatusResponse = {
   id?: string;
@@ -55,55 +93,44 @@ export type PaymentStatusResponse = {
   status?: string;
   amount?: number;
   currency?: string;
-  documentId?: string;
   [key: string]: unknown;
 };
 
-export const getCustomerPaymentById = (id: string) =>
-  api.get<PaymentStatusResponse>(`/customer/payments/${encodeURIComponent(id)}`);
+/** GET /customer/donations/{id} */
+export const getCustomerPaymentById = async (id: string): Promise<PaymentStatusResponse> => {
+  const data = await api.get<R>(`/customer/donations/${encodeURIComponent(id)}`);
+  return {
+    id: String(data['donationId'] ?? ''),
+    paymentReference: String(data['donationId'] ?? ''),
+    status: String(data['status'] ?? ''),
+    amount: data['amount'] != null ? Number(data['amount']) : undefined,
+    currency: String(data['currency'] ?? 'USD'),
+    ...data,
+  };
+};
 
-/** URL to download/view a payment receipt (PDF document). */
-export function receiptUrl(documentId: string) {
-  return `/bff/gw/customer/documents/${documentId}`;
+/** URL to view a giving receipt PDF (MinIO reference via BFF proxy). */
+export function receiptUrl(receiptId: string) {
+  return `/bff/gw/customer/receipts/${receiptId}/pdf`;
 }
 
-/* -------- Customer giving (authenticated donate flow) -------- */
+/* -------- Customer donation intent (authenticated giving flow) -------- */
 
 export type CustomerDonationRequest = {
-  campusId?: string;
   fundId?: string;
   amount: number;
   currency: string;
-  note?: string;
+  donorName?: string;
+  donorEmail?: string;
+  userProfileId?: string;
 };
 
 export type CustomerDonationResponse = {
-  id: string;
+  donationId: string;
+  tenantId?: string;
   [key: string]: unknown;
 };
 
+/** POST /customer/donations/intents — creates a contribution intent for an authenticated member. */
 export const createCustomerDonation = (payload: CustomerDonationRequest) =>
-  api.post<CustomerDonationResponse>('/customer/donations', payload);
-
-export type CustomerPaymentRequest = {
-  idempotencyKey: string;
-  purpose: 'DONATION';
-  amount: number;
-  currency: string;
-  businessReference: { type: 'DONATION'; id: string };
-  integrationType: 'COLLECT_JS' | 'COLLECT_CHECKOUT';
-  successUrl: string;
-  cancelUrl: string;
-  metadata?: Record<string, unknown>;
-};
-
-import type { CreatePaymentResponse, PaymentStatus } from './checkout';
-
-export const createCustomerPayment = (payload: CustomerPaymentRequest) =>
-  api.post<CreatePaymentResponse>('/customer/payments', payload);
-
-export const submitCustomerPaymentToken = (ref: string, paymentToken: string) =>
-  api.post(`/customer/payments/${encodeURIComponent(ref)}/token`, { paymentToken });
-
-export const getCustomerPaymentStatus = (id: string) =>
-  api.get<PaymentStatus>(`/customer/payments/${encodeURIComponent(id)}`);
+  api.post<CustomerDonationResponse>('/customer/donations/intents', payload);

@@ -1,24 +1,30 @@
 /**
  * Public giving checkout API.
  *
- * The real payment gateway is LeadRemit / CollectCheckout (NMI Collect.js).
- * Cards are NOT collected in-app; the gateway handles it via:
- *   A) COLLECT_JS lightbox (Apple Pay supported)
- *   B) COLLECT_CHECKOUT hosted redirect
+ * Backend reality (no /public/checkout/* endpoints exist):
  *
- * Flow confirmed from backend canonical tools (checkout.js / giving.js):
- *   GET  /public/checkout/config
- *   POST /public/checkout/donations       → donationId
- *   POST /public/checkout/payments        → paymentRef + integrationType + redirectUrl/collectionCheckout
- *   if COLLECT_JS: load script, CollectJS.configure({variant:"lightbox"}), on token →
- *     POST /public/checkout/payments/{ref}/token
- *   if COLLECT_CHECKOUT: CollectCheckout.redirectToCheckout(...)
- *   POLL GET /public/checkout/payments/{ref}  → status SUCCEEDED/FAILED/CANCELED/EXPIRED
+ *   Guest donation intent:
+ *     POST /public/contributions/guest/intents
+ *     Request:  ContributionIntentRequest { fundId, amount, currency, donorName, donorEmail, userProfileId }
+ *     Response: ContributionResponse { donationId, tenantId, fundId, amount, currency, status, ... }
+ *
+ *   LeadRemit checkout config (after donation intent is created):
+ *     GET  /public/payments/leadremit/checkout-config/{donationId}?tenantId={tenantId}
+ *     Response: { paymentReference, tenantId, scriptUrl (checkoutScriptUrl), checkoutPublicKey,
+ *                 successUrl, cancelUrl, qrUrl }
+ *
+ *   The actual card capture is fully hosted by LeadRemit CollectCheckout:
+ *     CollectCheckout.redirectToCheckout({ scriptUrl, checkoutPublicKey, lineItems: [] })
+ *   The page navigates away; the user is redirected back to successUrl/cancelUrl.
+ *
+ *   NOTE: There is no global /public/checkout/config endpoint, no /public/checkout/donations,
+ *   no /public/checkout/payments, and no payment-status polling endpoint.
+ *   getCheckoutConfig() returns an empty config; campuses/funds are not publicly served.
  */
 
 import { api } from './client';
 
-/* -------- Config -------- */
+/* -------- Pre-checkout config (stub — no backend endpoint) -------- */
 
 export type CheckoutConfig = {
   tenantDisplayName?: string;
@@ -26,85 +32,69 @@ export type CheckoutConfig = {
   campuses?: { id: string; name: string }[];
   funds?: { id: string; name: string }[];
   currencies?: string[];
-  /** Collect.js tokenization key */
   publicKey?: string;
   supportedIntegrationTypes?: ('COLLECT_JS' | 'COLLECT_CHECKOUT')[];
 };
 
-export const getCheckoutConfig = () =>
-  api.get<CheckoutConfig>('/public/checkout/config');
+/**
+ * No global checkout config endpoint exists in the backend.
+ * Returns an empty config so the checkout form renders with its defaults.
+ */
+export const getCheckoutConfig = async (): Promise<CheckoutConfig> => ({});
 
-/* -------- Donation -------- */
+/* -------- Guest donation intent -------- */
 
 export type CreateDonationRequest = {
-  campusId?: string;
   fundId?: string;
   amount: number;
   currency: string;
   donorName?: string;
   donorEmail: string;
-  note?: string;
-  donorType?: 'member' | 'guest';
+  userProfileId?: string;
 };
 
 export type DonationResponse = {
-  id: string;
-  [key: string]: unknown;
-};
-
-export const createDonation = (payload: CreateDonationRequest) =>
-  api.post<DonationResponse>('/public/checkout/donations', payload);
-
-/* -------- Payment -------- */
-
-export type CreatePaymentRequest = {
-  idempotencyKey: string;
-  purpose: 'DONATION';
-  source?: string;
-  amount: number;
-  currency: string;
-  businessReference: { type: 'DONATION'; id: string };
-  payer: { name?: string; email: string };
-  integrationType: 'COLLECT_JS' | 'COLLECT_CHECKOUT';
-  successUrl: string;
-  cancelUrl: string;
-  metadata?: Record<string, unknown>;
-};
-
-export type CreatePaymentResponse = {
-  paymentReference: string;
-  integrationType: 'COLLECT_JS' | 'COLLECT_CHECKOUT';
-  redirectUrl?: string;
-  collectionCheckout?: {
-    scriptUrl: string;
-    checkoutPublicKey: string;
-    lineItems: unknown[];
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-};
-
-export const createCheckoutPayment = (payload: CreatePaymentRequest) =>
-  api.post<CreatePaymentResponse>('/public/checkout/payments', payload);
-
-/* -------- Token submission (COLLECT_JS only) -------- */
-
-export const submitPaymentToken = (ref: string, paymentToken: string) =>
-  api.post(`/public/checkout/payments/${encodeURIComponent(ref)}/token`, { paymentToken });
-
-/* -------- Payment status polling -------- */
-
-export type PaymentStatus = {
-  id?: string;
-  paymentReference?: string;
-  status?: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED' | 'EXPIRED';
+  donationId: string;
+  tenantId?: string;
+  fundId?: string;
   amount?: number;
   currency?: string;
+  status?: string;
+  donorName?: string;
+  donorEmail?: string;
+  receivedAt?: string;
   [key: string]: unknown;
 };
 
-export const getPaymentStatus = (ref: string) =>
-  api.get<PaymentStatus>(`/public/checkout/payments/${encodeURIComponent(ref)}`);
+/** POST /public/contributions/guest/intents — creates a guest donation intent. */
+export const createDonation = (payload: CreateDonationRequest) =>
+  api.post<DonationResponse>('/public/contributions/guest/intents', payload);
+
+/* -------- LeadRemit hosted checkout config -------- */
+
+export type LeadremitCheckoutConfig = {
+  paymentReference?: string;
+  tenantId?: string;
+  scriptUrl?: string;
+  checkoutPublicKey?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+  qrUrl?: string;
+  [key: string]: unknown;
+};
+
+/**
+ * GET /public/payments/leadremit/checkout-config/{donationId}?tenantId={tenantId}
+ *
+ * Called after creating a donation intent; returns the CollectCheckout script URL
+ * and public key needed to launch the hosted payment page.
+ */
+export const getLeadremitCheckoutConfig = (donationId: string, tenantId?: string) => {
+  const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : '';
+  return api.get<LeadremitCheckoutConfig>(
+    `/public/payments/leadremit/checkout-config/${encodeURIComponent(donationId)}${qs}`
+  );
+};
 
 /* -------- Gateway helpers -------- */
 
@@ -161,7 +151,6 @@ export async function startCollectJs(publicKey: string): Promise<string> {
       variant: 'lightbox',
       callback: (token) => resolve(token.token),
     });
-    // Trigger the lightbox by simulating the launch
     const btn = document.createElement('button');
     btn.setAttribute('data-tokenization-key', publicKey);
     btn.style.display = 'none';
@@ -173,37 +162,19 @@ export async function startCollectJs(publicKey: string): Promise<string> {
 
 /**
  * Trigger the CollectCheckout hosted redirect.
+ * The page navigates away and never returns; call sites should treat this as final.
  */
-export async function launchHostedCheckout(
-  opts: NonNullable<CreatePaymentResponse['collectionCheckout']>
-): Promise<never> {
+export async function launchHostedCheckout(opts: {
+  scriptUrl: string;
+  checkoutPublicKey: string;
+  lineItems?: unknown[];
+  [key: string]: unknown;
+}): Promise<never> {
   await loadScript(opts.scriptUrl);
   if (!window.CollectCheckout) throw new Error('CollectCheckout not available');
-  window.CollectCheckout.redirectToCheckout(opts as Parameters<typeof window.CollectCheckout.redirectToCheckout>[0]);
-  return new Promise(() => {}); // never resolves (page navigates away)
-}
-
-/**
- * Poll a payment reference until it settles (or times out after 5 minutes).
- * Uses the provided getter (public or customer variant).
- */
-export async function waitForSettlement(
-  ref: string,
-  getter: (ref: string) => Promise<PaymentStatus> = getPaymentStatus,
-  maxMs = 5 * 60 * 1000
-): Promise<PaymentStatus> {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    const status = await getter(ref);
-    if (
-      status.status === 'SUCCEEDED' ||
-      status.status === 'FAILED' ||
-      status.status === 'CANCELED' ||
-      status.status === 'EXPIRED'
-    ) {
-      return status;
-    }
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  throw new Error('Payment timed out waiting for settlement');
+  window.CollectCheckout.redirectToCheckout({
+    ...opts,
+    lineItems: opts.lineItems ?? [],
+  });
+  return new Promise(() => {}); // never resolves — page navigates away
 }

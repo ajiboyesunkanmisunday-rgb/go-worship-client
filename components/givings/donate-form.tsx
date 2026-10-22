@@ -6,13 +6,12 @@
  * Uses the real LeadRemit / CollectCheckout gateway when USE_LIVE_API=true.
  * Falls back to the mock /dashboard/givings/give/pay walkthrough in demo mode.
  *
- * Live flow (confirmed from giving.js + 177-path spec):
- *   GET  /public/checkout/config  (public config; no customer config endpoint)
- *   POST /customer/donations
- *   POST /customer/payments
- *   → COLLECT_JS lightbox  OR  COLLECT_CHECKOUT redirect
- *   POST /customer/payments/{ref}/token  (COLLECT_JS only)
- *   POLL GET /customer/payments/{id}  → /dashboard/givings/give/success?ref=&amount=
+ * Live flow (backend-confirmed):
+ *   POST /customer/donations/intents           → ContributionResponse { donationId, tenantId }
+ *   GET  /public/payments/leadremit/checkout-config/{donationId}?tenantId=...
+ *       → { scriptUrl, checkoutPublicKey }
+ *   CollectCheckout.redirectToCheckout(...)   → hosted page, page navigates away
+ *   On return: /dashboard/givings/give/success?ref=...  OR  /dashboard/givings/give
  */
 
 import { z } from 'zod';
@@ -36,8 +35,8 @@ import { Input } from '../ui/input';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 import { Button } from '../ui/button';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getCheckoutConfig, chooseIntegration, startCollectJs, launchHostedCheckout, waitForSettlement, type CheckoutConfig } from '@/lib/api/checkout';
-import { createCustomerDonation, createCustomerPayment, submitCustomerPaymentToken, getCustomerPaymentStatus } from '@/lib/api/customer';
+import { getCheckoutConfig, getLeadremitCheckoutConfig, launchHostedCheckout, type CheckoutConfig } from '@/lib/api/checkout';
+import { createCustomerDonation } from '@/lib/api/customer';
 
 const schema = z.object({
   fullName: z.string().optional(),
@@ -101,56 +100,33 @@ export function DonateForm() {
     setSubmitting(true);
     const amount = parseFloat(data.amount);
     const currency = data.currency || 'USD';
-    const origin = window.location.origin;
 
     try {
-      // 1. Create the donation record
+      // 1. Create the authenticated donation intent
       const donation = await createCustomerDonation({
         fundId: data.purpose || undefined,
-        campusId: data.campusId || undefined,
-        note: data.note || undefined,
         amount,
         currency,
+        donorName: data.fullName || undefined,
+        donorEmail: data.email,
       });
 
-      // 2. Choose integration type
-      const integrationType = chooseIntegration(config);
+      // 2. Fetch LeadRemit checkout config for this donation
+      const checkoutCfg = await getLeadremitCheckoutConfig(
+        donation.donationId,
+        donation.tenantId
+      );
 
-      // 3. Create the payment record
-      const payment = await createCustomerPayment({
-        idempotencyKey: crypto.randomUUID(),
-        purpose: 'DONATION',
-        amount,
-        currency,
-        businessReference: { type: 'DONATION', id: donation.id },
-        integrationType,
-        successUrl: `${origin}/dashboard/givings/give/success`,
-        cancelUrl: `${origin}/dashboard/givings/give`,
+      if (!checkoutCfg.scriptUrl || !checkoutCfg.checkoutPublicKey) {
+        throw new Error('Checkout configuration is unavailable. Please try again.');
+      }
+
+      // 3. Launch hosted checkout — page navigates away to LeadRemit
+      await launchHostedCheckout({
+        scriptUrl: checkoutCfg.scriptUrl,
+        checkoutPublicKey: checkoutCfg.checkoutPublicKey,
+        lineItems: [],
       });
-
-      const ref = payment.paymentReference;
-
-      if (integrationType === 'COLLECT_JS' && config.publicKey) {
-        // 4a. Collect.js lightbox
-        const token = await startCollectJs(config.publicKey);
-        await submitCustomerPaymentToken(ref, token);
-      } else if (payment.collectionCheckout) {
-        // 4b. Hosted redirect (returns never — page navigates away)
-        await launchHostedCheckout(payment.collectionCheckout);
-      } else if (payment.redirectUrl) {
-        window.location.href = payment.redirectUrl;
-        return;
-      }
-
-      // 5. Poll for settlement (COLLECT_JS path; COLLECT_CHECKOUT redirects back)
-      const settled = await waitForSettlement(ref, getCustomerPaymentStatus);
-      if (settled.status === 'SUCCEEDED') {
-        router.push(
-          `/dashboard/givings/give/success?ref=${ref}&amount=${amount}`
-        );
-      } else {
-        toast.error(`Payment ${settled.status?.toLowerCase() ?? 'did not complete'}.`);
-      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Payment failed');
     } finally {

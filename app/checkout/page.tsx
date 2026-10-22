@@ -12,14 +12,10 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   type CheckoutConfig,
-  chooseIntegration,
-  createCheckoutPayment,
   createDonation,
   getCheckoutConfig,
+  getLeadremitCheckoutConfig,
   launchHostedCheckout,
-  startCollectJs,
-  submitPaymentToken,
-  waitForSettlement,
 } from '@/lib/api/checkout';
 import { USE_LIVE_API } from '@/lib/api/config';
 
@@ -88,50 +84,31 @@ export default function CheckoutGivingPage() {
 
     setSubmitting(true);
     try {
+      // 1. Create the guest donation intent
       const donation = await createDonation({
         donorName: donorName || undefined,
         donorEmail,
         currency,
         amount,
         fundId,
-        campusId,
-        donorType,
       });
 
-      const integration = chooseIntegration(config);
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const idempotencyKey = crypto.randomUUID();
+      // 2. Fetch LeadRemit checkout config for this donation
+      const checkoutCfg = await getLeadremitCheckoutConfig(
+        donation.donationId,
+        donation.tenantId
+      );
 
-      const payment = await createCheckoutPayment({
-        idempotencyKey,
-        purpose: 'DONATION',
-        amount,
-        currency,
-        businessReference: { type: 'DONATION', id: donation.id },
-        payer: { name: donorName || undefined, email: donorEmail },
-        integrationType: integration,
-        successUrl: `${origin}/checkout/success`,
-        cancelUrl: `${origin}/checkout`,
-      });
-
-      const ref = payment.paymentReference;
-
-      if (integration === 'COLLECT_JS' && config.publicKey) {
-        const token = await startCollectJs(config.publicKey);
-        await submitPaymentToken(ref, token);
-        const settled = await waitForSettlement(ref);
-        const amt = settled.amount ?? amount;
-        router.push(`/checkout/success?ref=${encodeURIComponent(ref)}&amount=${amt}`);
-      } else if (payment.collectionCheckout) {
-        await launchHostedCheckout(payment.collectionCheckout);
-        // page navigates away via the hosted checkout redirect
-      } else if (payment.redirectUrl) {
-        window.location.href = payment.redirectUrl;
-      } else {
-        const settled = await waitForSettlement(ref);
-        const amt = settled.amount ?? amount;
-        router.push(`/checkout/success?ref=${encodeURIComponent(ref)}&amount=${amt}`);
+      if (!checkoutCfg.scriptUrl || !checkoutCfg.checkoutPublicKey) {
+        throw new Error('Checkout configuration is unavailable. Please try again.');
       }
+
+      // 3. Launch hosted checkout — page navigates away
+      await launchHostedCheckout({
+        scriptUrl: checkoutCfg.scriptUrl,
+        checkoutPublicKey: checkoutCfg.checkoutPublicKey,
+        lineItems: [],
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment could not be completed. Please try again.');
     } finally {
