@@ -9,6 +9,7 @@ import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences } from '@/lib/api/auth';
 import { RefreshCw, Check, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 const TABS = [
   'General',
@@ -191,13 +192,19 @@ function SecurityPanel() {
   }, []);
 
   const updatePassword = async () => {
-    if (!newPw || newPw !== confirmPw) return;
+    if (!currentPw) { toast.error('Enter your current password'); return; }
+    if (!newPw || newPw.length < 8) { toast.error('New password must be at least 8 characters'); return; }
+    if (newPw !== confirmPw) { toast.error('Passwords do not match'); return; }
     setPwSaving(true);
     try {
       await apiChangePassword(currentPw, newPw, confirmPw);
+      toast.success('Password updated successfully');
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    } catch { /* keep form */ }
-    finally { setPwSaving(false); }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to change password');
+    } finally {
+      setPwSaving(false);
+    }
   };
 
   const removeMethod = (method: string) => {
