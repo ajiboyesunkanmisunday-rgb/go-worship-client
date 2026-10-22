@@ -18,7 +18,7 @@ type Props = Readonly<{
 
 export default function RootLayout({ children, modal }: Props) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
           poppins.variable,
