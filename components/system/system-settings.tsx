@@ -217,11 +217,10 @@ function SecurityPanel() {
     OTP_EMAIL: 'Receive a one-time code by email each time you sign in.',
     OTP_SMS: 'Receive a one-time code by text message to your phone.',
   };
-  const MethodIcon = ({ method, enrolled }: { method: string; enrolled: boolean }) => {
-    const color = enrolled ? 'text-white' : 'text-[#555]';
-    if (method === 'TOTP') return <Smartphone className={`size-5 ${color}`} />;
-    if (method === 'OTP_EMAIL') return <Mail className={`size-5 ${color}`} />;
-    return <MessageSquare className="size-5 text-[#555]" />;
+  const MethodIcon = ({ method }: { method: string }) => {
+    if (method === 'TOTP') return <Smartphone className="size-5" />;
+    if (method === 'OTP_EMAIL') return <Mail className="size-5" />;
+    return <MessageSquare className="size-5" />;
   };
 
   const setPreferredMethod = (method: string) => {
@@ -268,14 +267,14 @@ function SecurityPanel() {
       </div>
 
       {/* 2FA */}
-      <div className="rounded-[14px] border border-[#eee] p-6">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className={cn('size-5', mfa?.mfaEnabled ? 'text-[#22a45d]' : 'text-[#555]')} />
-          <h2 className="text-[16px] font-bold">Two-factor authentication</h2>
+      <div className="rounded-[14px] bg-white p-6">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="size-5 text-[#22a45d]" />
+          <h2 className="text-[18px] font-bold">Two-factor authentication</h2>
           {mfa && (
             <span className={cn(
-              'rounded-full border px-2.5 py-0.5 text-[11px] font-medium',
-              mfa.mfaEnabled ? 'border-[#22a45d] text-[#22a45d]' : 'border-[#eb0000] text-[#eb0000]'
+              'rounded-full px-2.5 py-0.5 text-[11px] font-medium',
+              mfa.mfaEnabled ? 'bg-[#e7f7ee] text-[#34a853]' : 'bg-[#fde8e8] text-[#eb0000]'
             )}>
               {mfa.mfaEnabled ? 'On' : 'Off'}
             </span>
@@ -287,70 +286,72 @@ function SecurityPanel() {
 
         {mfa && (
           <>
-            <div className="mt-5 flex items-center justify-between gap-4 rounded-[10px] bg-[#f7f9fc] px-4 py-3">
-              <div>
-                <p className="text-[13px] font-medium">Primary method</p>
-                <p className="text-[12px] text-brand-gray-500">The method you&apos;ll be asked for first when signing in.</p>
+            <div className="mt-5 flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[#dfe6ff] bg-[#f7f9ff] p-4">
+                <div className="min-w-[180px]">
+                  <p className="text-[13px] font-medium">Primary method</p>
+                  <p className="text-[12px] text-brand-gray-500">The method you&apos;ll be asked for first when signing in.</p>
+                </div>
+                <div className="relative ml-auto">
+                  <select
+                    value={mfa.preferredMethod}
+                    onChange={(e) => setPreferredMethod(e.target.value)}
+                    className="h-[40px] appearance-none rounded-[8px] border border-[#ddd] bg-white pl-3 pr-8 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                  >
+                    {mfa.enrolledMethods.map((m) => (
+                      <option key={m} value={m}>{methodLabel[m] ?? m}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-[#888]" />
+                </div>
               </div>
-              <div className="relative">
-                <select
-                  value={mfa.preferredMethod}
-                  onChange={(e) => setPreferredMethod(e.target.value)}
-                  className="h-[40px] appearance-none rounded-[8px] border border-[#ddd] bg-white pl-3 pr-8 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand-blue"
-                >
-                  {mfa.enrolledMethods.map((m) => (
-                    <option key={m} value={m}>{methodLabel[m] ?? m}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-[#888]" />
-              </div>
-            </div>
 
-            <div className="mt-4 flex flex-col gap-3">
-              {allMethods.map((method) => {
-                const enrolled = mfa.enrolledMethods.includes(method);
-                const preferred = mfa.preferredMethod === method;
-                const comingSoon = method === 'OTP_SMS' && !mfa.otpSmsAvailable;
-                return (
-                  <div key={method} className="flex items-start justify-between gap-4 rounded-[10px] border border-[#eee] p-4">
-                    <div className="flex items-start gap-3">
-                      <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px]', enrolled ? 'bg-[#22a45d]' : 'bg-[#f2f2f2]')}>
-                        <MethodIcon method={method} enrolled={enrolled} />
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2 text-[13px] font-medium">
-                          {methodLabel[method]}
-                          {enrolled && (
-                            <span className="flex items-center gap-1 text-[11px] font-normal text-[#22a45d]">
-                              <Check className="size-3" /> Enrolled
-                            </span>
-                          )}
-                          {preferred && enrolled && (
-                            <span className="rounded-full bg-[#e9f0ff] px-2 py-0.5 text-[10px] text-brand-blue">Preferred</span>
+              <div className="flex flex-col gap-3">
+                {allMethods.map((method) => {
+                  const enrolled = mfa.enrolledMethods.includes(method);
+                  const preferred = mfa.preferredMethod === method;
+                  const comingSoon = method === 'OTP_SMS' && !mfa.otpSmsAvailable;
+                  return (
+                    <div key={method} className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4">
+                      <div className="flex items-start gap-3">
+                        <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full', enrolled ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#f2f2f2] text-brand-gray-500')}>
+                          <MethodIcon method={method} />
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2 text-[15px] font-semibold">
+                            {methodLabel[method]}
+                            {enrolled && (
+                              <span className="flex items-center gap-1 text-[11px] font-normal text-[#22a45d]">
+                                <Check className="size-3" /> Enrolled
+                              </span>
+                            )}
+                            {preferred && enrolled && (
+                              <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[10px] font-medium text-brand-blue">Preferred</span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-[12px] text-brand-gray-500">{methodDesc[method]}</p>
+                          {comingSoon && (
+                            <p className="mt-1 text-[11px] text-brand-gray-400">
+                              Coming soon — text-message codes aren&apos;t enabled yet. Set up another method now and switch when SMS is available.
+                            </p>
                           )}
                         </div>
-                        <p className="mt-0.5 text-[12px] text-brand-gray-500">{methodDesc[method]}</p>
-                        {comingSoon && (
-                          <p className="mt-1 text-[11px] text-brand-gray-400">
-                            Coming soon — text-message codes aren&apos;t enabled yet. Set up another method now and switch when SMS is available.
-                          </p>
-                        )}
                       </div>
+                      {comingSoon ? (
+                        <span className="shrink-0 rounded-full bg-[#fff4e5] px-3 py-1.5 text-[11px] font-medium text-[#ff8d28]">Coming soon</span>
+                      ) : enrolled ? (
+                        <button
+                          type="button"
+                          className="shrink-0 min-h-[24px] rounded-[5px] border-[0.5px] border-[#3E3E3E] bg-transparent px-3 py-1 text-[14px] font-medium text-destructive hover:bg-brand-gray-100"
+                          onClick={() => removeMethod(method)}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
                     </div>
-                    {comingSoon ? (
-                      <span className="shrink-0 rounded-full bg-[#fff4e5] px-2.5 py-1 text-[11px] font-medium text-[#ff8d28]">Coming soon</span>
-                    ) : enrolled ? (
-                      <button
-                        type="button"
-                        className="shrink-0 rounded-[6px] border border-[#eb0000] px-3 py-1 text-[12px] font-medium text-[#eb0000] hover:bg-[#fde8e8]"
-                        onClick={() => removeMethod(method)}
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
