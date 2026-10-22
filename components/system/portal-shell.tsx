@@ -79,7 +79,7 @@ function Topbar() {
       <TopbarSearch tone="dark" />
 
       <div className="flex items-center gap-4">
-        <NotificationsBell tone="dark" />
+        <NotificationsBell tone="dark" endpoint={null} />
         <AdminProfileMenu
           profileHref="/system/settings"
           settingsHref="/system/settings"

@@ -39,16 +39,19 @@ const NOTIFICATIONS: Notification[] = [
 
 export function NotificationsBell({
   tone = 'light',
+  endpoint = '/tenant/notifications/messages',
 }: {
   tone?: 'light' | 'dark';
+  /** Pass null to skip the live fetch (e.g. system portal where tenant endpoint is forbidden). */
+  endpoint?: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(USE_LIVE_API ? [] : NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>(USE_LIVE_API && endpoint ? [] : NOTIFICATIONS);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/notifications/messages') as Promise<unknown>)
+    if (!USE_LIVE_API || !endpoint) return;
+    (api.get<unknown>(endpoint) as Promise<unknown>)
       .then((data) => {
         type R = Record<string, unknown>;
         const arr: R[] = Array.isArray(data)
