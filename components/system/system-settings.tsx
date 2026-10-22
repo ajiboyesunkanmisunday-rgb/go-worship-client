@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
-import { api } from '@/lib/api/client';
+import { api, ApiError } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences } from '@/lib/api/auth';
 import { RefreshCw, Check, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
@@ -201,7 +201,13 @@ function SecurityPanel() {
       toast.success('Password updated successfully');
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to change password');
+      const msg =
+        e instanceof ApiError && e.status === 409
+          ? 'Password change requires MFA verification, but the server is unable to process it right now. Please try again later or contact support.'
+          : e instanceof Error
+            ? e.message
+            : 'Failed to change password';
+      toast.error(msg, { duration: 8000 });
     } finally {
       setPwSaving(false);
     }
