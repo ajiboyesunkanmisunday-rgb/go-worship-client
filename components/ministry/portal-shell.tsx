@@ -10,6 +10,7 @@ import {
   Radio,
   Search,
   Settings,
+  ShieldAlert,
   UserCog,
   UserRound,
   Users,
@@ -45,6 +46,7 @@ const NAV_ITEMS = [
     label: 'Admin Management',
     icon: UserCog,
   },
+  { href: '/ministry/audit-logs', label: 'Audit Logs', icon: ShieldAlert },
   { href: '/ministry/settings', label: 'Settings', icon: Settings },
 ];
 
