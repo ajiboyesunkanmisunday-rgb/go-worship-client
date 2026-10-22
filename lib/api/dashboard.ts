@@ -68,11 +68,24 @@ export async function getUnifiedDashboard(
   _period = 'LAST_30_DAYS',
   currency = 'USD',
   family = 'PLATFORM',
-  _portal: 'system' | 'tenant' = 'tenant'
+  portal: 'system' | 'tenant' = 'tenant'
 ): Promise<UnifiedDashboardStats | null> {
   try {
-    const path = `/dashboard?family=${encodeURIComponent(family || 'PLATFORM')}`;
-    const data = await api.get<R>(path);
+    // System portal confirmed from live HAR: GET /api/v1/dashboard?family=PLATFORM
+    // Tenant portal: keep /tenant/dashboard/admin until confirmed otherwise
+    const path =
+      portal === 'system'
+        ? `/dashboard?family=${encodeURIComponent(family || 'PLATFORM')}`
+        : `/tenant/dashboard/admin`;
+    let data: R;
+    try {
+      data = await api.get<R>(path);
+    } catch (err) {
+      if (portal === 'system') {
+        return null;
+      }
+      throw err;
+    }
     if (!data || typeof data !== 'object') return null;
 
     /* Context — admin display name */

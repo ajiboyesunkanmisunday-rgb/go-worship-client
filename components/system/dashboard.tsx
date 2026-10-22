@@ -358,7 +358,7 @@ export function SystemDashboard() {
         <StatCard title="Trial Tenants"    value={fmt(stats.trialTenants)}    variant="white" />
         <StatCard title="Overdue Payments" value={fmt(stats.overduePayments)} variant="white" />
         <div className="rounded-[14px] bg-white p-5">
-          <p className="text-[14px] text-brand-gray-600">Plan Distribution</p>
+          <p className="text-[14px] text-brand-gray-500">Plan Distribution</p>
           <div className="mt-3 flex flex-col gap-2 text-[13px]">
             {plans.map(([plan, n]) => (
               <div key={plan} className="flex items-center justify-between">
