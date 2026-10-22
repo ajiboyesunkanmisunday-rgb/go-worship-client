@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-8 px-6 text-center">
+    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-8 bg-white px-6 text-center">
       <Image
         src="/auth/infinity-blue.svg"
         alt="Go Worship"
