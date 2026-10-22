@@ -7,6 +7,7 @@ import { ArrowLeft, Music } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
@@ -130,17 +131,16 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
           <Button asChild size="lg" variant="outline" className="h-[52px] w-full">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (USE_LIVE_API && id) {
                   const action = sermon.status.toUpperCase() === 'PUBLISHED' ? 'unpublish' : 'publish';
-                  (api.patch(`/tenant/admin/content/sermons/${id}/${action}`, {}) as Promise<unknown>)
-                    .then(() => {
-                      setSermon((prev) => ({
-                        ...prev,
-                        status: action === 'publish' ? 'Published' : 'Draft',
-                      }));
-                    })
-                    .catch(() => {});
+                  try {
+                    await (api.patch(`/tenant/admin/content/sermons/${id}/${action}`, {}) as Promise<unknown>);
+                    toast.success(action === 'publish' ? 'Sermon published' : 'Sermon unpublished');
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : `Failed to ${action} sermon`);
+                    return;
+                  }
                 }
                 router.push(back);
               }}

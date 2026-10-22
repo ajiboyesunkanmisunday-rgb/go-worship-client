@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 function Field({
   label,
@@ -81,7 +82,10 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
         } else {
           await (api.post('/system/billing/plans', payload) as Promise<unknown>);
         }
-      } catch { /* show success regardless */ }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to save plan. Please try again.');
+        return;
+      }
     }
     setResult('success');
   };

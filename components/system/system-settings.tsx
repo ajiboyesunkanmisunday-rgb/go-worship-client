@@ -224,7 +224,7 @@ function SecurityPanel() {
     if (!USE_LIVE_API) return;
     disableMfaEnrollment(method)
       .then(() => setMfa((prev) => prev ? { ...prev, enrolledMethods: prev.enrolledMethods.filter((m) => m !== method), totpEnrolled: method === 'TOTP' ? false : prev.totpEnrolled } : prev))
-      .catch(() => {});
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to remove authentication method'));
   };
 
   const methodLabel: Record<string, string> = {
@@ -247,7 +247,7 @@ function SecurityPanel() {
     if (!USE_LIVE_API) return;
     updateMfaPreferences({ enabled: mfa?.mfaEnabled ?? true, preferredMethod: method })
       .then(() => setMfa((prev) => prev ? { ...prev, preferredMethod: method } : prev))
-      .catch(() => {});
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to update preferred method'));
   };
 
   const allMethods = ['TOTP', 'OTP_EMAIL', 'OTP_SMS'];
@@ -507,7 +507,12 @@ export function SystemSettings() {
     const payload: ConfigMap = {};
     fd.forEach((v, k) => { payload[k] = String(v); });
     if (USE_LIVE_API && tab === 'Branding') {
-      await (api.put('/system/branding', payload) as Promise<unknown>).catch(() => {});
+      try {
+        await (api.put('/system/branding', payload) as Promise<unknown>);
+        toast.success('Branding settings saved');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to save branding settings');
+      }
     }
   };
 

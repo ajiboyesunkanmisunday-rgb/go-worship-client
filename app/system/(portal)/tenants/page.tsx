@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 const STATUS: Record<string, string> = {
   Active:    'bg-[#e7f7ee] text-[#34a853]',
@@ -47,7 +48,12 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
         onConfirm={async () => {
           setConfirm(false);
           if (USE_LIVE_API) {
-            await (api.patch(`/system/tenants/${id}/suspend`, {}) as Promise<unknown>).catch(() => {});
+            try {
+              await (api.patch(`/system/tenants/${id}/suspend`, {}) as Promise<unknown>);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : 'Failed to suspend tenant');
+              return;
+            }
           }
           onSuspend();
         }}
