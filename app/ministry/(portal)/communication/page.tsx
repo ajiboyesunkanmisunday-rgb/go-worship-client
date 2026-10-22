@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Bell, Mail, Plus } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number; channels?: string[] };
 
@@ -48,7 +49,7 @@ export default function MinistryCommunicationPage() {
         })).filter((m) => m.title);
         if (mapped.length > 0) setMessages(mapped);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load messages.'); });
     // /tenant/admin/members/count not in backend API — disabled.
   }, []);
 

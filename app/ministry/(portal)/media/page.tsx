@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { FolderPlus } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
   Published: 'text-[#34a853]',
@@ -76,7 +77,7 @@ export default function MinistryMediaPage() {
         }).filter((s) => s.name);
         if (mapped.length > 0) setSeries(mapped);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load media series.'); });
   }, []);
 
   const draftCount = series.filter((s) => s.status === 'Draft').length;

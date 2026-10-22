@@ -1,6 +1,7 @@
 'use client';
 
 import { z } from 'zod';
+import { FormAlert } from '@/components/ui/form-alert';
 import { AuthLayout } from '@/components/auth/layout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -166,12 +167,12 @@ function SetPasswordInner() {
             />
 
             {formError && (
-              <p role="alert" className="text-[14px] text-destructive">
+              <FormAlert variant="error">
                 {formError}{' '}
                 <Link href="/auth/forgot-password" className="font-bold underline">
                   Start over
                 </Link>
-              </p>
+              </FormAlert>
             )}
 
             <Button size="lg" className="w-full mt-6" type="submit" disabled={submitting}>

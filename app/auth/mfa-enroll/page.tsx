@@ -11,6 +11,7 @@ import {
   type TotpEnrollBeginResponse,
 } from '@/lib/api/auth';
 import { portalForRoles } from '@/lib/portal';
+import { FormAlert } from '@/components/ui/form-alert';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -147,11 +148,7 @@ function MfaEnrollInner({ shellProps }: { shellProps?: ShellProps }) {
                 </button>
               ))}
             </div>
-            {error && (
-              <p role="alert" className="text-[14px] text-destructive">
-                {error}
-              </p>
-            )}
+            {error && <FormAlert variant="error">{error}</FormAlert>}
             <Button
               size="lg"
               className="h-[52px] w-full"
@@ -192,11 +189,7 @@ function MfaEnrollInner({ shellProps }: { shellProps?: ShellProps }) {
                 )}
               </div>
             )}
-            {error && (
-              <p role="alert" className="text-[14px] text-destructive">
-                {error}
-              </p>
-            )}
+            {error && <FormAlert variant="error">{error}</FormAlert>}
             <Button size="lg" className="h-[52px] w-full" onClick={handleTotpReady}>
               Continue
             </Button>

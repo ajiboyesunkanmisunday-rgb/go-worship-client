@@ -1,5 +1,7 @@
 'use client';
 
+import { FormAlert } from '@/components/ui/form-alert';
+
 /**
  * Ministry → Members → Add member (TN-007).
  *
@@ -156,11 +158,7 @@ export function AddMember() {
           </Field>
         </div>
 
-        {enrollError && (
-          <p role="alert" className="text-[13px] text-destructive">
-            {enrollError}
-          </p>
-        )}
+        {enrollError && <FormAlert variant="error">{enrollError}</FormAlert>}
 
         <p className="text-[12px] text-brand-gray-500">
           An invite email will be sent to the member so they can set their password and complete their profile.

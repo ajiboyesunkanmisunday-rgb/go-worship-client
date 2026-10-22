@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { FormAlert } from '@/components/ui/form-alert';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -145,12 +146,12 @@ function SetPasswordInner() {
             />
 
             {formError && (
-              <p role="alert" className="text-[14px] text-destructive">
+              <FormAlert variant="error">
                 {formError}{' '}
                 <Link href="/auth/login" className="font-bold underline">
                   Sign in again
                 </Link>
-              </p>
+              </FormAlert>
             )}
 
             <Button

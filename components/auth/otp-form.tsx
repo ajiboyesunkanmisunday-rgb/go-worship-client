@@ -1,4 +1,5 @@
 'use client';
+import { FormAlert } from '@/components/ui/form-alert';
 import { Button } from '@/components/ui/button';
 import {
   InputOTP,
@@ -115,11 +116,7 @@ export function OtpForm({
           </InputOTPGroup>
         </InputOTP>
 
-        {error && (
-          <p role="alert" className="text-[14px] text-destructive">
-            {error}
-          </p>
-        )}
+        {error && <FormAlert variant="error">{error}</FormAlert>}
 
         <Button
           size="lg"

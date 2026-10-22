@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { getSystemStats } from '@/lib/api/system';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 type Plan = {
   id: number;
@@ -168,7 +169,7 @@ export default function SystemPlansPage() {
         }).filter((p) => p.name);
         if (mapped.length > 0) setPlans(mapped);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load plans.'); });
   }, []);
 
   return (

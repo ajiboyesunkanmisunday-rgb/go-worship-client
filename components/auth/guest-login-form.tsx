@@ -1,5 +1,7 @@
 'use client';
 
+import { FormAlert } from '@/components/ui/form-alert';
+
 /**
  * Guest login form — two-step: email → OTP code.
  *
@@ -133,7 +135,7 @@ export function GuestLoginForm({
               </InputGroup>
             </div>
 
-            {error && <p role="alert" className="text-[14px] text-destructive">{error}</p>}
+            {error && <FormAlert variant="error">{error}</FormAlert>}
 
             <Button size="lg" className="h-[52px] w-full" type="submit" disabled={busy}>
               {busy ? 'Sending code…' : 'Send Code'}
@@ -156,7 +158,7 @@ export function GuestLoginForm({
               </InputOTPGroup>
             </InputOTP>
 
-            {error && <p role="alert" className="w-full text-[14px] text-destructive">{error}</p>}
+            {error && <FormAlert variant="error">{error}</FormAlert>}
 
             <Button size="lg" className="h-[52px] w-full" type="submit" disabled={busy || code.length < 6}>
               {busy ? 'Verifying…' : 'Continue'}

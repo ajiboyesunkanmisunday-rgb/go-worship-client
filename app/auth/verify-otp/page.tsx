@@ -8,6 +8,7 @@ import { USE_LIVE_API } from '@/lib/api/config';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { toast } from 'sonner';
 import { portalForRoles } from '@/lib/portal';
+import { FormAlert } from '@/components/ui/form-alert';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -171,11 +172,7 @@ function LoginMfaPage({
           </>
         )}
         <p className="text-[14px] text-brand-gray-500">{methodDescription(selectedMethod)}</p>
-        {beginError && (
-          <p role="alert" className="text-[14px] text-destructive">
-            {beginError}
-          </p>
-        )}
+        {beginError && <FormAlert variant="error">{beginError}</FormAlert>}
       </div>
     ) : (
       <p className="text-[14px] text-[#666]">{methodDescription(selectedMethod)}</p>

@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const MOCK_MEMBERS: TenantMember[] = [
   { id: 'M-001', name: 'John Adeyemi', email: 'john@example.com', phone: '+1 555-0101', status: 'Active', joinedAt: 'Jan 12, 2025', groups: ['Faith Builders'] },
@@ -20,7 +21,7 @@ export default function MinistryMembersPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getTenantMembers().then(setMembers).catch(() => {});
+    getTenantMembers().then(setMembers).catch(() => { toast.error('Could not load members.'); });
   }, []);
 
   const active = members.filter((m) => m.status === 'Active').length;

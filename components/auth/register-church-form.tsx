@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { registerTenant } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
+import { FormAlert } from '@/components/ui/form-alert';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -265,11 +266,7 @@ export function RegisterChurchForm() {
               </Field>
             </div>
 
-            {error && (
-              <p role="alert" className="text-[13px] text-destructive">
-                {error}
-              </p>
-            )}
+            {error && <FormAlert variant="error">{error}</FormAlert>}
 
             <Button size="lg" type="submit" className="h-[52px] w-full">
               Continue
@@ -346,11 +343,7 @@ export function RegisterChurchForm() {
               />
             </Field>
 
-            {error && (
-              <p role="alert" className="text-[13px] text-destructive">
-                {error}
-              </p>
-            )}
+            {error && <FormAlert variant="error">{error}</FormAlert>}
 
             <div className="flex flex-col gap-3">
               <Button

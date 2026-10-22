@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { forgotPassword } from '@/lib/api/auth';
+import { FormAlert } from '@/components/ui/form-alert';
 
 const formSchema = z.object({
   email: z.email({
@@ -156,11 +157,7 @@ export default function ForgotPasswordPage() {
             />
 
 
-            {formError && (
-              <p role="alert" className="text-[14px] text-destructive">
-                {formError}
-              </p>
-            )}
+            {formError && <FormAlert variant="error">{formError}</FormAlert>}
 
             <Button
               size="lg"

@@ -11,6 +11,7 @@ import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { api } from '@/lib/api/client';
 import { DollarSign } from 'lucide-react';
+import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 
 const MOCK = {
@@ -37,7 +38,7 @@ export default function MinistryFinancePage() {
     if (!USE_LIVE_API) return;
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load dashboard stats.'); });
     getCustomerPayments(0, 20)
       .then((page) => {
         const rows = (page?.content ?? []).map((p) => {
@@ -60,7 +61,7 @@ export default function MinistryFinancePage() {
           if (failed > 0) setFailedTransactions(String(failed));
         }
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load payment data.'); });
 
     // /tenant/admin/finance/summary not in backend API — disabled.
   }, []);

@@ -1,5 +1,7 @@
 'use client';
 
+import { FormAlert } from '@/components/ui/form-alert';
+
 /**
  * Ministry → Admin Management → Add new account (Figma 640:34373).
  *
@@ -266,11 +268,7 @@ export function AddAccount() {
           </table>
         </div>
 
-        {enrollError && (
-          <p role="alert" className="text-[13px] text-destructive">
-            {enrollError}
-          </p>
-        )}
+        {enrollError && <FormAlert variant="error">{enrollError}</FormAlert>}
 
         <div className="flex flex-col gap-3 pt-2">
           <Button size="lg" type="submit" disabled={submitting} className="h-[52px] w-full">

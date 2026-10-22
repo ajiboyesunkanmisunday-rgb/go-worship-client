@@ -18,6 +18,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { useState } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
 import { executeRecaptcha } from '@/lib/recaptcha';
+import { FormAlert } from '@/components/ui/form-alert';
 import { USE_LIVE_API } from '@/lib/api/config';
 import {
   registerCustomer,
@@ -175,11 +176,7 @@ export function PasswordForm({ onSuccess }: Props) {
           />
 
 
-          {formError && (
-            <p role="alert" className="text-[14px] text-destructive">
-              {formError}
-            </p>
-          )}
+          {formError && <FormAlert variant="error">{formError}</FormAlert>}
 
           <Button
             size="lg"

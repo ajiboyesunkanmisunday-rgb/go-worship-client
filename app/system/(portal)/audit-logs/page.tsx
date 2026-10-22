@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 /**
  * System → Audit Logs (778:38441). Matches the design: heading + "Track all
@@ -160,7 +161,7 @@ export default function SystemAuditLogsPage() {
         const rows = parseArr(data).map(mapLogRow).filter((l) => l.action || l.resource);
         if (rows.length > 0) setLogs(rows);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load audit logs.'); });
   };
 
   useEffect(() => {

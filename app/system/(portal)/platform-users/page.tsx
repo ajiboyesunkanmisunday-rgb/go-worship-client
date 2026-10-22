@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getSystemUsers, type SystemUser } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 const ROLE_STYLE: Record<string, string> = {
   'Super Admin': 'bg-[#fde8e8] text-[#eb0000]',
@@ -37,7 +38,7 @@ export default function SystemPlatformUsersPage() {
       .then((data) => {
         if (data.length > 0) setUsers(data);
       })
-      .catch(() => {})
+      .catch(() => { toast.error('Could not load platform users.'); })
       .finally(() => setLoading(false));
   }, []);
 

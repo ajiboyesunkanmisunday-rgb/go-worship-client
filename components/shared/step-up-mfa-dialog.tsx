@@ -18,6 +18,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { FormAlert } from '@/components/ui/form-alert';
 import { Button } from '@/components/ui/button';
 import {
   stepUpBeginMfa,
@@ -148,11 +149,7 @@ export function StepUpMfaDialog({ challenge, onSuccess, onClose }: Props) {
           </div>
         )}
 
-        {error && (
-          <p role="alert" className="text-[13px] text-destructive">
-            {error}
-          </p>
-        )}
+        {error && <FormAlert variant="error">{error}</FormAlert>}
 
         <div className="flex gap-3">
           {phase === 'enter_code' && (

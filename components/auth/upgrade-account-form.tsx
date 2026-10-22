@@ -23,6 +23,7 @@ import { ApiError } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { FormAlert } from '@/components/ui/form-alert';
 
 export function UpgradeAccountForm() {
   const router = useRouter();
@@ -129,11 +130,7 @@ export function UpgradeAccountForm() {
             />
           </div>
 
-          {error && (
-            <p role="alert" className="text-[13px] text-destructive">
-              {error}
-            </p>
-          )}
+          {error && <FormAlert variant="error">{error}</FormAlert>}
 
           <Button size="lg" type="submit" disabled={submitting} className="h-[52px] w-full">
             {submitting ? 'Upgrading…' : 'Complete account'}

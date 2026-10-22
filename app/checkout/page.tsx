@@ -1,5 +1,6 @@
 'use client';
 
+import { FormAlert } from '@/components/ui/form-alert';
 import { CheckoutShell } from '@/components/checkout/checkout-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -210,9 +211,7 @@ export default function CheckoutGivingPage() {
             )}
           </Field>
 
-          {error && (
-            <p role="alert" className="text-[13px] text-destructive">{error}</p>
-          )}
+          {error && <FormAlert variant="error">{error}</FormAlert>}
 
           <Button size="lg" type="submit" className="mt-2 h-[52px] w-full" disabled={submitting}>
             {submitting ? 'Processing…' : 'Give Generously'}

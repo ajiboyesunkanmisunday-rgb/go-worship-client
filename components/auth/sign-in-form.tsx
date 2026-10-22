@@ -26,7 +26,7 @@ import { GoogleIcon } from '@/icons/socials';
 import { PasswordInput } from '@/components/ui/password-input';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { FormAlert } from '@/components/ui/form-alert';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { portalForRoles, isRoleAllowedForPortal, type PortalKind } from '@/lib/portal';
 import { executeRecaptcha } from '@/lib/recaptcha';
@@ -265,10 +265,7 @@ function SignInFormInner({
   return (
     <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc} imgClassName={imgClassName} flat={flat}>
       {sessionBanner && (
-        <div className="mb-4 flex items-start gap-3 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
-          <AlertTriangle className="mt-px h-4 w-4 shrink-0 text-amber-500" />
-          <span>{sessionBanner}</span>
-        </div>
+        <FormAlert variant="warning" className="mb-4">{sessionBanner}</FormAlert>
       )}
       <div className={`mx-auto flex w-full flex-col gap-${flat ? '7' : '6'} ${flat ? 'max-w-[430px] items-center' : 'max-w-[460px] items-start lg:items-center'}`}>
         {!hideBrandLogo && (
@@ -372,11 +369,7 @@ function SignInFormInner({
 
             {/* reCAPTCHA v3 is invisible — the token is minted on submit,
                 so there is no widget here. */}
-            {formError && (
-              <p role="alert" className="text-[14px] text-destructive">
-                {formError}
-              </p>
-            )}
+            {formError && <FormAlert variant="error">{formError}</FormAlert>}
 
             <Button
               size="lg"

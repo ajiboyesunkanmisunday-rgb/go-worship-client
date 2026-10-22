@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 type Role = {
   id: string;
@@ -70,7 +71,7 @@ export default function MinistryAdminManagementPage() {
         }).filter((r) => r.role);
         if (mapped.length > 0) setRoles(mapped);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load roles.'); });
   }, []);
 
   const activeCount = roles.filter((r) => r.status === 'Active').length;

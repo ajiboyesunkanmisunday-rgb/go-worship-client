@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 import { getTenantEvents, type TenantEvent } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
   Upcoming: 'text-brand-blue',
@@ -39,7 +40,7 @@ export default function MinistryEventsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getTenantEvents().then((data) => setEvents(data.map(toRow))).catch(() => {});
+    getTenantEvents().then((data) => setEvents(data.map(toRow))).catch(() => { toast.error('Could not load events.'); });
   }, []);
 
   const upcoming = events.filter((e) => e.status.toLowerCase() === 'upcoming').length;

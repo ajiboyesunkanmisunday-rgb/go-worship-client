@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 type AuditTab = 'All activity' | 'Security events';
 const AUDIT_TABS: AuditTab[] = ['All activity', 'Security events'];
@@ -136,13 +137,13 @@ export default function MinistryAuditLogsPage() {
         const rows = parseArr(data).map(mapRow).filter((r) => r.action);
         if (rows.length > 0) setAllLogs(rows);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load audit logs.'); });
     (api.get<unknown>('/tenant/audit/security-events') as Promise<unknown>)
       .then((data) => {
         const rows = parseArr(data).map(mapRow).filter((r) => r.action);
         if (rows.length > 0) setSecurityLogs(rows);
       })
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load security events.'); });
   }, []);
 
   const logs = activeTab === 'All activity' ? allLogs : securityLogs;

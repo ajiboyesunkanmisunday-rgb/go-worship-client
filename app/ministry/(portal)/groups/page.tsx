@@ -8,6 +8,7 @@ import { CheckSquare, Plus } from 'lucide-react';
 import { getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type GroupRow = { id: string; name: string; category: string; leader: string; members: number; status: string; schedule: string };
 
@@ -37,7 +38,7 @@ export default function MinistryGroupsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    getTenantGroups().then((data) => setGroups(data.map(toGroupRow))).catch(() => {});
+    getTenantGroups().then((data) => setGroups(data.map(toGroupRow))).catch(() => { toast.error('Could not load groups.'); });
   }, []);
 
   const active = groups.filter((g) => g.status.toLowerCase() === 'active').length;
