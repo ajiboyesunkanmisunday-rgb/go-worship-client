@@ -67,16 +67,15 @@ export type UnifiedDashboardStats = {
 export async function getUnifiedDashboard(
   _period = 'LAST_30_DAYS',
   currency = 'USD',
-  family = 'PLATFORM',
+  family?: string,
   portal: 'system' | 'tenant' = 'tenant'
 ): Promise<UnifiedDashboardStats | null> {
   try {
-    // System portal confirmed from live HAR: GET /api/v1/dashboard?family=PLATFORM
-    // Tenant portal: keep /tenant/dashboard/admin until confirmed otherwise
-    const path =
-      portal === 'system'
-        ? `/dashboard?family=${encodeURIComponent(family || 'PLATFORM')}`
-        : `/tenant/dashboard/admin`;
+    // Confirmed from backend JAR: single DashboardController at /api/v1/dashboard.
+    // Family param drives scope for all portals (system-owner, tenant, campus, customer, guest).
+    // System: family=PLATFORM (confirmed live HAR). Tenant: family=TENANT_OPERATIONS.
+    const effectiveFamily = family ?? (portal === 'system' ? 'PLATFORM' : 'TENANT_OPERATIONS');
+    const path = `/dashboard?family=${encodeURIComponent(effectiveFamily)}`;
     let data: R;
     try {
       data = await api.get<R>(path);
