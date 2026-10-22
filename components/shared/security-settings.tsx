@@ -16,8 +16,11 @@ import {
 } from '@/components/ui/form';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
-import { changePassword } from '@/lib/api/auth';
+import { changePassword, isStepUpChallenge } from '@/lib/api/auth';
+import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { ApiError } from '@/lib/api/client';
+import { StepUpMfaDialog } from '@/components/shared/step-up-mfa-dialog';
 import { MfaManager } from './mfa-manager';
 
 const pwSchema = z
@@ -35,6 +38,7 @@ type PwForm = z.infer<typeof pwSchema>;
 
 export function SecuritySettings() {
   const [pwBusy, setPwBusy] = useState(false);
+  const [pwStepUp, setPwStepUp] = useState<StepUpMfaChallengeResponse | null>(null);
 
   const form = useForm<PwForm>({
     resolver: zodResolver(pwSchema),
@@ -49,11 +53,21 @@ export function SecuritySettings() {
     }
     setPwBusy(true);
     try {
-      await changePassword(data.currentPassword, data.newPassword, data.confirmPassword);
-      toast.success('Password changed successfully');
-      form.reset();
+      const result = await changePassword(data.currentPassword, data.newPassword, data.confirmPassword);
+      if (isStepUpChallenge(result)) {
+        setPwStepUp(result);
+      } else {
+        toast.success('Password changed successfully');
+        form.reset();
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to change password');
+      const msg =
+        e instanceof ApiError && e.status === 409
+          ? 'Password change requires MFA verification, but the server is unable to process it right now. Please try again later or contact support.'
+          : e instanceof Error
+            ? e.message
+            : 'Failed to change password';
+      toast.error(msg, { duration: 8000 });
     } finally {
       setPwBusy(false);
     }
@@ -142,6 +156,18 @@ export function SecuritySettings() {
       <section>
         <MfaManager />
       </section>
+
+      {pwStepUp && (
+        <StepUpMfaDialog
+          challenge={pwStepUp}
+          onSuccess={() => {
+            toast.success('Password changed successfully');
+            form.reset();
+            setPwStepUp(null);
+          }}
+          onClose={() => setPwStepUp(null)}
+        />
+      )}
     </div>
   );
 }

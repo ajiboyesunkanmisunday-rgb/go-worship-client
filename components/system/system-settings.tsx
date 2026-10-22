@@ -7,7 +7,9 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences } from '@/lib/api/auth';
+import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences, isStepUpChallenge } from '@/lib/api/auth';
+import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
+import { StepUpMfaDialog } from '@/components/shared/step-up-mfa-dialog';
 import { RefreshCw, Check, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -173,6 +175,7 @@ function SecurityPanel() {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
+  const [pwStepUp, setPwStepUp] = useState<StepUpMfaChallengeResponse | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -197,9 +200,13 @@ function SecurityPanel() {
     if (newPw !== confirmPw) { toast.error('Passwords do not match'); return; }
     setPwSaving(true);
     try {
-      await apiChangePassword(currentPw, newPw, confirmPw);
-      toast.success('Password updated successfully');
-      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      const result = await apiChangePassword(currentPw, newPw, confirmPw);
+      if (isStepUpChallenge(result)) {
+        setPwStepUp(result);
+      } else {
+        toast.success('Password updated successfully');
+        setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      }
     } catch (e) {
       const msg =
         e instanceof ApiError && e.status === 409
@@ -373,6 +380,18 @@ function SecurityPanel() {
           <p className="mt-4 text-[13px] text-brand-gray-400">Loading security settings…</p>
         )}
       </div>
+
+      {pwStepUp && (
+        <StepUpMfaDialog
+          challenge={pwStepUp}
+          onSuccess={() => {
+            toast.success('Password updated successfully');
+            setCurrentPw(''); setNewPw(''); setConfirmPw('');
+            setPwStepUp(null);
+          }}
+          onClose={() => setPwStepUp(null)}
+        />
+      )}
     </div>
   );
 }
