@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { readJson, setSessionCookies, upstreamFetch } from '@/lib/api/server';
+import { readJson, resolveUpstreamFromHeaders, setSessionCookies, upstreamFetch } from '@/lib/api/server';
 
 /**
  * Final step of the first-login flow: exchange the challenge token from the
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
   // The backend's example sends the tenant explicitly on this call.
   if (tenantId) headers['X-Tenant-Id'] = tenantId;
 
+  const upstreamBase = resolveUpstreamFromHeaders(req.headers);
   const upstream = await upstreamFetch('/auth/first-login/password/complete', {
     method: 'POST',
     headers,
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
       confirmPassword,
       rememberMe: Boolean(rememberMe),
     }),
-  });
+  }, upstreamBase);
 
   const data = await readJson(upstream);
 

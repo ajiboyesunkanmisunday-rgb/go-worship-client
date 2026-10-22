@@ -6,7 +6,7 @@
  *  - 403 {code:"MFA_ENROLLMENT_REQUIRED", ...}  → admin must enrol MFA first
  *
  * Endpoints (SO-006…009 from the Postman collection):
- *   POST /system/tenants/provision  — provision tenant + first admin (QA v2.0 SO-009)
+ *   POST /system/tenants/indirect   — provision tenant + first admin via invite email (QA v2.0 SO-009; path confirmed indirect, not /provision)
  *   POST /system/users/provision    — provision SO platform user
  *   GET  /system/users              — platform user list (confirmed from live DO HAR)
  *   GET  /system/billing/plans      — billing plan list (confirmed from live DO HAR)

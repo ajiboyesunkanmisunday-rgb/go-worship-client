@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { readJson, upstreamFetch } from '@/lib/api/server';
+import { readJson, resolveUpstreamFromHeaders, upstreamFetch } from '@/lib/api/server';
 
 /**
  * Step 1 of the first-login flow.
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Missing link token' }, { status: 400 });
   }
 
+  const upstreamBase = resolveUpstreamFromHeaders(req.headers);
   const upstream = await upstreamFetch('/auth/first-login/link/consume', {
     method: 'POST',
     headers: {
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       'X-Correlation-Id': randomUUID(),
     },
     body: JSON.stringify({ token }),
-  });
+  }, upstreamBase);
 
   const data = await readJson(upstream);
 
