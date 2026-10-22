@@ -196,7 +196,7 @@ export function SystemDashboard() {
 
   const loadFamily = useCallback(async (family: string) => {
     if (!USE_LIVE_API) return;
-    const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'));
+    const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'), 'system');
     if (!u) return;
 
     if (u.adminDisplayName) setAdminName(u.adminDisplayName);

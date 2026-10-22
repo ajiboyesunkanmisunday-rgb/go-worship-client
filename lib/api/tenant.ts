@@ -373,9 +373,9 @@ export type BrandingAsset = {
   contentLength: number;
 };
 
-/** GET /tenant/branding */
+/** GET /tenant/admin/branding/brand */
 export async function getTenantBranding(): Promise<TenantBranding> {
-  const data = await api.get<R>('/tenant/branding');
+  const data = await api.get<R>('/tenant/admin/branding/brand');
   const d = ((data as R)?.['data'] ?? data) as R;
   return {
     organizationName: fieldOf(d, ['organizationName', 'name', 'churchName']),
@@ -391,34 +391,26 @@ export async function getTenantBranding(): Promise<TenantBranding> {
   };
 }
 
-/** PUT /tenant/branding */
+/** PUT /tenant/admin/branding/brand */
 export async function updateTenantBranding(payload: Partial<TenantBranding>): Promise<void> {
-  await api.put('/tenant/branding', payload);
+  await api.put('/tenant/admin/branding/brand', payload);
 }
 
-/** PATCH /tenant/branding/activate */
+/** POST /tenant/admin/branding/brand/ensure — ensure brand record exists (replaces non-existent /activate) */
 export async function activateTenantBranding(): Promise<void> {
-  await api.patch('/tenant/branding/activate', {});
+  await (api.post('/tenant/admin/branding/brand/ensure', {}) as Promise<unknown>);
 }
 
-/** GET /tenant/branding/assets */
+/** Assets are embedded in the brand record; no separate GET endpoint exists. Returns empty array. */
 export async function getTenantBrandingAssets(): Promise<BrandingAsset[]> {
-  const data = await api.get<unknown>('/tenant/branding/assets');
-  return (findTableRows(data, 'asset') as R[]).map((a) => ({
-    id:            fieldOf(a, ['id', 'assetId']),
-    category:      fieldOf(a, ['category']),
-    fileName:      fieldOf(a, ['fileName', 'name']),
-    url:           fieldOf(a, ['url', 'assetUrl']),
-    contentType:   fieldOf(a, ['contentType', 'mimeType']),
-    contentLength: Number(fieldOf(a, ['contentLength', 'size']) || 0),
-  }));
+  return [];
 }
 
-/** POST /tenant/branding/assets/{category} (multipart) */
+/** POST /tenant/admin/branding/brand/assets/{category} (multipart) */
 export async function uploadBrandingAsset(category: string, file: File): Promise<void> {
   const fd = new FormData();
   fd.append('file', file);
-  await fetch(`/bff/gw/tenant/branding/assets/${encodeURIComponent(category)}`, {
+  await fetch(`/bff/gw/tenant/admin/branding/brand/assets/${encodeURIComponent(category)}`, {
     method: 'POST',
     body: fd,
     credentials: 'include',
@@ -430,9 +422,9 @@ export async function uploadBrandingAsset(category: string, file: File): Promise
   });
 }
 
-/** DELETE /tenant/branding/assets/{id} */
-export async function deleteBrandingAsset(id: string): Promise<void> {
-  await api.del(`/tenant/branding/assets/${encodeURIComponent(id)}`);
+/** DELETE /tenant/admin/branding/brand/assets/{category} */
+export async function deleteBrandingAsset(category: string): Promise<void> {
+  await api.del(`/tenant/admin/branding/brand/assets/${encodeURIComponent(category)}`);
 }
 
 /* -------- Tenant Billing / Subscription (confirmed: auth-endpoints memory) -- */
@@ -479,9 +471,9 @@ export async function getTenantSubscription(): Promise<TenantSubscription | null
   }
 }
 
-/** GET /tenant/billing/invoices */
+/** GET /tenant/admin/billing/invoices */
 export async function getTenantInvoices(): Promise<TenantInvoice[]> {
-  const data = await api.get<unknown>('/tenant/billing/invoices');
+  const data = await api.get<unknown>('/tenant/admin/billing/invoices');
   return (findTableRows(data, 'invoice') as R[]).map((row) => ({
     id:        fieldOf(row, ['id', 'invoiceId']),
     reference: fieldOf(row, ['reference', 'invoiceNumber', 'paymentReference']),

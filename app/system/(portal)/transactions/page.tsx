@@ -68,7 +68,7 @@ export default function SystemTransactionsPage() {
 
     // Stats: /system/finance/stats and /system/transactions/summary not in backend API — disabled.
 
-    getUnifiedDashboard()
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', undefined, 'system')
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
       .catch(() => {});
   }, []);

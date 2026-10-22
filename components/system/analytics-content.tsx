@@ -170,7 +170,7 @@ export function SystemAnalyticsContent() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getSystemTenants().then(setLiveTenants).catch(() => {});
-    getUnifiedDashboard()
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', undefined, 'system')
       .then((s) => {
         if (s && s.trend.length > 0) {
           setFinanceTrend(s.trend.map((p) => ({ month: p.label, value: p.value })));

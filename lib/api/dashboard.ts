@@ -1,9 +1,12 @@
 /**
- * Unified, role-aware dashboard endpoint.
- * GET /api/v1/dashboard?family=PLATFORM&period=LAST_30_DAYS&granularity=DAY
+ * Role-aware dashboard helpers.
  *
- * The response is section-based:
- *   { availableFamilies, selectedFamily, sections: [{type, metrics: [{code, value, formattedValue}], series}] }
+ * Backend endpoints (no unified /dashboard exists):
+ *   GET /api/v1/system/dashboard/super-admin  → SystemRoleDashboardResponse (system portal)
+ *   GET /api/v1/tenant/dashboard/admin        → SystemRoleDashboardResponse (tenant/ministry portal)
+ *
+ * Response shape: { ok, dashboardType, sections: [{key, title, cards: [{key, title, value, unit}], charts: [...]}] }
+ * card keys are camelCase (e.g. "totalTenants", "donationTotal", "customers").
  */
 
 import { api } from './client';
@@ -108,182 +111,154 @@ export type UnifiedDashboardStats = {
 };
 
 export async function getUnifiedDashboard(
-  period = 'LAST_30_DAYS',
+  _period = 'LAST_30_DAYS',
   currency = 'USD',
-  family?: string
+  _family?: string,
+  portal: 'system' | 'tenant' = 'tenant'
 ): Promise<UnifiedDashboardStats | null> {
   try {
-    const qs = new URLSearchParams({ period, granularity: 'DAY', currency });
-    if (family) qs.set('family', family);
-    const data = await api.get<R>(`/dashboard?${qs.toString()}`);
-    if (!data || typeof data !== 'object') return null;
+    const path = portal === 'system'
+      ? '/system/dashboard/super-admin'
+      : '/tenant/dashboard/admin';
 
-    const sections = Array.isArray((data as R)['sections'])
+    const data = await api.get<R>(path);
+    if (!data || typeof data !== 'object') return null;
+    if ((data as R)['ok'] === false) return null;
+
+    /* Parse SystemRoleDashboardResponse — sections[].cards[] (camelCase keys) */
+    const backendSections = Array.isArray((data as R)['sections'])
       ? ((data as R)['sections'] as R[])
       : [];
 
-    const isSectionBased = sections.length > 0;
+    /* Flatten all cards into a lookup map for easy field extraction */
+    const cardMap = new Map<string, R>();
+    for (const sec of backendSections) {
+      for (const card of (Array.isArray(sec['cards']) ? sec['cards'] as R[] : [])) {
+        cardMap.set(String(card['key'] ?? ''), card);
+      }
+    }
 
-    /* ---------- flat-key fallback (older ministry/tenant dashboard) ---------- */
-    const d = isSectionBased ? data as R : (((data as R)['data'] ?? data) as R);
+    const cardNum = (...keys: string[]): number => {
+      for (const k of keys) {
+        const c = cardMap.get(k);
+        if (c !== undefined) return num(c['value']);
+      }
+      return 0;
+    };
 
+    const cardStr = (...keys: string[]): string => {
+      for (const k of keys) {
+        const c = cardMap.get(k);
+        if (c !== undefined) {
+          const v = c['value'];
+          return typeof v === 'string' ? v : String(num(v));
+        }
+      }
+      return '';
+    };
+
+    /* Extract giving — backend stores as formatted currency string or raw number */
     let totalGiving = '$0';
-    if (!isSectionBased) {
-      const rawGiving = fieldOf(d, [
-        'totalGiving', 'givingVolume', 'totalRevenue', 'volume',
-        'totalDonations', 'donationTotal',
-      ]);
-      const givingNum = typeof rawGiving === 'number' ? rawGiving : num(rawGiving);
-      totalGiving =
-        typeof rawGiving === 'string' && isNaN(Number(rawGiving))
-          ? rawGiving
-          : givingNum > 0
-          ? new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(givingNum)
+    const rawGiving = cardMap.get('donationTotal')?.['value'] ?? cardMap.get('totalRevenue')?.['value'] ?? cardMap.get('mrr')?.['value'];
+    if (rawGiving !== undefined) {
+      if (typeof rawGiving === 'string' && rawGiving.startsWith('$')) {
+        totalGiving = rawGiving;
+      } else {
+        const n = num(rawGiving);
+        totalGiving = n > 0
+          ? new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(n)
           : '$0';
+      }
     }
 
-    /* ---------- section-based extraction ---------- */
-    let totalTenants   = 0, activeTenants  = 0, newTenants    = 0, totalCampuses = 0;
-    let totalUsers     = 0, activeUsers    = 0, newUsers      = 0;
-    let activeSessions = 0, riskySessions  = 0;
-    let successfulAuths = 0, failedAuths   = 0, lockedAccounts = 0;
-    let mfaEnabledUsers = 0, auditFailures = 0;
-    let trend: { label: string; value: number }[] = [];
-    let adminDisplayName: string | undefined;
-
-    const availableFamilies = Array.isArray((data as R)['availableFamilies'])
-      ? ((data as R)['availableFamilies'] as string[])
-      : [];
-
-    const context = (data as R)['context'] as R | undefined;
-    if (context?.['userDisplayName']) {
-      adminDisplayName = str(context['userDisplayName']);
-    }
-
-    /* Additional section-extracted fields */
-    let newMembers = 0, publishedSermons = 0, attendanceRecords = 0;
-    let totalRegistrations = 0, checkedIn = 0, uniqueAttendees = 0;
-    /* tenant-level event/member totals (from TENANT_OPERATIONS or ENGAGEMENT family) */
-    let tenantTotalEvents = 0, tenantUpcomingEvents = 0, tenantTotalMembers = 0;
-
-    if (isSectionBased) {
-      // PLATFORM family sections
-      totalTenants    = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'TOTAL_TENANTS');
-      activeTenants   = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'ACTIVE_TENANTS');
-      newTenants      = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'NEW_TENANTS');
-      totalCampuses   = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'TOTAL_CAMPUSES');
-      activeUsers     = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'ACTIVE_USERS');
-      newUsers        = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'NEW_USERS');
-      activeSessions  = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'ACTIVE_SESSIONS');
-      riskySessions   = sectionMetric(sections, 'PLATFORM_OVERVIEW', 'RISKY_SESSIONS');
-
-      // SECURITY section (present in PLATFORM and SECURITY families)
-      successfulAuths = sectionMetric(sections, 'SECURITY', 'SUCCESSFUL_AUTHENTICATIONS')
-        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'SUCCESSFUL_AUTHENTICATIONS');
-      failedAuths     = sectionMetric(sections, 'SECURITY', 'FAILED_AUTHENTICATIONS')
-        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'FAILED_AUTHENTICATIONS');
-      lockedAccounts  = sectionMetric(sections, 'SECURITY', 'LOCKED_ACCOUNTS')
-        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'LOCKED_ACCOUNTS');
-      mfaEnabledUsers = sectionMetric(sections, 'SECURITY', 'MFA_ENABLED_USERS')
-        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'MFA_ENABLED_USERS');
-      auditFailures   = sectionMetric(sections, 'SECURITY', 'AUDIT_FAILURES')
-        || sectionMetric(sections, 'ACCOUNT_SECURITY', 'AUDIT_FAILURES');
-
-      totalUsers = totalTenants > 0
-        ? sectionMetric(sections, 'TENANTS', 'ACTIVE_USERS') || activeUsers
-        : activeUsers;
-
-      // TENANT_OPERATIONS family: OVERVIEW section
-      const ovActiveUsers  = sectionMetric(sections, 'OVERVIEW', 'ACTIVE_USERS');
-      const ovNewUsers     = sectionMetric(sections, 'OVERVIEW', 'NEW_USERS');
-      const ovUpcoming     = sectionMetric(sections, 'OVERVIEW', 'UPCOMING_EVENTS');
-      const ovAttendance   = sectionMetric(sections, 'OVERVIEW', 'ATTENDANCE_RECORDS');
-      const ovSermons      = sectionMetric(sections, 'OVERVIEW', 'PUBLISHED_SERMONS');
-      if (ovActiveUsers)  tenantTotalMembers = ovActiveUsers;
-      if (ovNewUsers)     newMembers = ovNewUsers;
-      if (ovUpcoming)     tenantUpcomingEvents = ovUpcoming;
-      if (ovAttendance)   attendanceRecords = ovAttendance;
-      if (ovSermons)      publishedSermons = ovSermons;
-
-      // ENGAGEMENT family: EVENTS section
-      const engEvents     = sectionMetric(sections, 'EVENTS', 'EVENTS_IN_PERIOD');
-      const engUpcoming   = sectionMetric(sections, 'EVENTS', 'UPCOMING_EVENTS');
-      const engAttendance = sectionMetric(sections, 'EVENTS', 'ATTENDANCE_RECORDS')
-        || sectionMetric(sections, 'ATTENDANCE', 'ATTENDANCE_RECORDS');
-      if (engEvents)    tenantTotalEvents = engEvents;
-      if (engUpcoming)  tenantUpcomingEvents = tenantUpcomingEvents || engUpcoming;
-      if (engAttendance) attendanceRecords = attendanceRecords || engAttendance;
-      totalRegistrations = sectionMetric(sections, 'EVENTS', 'REGISTRATIONS')
-        || sectionMetric(sections, 'EVENT_REGISTRATIONS', 'REGISTRATIONS');
-      checkedIn       = sectionMetric(sections, 'EVENTS', 'CHECKED_IN')
-        || sectionMetric(sections, 'ATTENDANCE', 'CHECKED_IN');
-      uniqueAttendees = sectionMetric(sections, 'EVENTS', 'UNIQUE_ATTENDEES')
-        || sectionMetric(sections, 'ATTENDANCE', 'UNIQUE_ATTENDEES');
-
-      // CONTENT family: CONTENT / SERMONS sections
-      const contentSermons = sectionMetric(sections, 'CONTENT', 'PUBLISHED_SERMONS')
-        || sectionMetric(sections, 'SERMONS', 'PUBLISHED_SERMONS');
-      if (contentSermons) publishedSermons = contentSermons;
-
-      const trendSeries = sectionSeries(sections, 'TENANT_GROWTH');
-      trend = trendSeries.length ? trendSeries : sectionSeries(sections, 'EVENTS');
-    } else {
-      totalTenants  = num(fieldOf(d, ['totalTenants', 'tenantCount', 'tenants']));
-      activeTenants = num(fieldOf(d, ['activeTenants', 'activeCount']));
-      totalUsers    = num(fieldOf(d, ['totalUsers', 'userCount', 'users']));
-      const rawTrend = d['trend'] ?? d['chartData'] ?? d['series'] ?? d['data'];
-      trend = Array.isArray(rawTrend)
-        ? rawTrend.slice(0, 12).map((pt: unknown) => {
-            const p = (pt ?? {}) as R;
-            return {
-              label: str(p['month'] ?? p['date'] ?? p['label'] ?? p['period'], ''),
-              value: num(p['value'] ?? p['amount'] ?? p['total'] ?? p['count']),
-            };
-          })
-        : [];
-    }
-
-    const flatTotalMembers = num(fieldOf(d, ['totalMembers', 'memberCount', 'members', 'totalCustomers']));
-    const flatTotalGroups  = num(fieldOf(d, ['totalGroups', 'groupCount', 'groups']));
-    const flatTotalEvents  = num(fieldOf(d, ['totalEvents', 'eventCount', 'events']));
-    const flatUpcoming     = num(fieldOf(d, ['upcomingEvents', 'upcoming']));
-
-    const rawSections: DashboardSection[] = sections.map((sec) => ({
-      type: String(sec['type'] ?? ''),
-      title: String(sec['title'] ?? sec['type'] ?? ''),
-      metrics: (Array.isArray(sec['metrics']) ? sec['metrics'] as R[] : []).map((m) => ({
-        code: String(m['code'] ?? ''),
-        label: String(m['label'] ?? m['code'] ?? ''),
-        value: num(m['value']),
-        formattedValue: str(m['formattedValue'] as unknown) || String(num(m['value'])),
-      })),
-      series: (Array.isArray(sec['series']) ? sec['series'] as R[] : []).map((s) => ({
-        points: (Array.isArray(s['points']) ? s['points'] as R[] : []).map((pt) => ({
-          timestamp: str(pt['timestamp'] as unknown),
-          label: str(pt['label'] as unknown),
-          value: num(pt['value']),
-        })),
+    /* Map backend sections → DashboardSection[] (cards[] → metrics[]) */
+    const rawSections: DashboardSection[] = backendSections.map((sec) => ({
+      type: String(sec['key'] ?? ''),
+      title: String(sec['title'] ?? sec['key'] ?? ''),
+      metrics: (Array.isArray(sec['cards']) ? sec['cards'] as R[] : []).map((card) => {
+        const v = card['value'];
+        const n = num(v);
+        const unit = str(card['unit'] as unknown);
+        const formatted = unit === 'currency'
+          ? (typeof v === 'string' && v.startsWith('$') ? v : new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(n))
+          : unit === 'percent'
+          ? `${n}%`
+          : String(v ?? n);
+        return {
+          code: String(card['key'] ?? ''),
+          label: String(card['title'] ?? card['key'] ?? ''),
+          value: n,
+          formattedValue: formatted,
+        };
+      }),
+      series: (Array.isArray(sec['charts']) ? sec['charts'] as R[] : []).map((chart) => ({
+        points: (Array.isArray(chart['data']) ? chart['data'] as R[] : []).map((pt) => {
+          const ptR = pt as R;
+          return {
+            timestamp: str(ptR['x'] as unknown ?? ptR['date'] as unknown ?? ptR['timestamp'] as unknown),
+            label: str(ptR['label'] as unknown ?? ptR['x'] as unknown),
+            value: num(ptR['y'] ?? ptR['value']),
+          };
+        }),
       })),
     }));
+
+    /* Build trend from any chart named 'tenantGrowth90Days' or revenue trend */
+    let trend: { label: string; value: number }[] = [];
+    for (const sec of backendSections) {
+      for (const chart of (Array.isArray(sec['charts']) ? sec['charts'] as R[] : [])) {
+        const key = String(chart['key'] ?? '');
+        if (key === 'tenantGrowth90Days' || key === 'monthlyRevenueTrend' || key === 'tenantGrowth') {
+          const pts = Array.isArray(chart['data']) ? chart['data'] as R[] : [];
+          trend = pts.slice(0, 12).map((pt) => {
+            const ptR = pt as R;
+            const ts = str(ptR['x'] as unknown ?? ptR['date'] as unknown ?? ptR['label'] as unknown);
+            const label = ts
+              ? (ts.includes('-') ? new Date(ts).toLocaleDateString('en-US', { month: 'short' }) : ts)
+              : str(ptR['label'] as unknown);
+            return { label, value: num(ptR['y'] ?? ptR['value']) };
+          });
+          if (trend.length) break;
+        }
+      }
+      if (trend.length) break;
+    }
+
+    /* Available families = section keys */
+    const availableFamilies = rawSections.map((s) => s.type).filter(Boolean);
 
     return {
       rawSections,
       totalGiving,
-      totalMembers:   tenantTotalMembers || flatTotalMembers,
-      totalGroups:    flatTotalGroups,
-      totalEvents:    tenantTotalEvents || flatTotalEvents,
-      upcomingEvents: tenantUpcomingEvents || flatUpcoming,
-      newMembers:     newMembers || undefined,
-      publishedSermons: publishedSermons || undefined,
-      attendanceRecords: attendanceRecords || undefined,
-      totalRegistrations: totalRegistrations || undefined,
-      checkedIn:      checkedIn || undefined,
-      uniqueAttendees: uniqueAttendees || undefined,
-      totalTenants, activeTenants, newTenants, totalCampuses,
-      totalUsers, activeUsers, newUsers,
-      activeSessions, riskySessions,
-      successfulAuths, failedAuths, lockedAccounts, mfaEnabledUsers, auditFailures,
-      trend, availableFamilies, adminDisplayName,
+      /* tenant metrics */
+      totalMembers:   cardNum('customers', 'tenantUsers'),
+      totalGroups:    0,
+      totalEvents:    cardNum('events'),
+      upcomingEvents: 0,
+      newMembers:     cardNum('mfaEnabledUsers') ? undefined : undefined,
+      publishedSermons: cardNum('sermons') || undefined,
+      attendanceRecords: cardNum('attendanceRecords') || undefined,
+      totalRegistrations: cardNum('registrations') || undefined,
+      checkedIn:      undefined,
+      uniqueAttendees: undefined,
+      /* system metrics */
+      totalTenants:   cardNum('totalTenants'),
+      activeTenants:  cardNum('activeTenants'),
+      newTenants:     cardNum('newTenants30Days') || undefined,
+      totalCampuses:  undefined,
+      totalUsers:     cardNum('systemUsers', 'tenantUsers'),
+      activeUsers:    cardNum('activeTenants') || undefined,
+      newUsers:       cardNum('newTenants30Days') || undefined,
+      activeSessions: undefined,
+      riskySessions:  cardNum('riskyLogins') || undefined,
+      /* security */
+      successfulAuths: undefined,
+      failedAuths:    cardNum('failedLogins30Days') || undefined,
+      lockedAccounts: cardNum('lockedAccounts') || undefined,
+      mfaEnabledUsers: cardNum('mfaEnabledUsers') || undefined,
+      auditFailures:  cardNum('sensitiveActions30Days') || undefined,
+      trend, availableFamilies,
+      adminDisplayName: cardStr('tenantId') ? undefined : undefined,
     };
   } catch {
     return null;
