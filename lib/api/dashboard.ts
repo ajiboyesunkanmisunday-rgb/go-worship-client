@@ -117,11 +117,21 @@ export async function getUnifiedDashboard(
   portal: 'system' | 'tenant' = 'tenant'
 ): Promise<UnifiedDashboardStats | null> {
   try {
-    const path = portal === 'system'
+    const primaryPath = portal === 'system'
       ? '/system/dashboard/super-admin'
       : '/tenant/dashboard/admin';
 
-    const data = await api.get<R>(path);
+    let data: R;
+    try {
+      data = await api.get<R>(primaryPath);
+    } catch (firstErr) {
+      // super-admin endpoint not yet deployed on this backend (404) — fall back to admin
+      if (portal === 'system') {
+        data = await api.get<R>('/system/dashboard/admin');
+      } else {
+        throw firstErr;
+      }
+    }
     if (!data || typeof data !== 'object') return null;
     if ((data as R)['ok'] === false) return null;
 
