@@ -188,7 +188,11 @@ export function SystemDashboard() {
   const [adminName, setAdminName] = useState(USE_LIVE_API ? '' : 'Super System Administrator');
   const [dashFamily, setDashFamily] = useState('PLATFORM');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
-  const [stats, setStats] = useState<SystemStats>(MOCK_STATS);
+  const [stats, setStats] = useState<SystemStats>(
+    USE_LIVE_API
+      ? { totalTenants: 0, activeTenants: 0, totalUsers: 0, givingVolume: '$0', trialTenants: 0, overduePayments: 0 }
+      : MOCK_STATS
+  );
 
   const loadFamily = useCallback(async (family: string) => {
     if (!USE_LIVE_API) return;
@@ -206,7 +210,8 @@ export function SystemDashboard() {
       totalTenants:    u.totalTenants,
       activeTenants:   u.activeTenants,
       trialTenants:    u.newTenants ?? prev.trialTenants,
-      overduePayments: prev.overduePayments,
+      totalUsers:      u.totalUsers,
+      givingVolume:    u.totalGiving,
     }));
 
     if (u.trend.length > 0) {

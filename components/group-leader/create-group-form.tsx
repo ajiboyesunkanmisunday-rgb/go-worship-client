@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getTenantGroup, createTenantGroup, updateTenantGroup, getTenantMembers, type TenantGroup, type TenantMember } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 function Field({
   label,
@@ -110,8 +111,8 @@ export function CreateGroupForm({
       if (isEdit && id) { await updateTenantGroup(id, payload); }
       else { await createTenantGroup(payload); }
       router.push(`${basePath}/success`);
-    } catch {
-      router.push(`${basePath}/success`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save group. Please try again.');
     } finally {
       setSubmitting(false);
     }

@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { createTenantEvent } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 function Field({
   label,
@@ -65,8 +66,8 @@ export function EventForm({ backPath }: { backPath?: string } = {}) {
       setSubmitting(true);
       await createTenantEvent(payload);
       router.push(back);
-    } catch {
-      router.push(back);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to create event. Please try again.');
     } finally {
       setSubmitting(false);
     }

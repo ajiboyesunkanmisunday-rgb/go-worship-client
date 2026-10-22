@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 function Field({
   label,
@@ -187,8 +188,9 @@ export function SermonForm({
         } else {
           await (api.post('/tenant/admin/content/sermons', payload) as Promise<unknown>);
         }
-      } catch {
-        // fall through to navigate regardless
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to save sermon. Please try again.');
+        return;
       }
     }
     router.push(back);

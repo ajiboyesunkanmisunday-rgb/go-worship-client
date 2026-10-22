@@ -138,7 +138,9 @@ function SecurityTab() {
     setSaving(true);
     try {
       await updateTenantSecuritySettings(settings);
+      toast.success('Security settings saved');
     } catch {
+      toast.error('Failed to save security settings');
     } finally {
       setSaving(false);
     }
@@ -529,7 +531,9 @@ function NotificationsTab() {
     setSaving(true);
     try {
       await updateTenantNotificationSettings(settings);
+      toast.success('Notification settings saved');
     } catch {
+      toast.error('Failed to save notification settings');
     } finally {
       setSaving(false);
     }
