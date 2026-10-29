@@ -323,6 +323,65 @@ export type TenantRegistration = {
 export const registerTenant = (payload: TenantRegistration) =>
   authRoute<{ ok: true }>('/bff/auth/register-tenant', payload);
 
+/* -------- Self password / security summary -------- */
+
+/** GET /self/password/status */
+export const getSelfPasswordStatus = () =>
+  api.get<Record<string, unknown>>('/self/password/status');
+
+/** GET /self/security/summary */
+export const getSelfSecuritySummary = () =>
+  api.get<Record<string, unknown>>('/self/security/summary');
+
+/** GET /self/security/mfa/push/{challengeId}/status */
+export type MfaPushStatusResponse = {
+  ok: boolean;
+  challengeId: string;
+  status: string;
+  message: string;
+};
+
+export const getMfaPushStatus = (challengeId: string) =>
+  api.get<MfaPushStatusResponse>(`/self/security/mfa/push/${encodeURIComponent(challengeId)}/status`);
+
+/** POST /self/profile/avatar (multipart) */
+export async function uploadSelfAvatar(file: File): Promise<Profile> {
+  const fd = new FormData();
+  fd.append('avatar', file);
+  const res = await fetch('/bff/gw/self/profile/avatar', {
+    method: 'POST',
+    body: fd,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error((body as Record<string, unknown>)?.message as string || `Upload failed (${res.status})`);
+  }
+  return res.json() as Promise<Profile>;
+}
+
+/* -------- Auth token / policy / status -------- */
+
+export type RefreshTokenResponse = {
+  ok: boolean;
+  tokenType?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  serverTime?: string;
+};
+
+/** POST /auth/refresh */
+export const refreshAuthToken = (refreshToken: string) =>
+  api.post<RefreshTokenResponse>('/auth/refresh', { refreshToken });
+
+/** GET /auth/password-policy/max-age */
+export const getPasswordPolicyMaxAge = () =>
+  api.get<Record<string, unknown>>('/auth/password-policy/max-age');
+
+/** GET /auth/status */
+export const getAuthStatus = () =>
+  api.get<Record<string, unknown>>('/auth/status');
+
 /* -------- Guest user flow (auth-endpoints memory) -------- */
 
 /** POST /bff/auth/guest/otp/start — sends OTP to the email, returns tokenId */

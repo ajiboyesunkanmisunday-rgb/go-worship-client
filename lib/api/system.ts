@@ -262,3 +262,255 @@ export type ProvisionSystemUserPayload = {
 
 export const provisionSystemUser = (payload: ProvisionSystemUserPayload) =>
   api.post<unknown>('/system/users/provision', payload);
+
+/* -------- System Tenant Lifecycle Actions (/system/tenants/{tenantId}/*) ---- */
+
+export type TenantActionResponse = {
+  ok?: boolean;
+  code?: string;
+  message?: string;
+  serverTime?: string;
+  data?: Record<string, unknown>;
+};
+
+/** PATCH /system/tenants/{tenantId}/activate */
+export const activateSystemTenant = (tenantId: string) =>
+  api.patch<TenantActionResponse>(`/system/tenants/${encodeURIComponent(tenantId)}/activate`);
+
+/** PATCH /system/tenants/{tenantId}/suspend */
+export const suspendSystemTenant = (tenantId: string, reason?: string) => {
+  const path = reason
+    ? `/system/tenants/${encodeURIComponent(tenantId)}/suspend?reason=${encodeURIComponent(reason)}`
+    : `/system/tenants/${encodeURIComponent(tenantId)}/suspend`;
+  return api.patch<TenantActionResponse>(path);
+};
+
+/** DELETE /system/tenants/{tenantId}/soft-delete */
+export const softDeleteSystemTenant = (tenantId: string) =>
+  api.del<unknown>(`/system/tenants/${encodeURIComponent(tenantId)}/soft-delete`);
+
+/* -------- System Payment Gateways (/system/payment-gateways) --------------- */
+
+export type SystemPaymentGateway = {
+  id?: string;
+  gatewayType?: string;
+  environment?: string;
+  displayName?: string;
+  publicKey?: string;
+  secretKey?: string;
+  webhookSecret?: string;
+  active?: boolean;
+  platformDefault?: boolean;
+};
+
+export type CreatePaymentGatewayPayload = {
+  gatewayType: string;
+  environment?: string;
+  displayName?: string;
+  publicKey?: string;
+  secretKey?: string;
+  webhookSecret?: string;
+  active?: boolean;
+  platformDefault?: boolean;
+};
+
+/** GET /system/payment-gateways */
+export async function getSystemPaymentGateways(): Promise<SystemPaymentGateway[]> {
+  const data = await api.get<unknown>('/system/payment-gateways');
+  return Array.isArray(data) ? (data as SystemPaymentGateway[]) : [];
+}
+
+/** POST /system/payment-gateways */
+export const createSystemPaymentGateway = (payload: CreatePaymentGatewayPayload) =>
+  api.post<SystemPaymentGateway>('/system/payment-gateways', payload);
+
+/** PUT /system/payment-gateways/{providerId} */
+export const updateSystemPaymentGateway = (providerId: string, payload: Partial<CreatePaymentGatewayPayload>) =>
+  api.put<SystemPaymentGateway>(`/system/payment-gateways/${encodeURIComponent(providerId)}`, payload);
+
+/** PATCH /system/payment-gateways/{providerId}/activate */
+export const activateSystemPaymentGateway = (providerId: string) =>
+  api.patch<SystemPaymentGateway>(`/system/payment-gateways/${encodeURIComponent(providerId)}/activate`);
+
+/** PATCH /system/payment-gateways/{providerId}/deactivate */
+export const deactivateSystemPaymentGateway = (providerId: string) =>
+  api.patch<SystemPaymentGateway>(`/system/payment-gateways/${encodeURIComponent(providerId)}/deactivate`);
+
+/* -------- System Branding (/system/branding) -------------------------------- */
+
+export type SystemBrandingFull = {
+  id?: string;
+  domain?: string;
+  title?: string;
+  name?: string;
+  shortName?: string;
+  windowTitle?: string;
+  status?: string;
+  themeMode?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
+  surfaceColor?: string;
+  textColor?: string;
+  mutedTextColor?: string;
+  borderColor?: string;
+  successColor?: string;
+  warningColor?: string;
+  errorColor?: string;
+  primaryFont?: string;
+  secondaryFont?: string;
+  tagline?: string;
+  description?: string;
+  homeUrl?: string;
+  supportEmail?: string;
+  supportUrl?: string;
+  termsUrl?: string;
+  privacyUrl?: string;
+  docsUrl?: string;
+  twitterHandle?: string;
+  assets?: SystemBrandingAsset[];
+  updatedAt?: string;
+};
+
+export type SystemBrandingAsset = {
+  id?: string;
+  category?: string;
+  fileName?: string;
+  contentType?: string;
+  contentLength?: number;
+  checksum?: string;
+  url?: string;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type SystemBrandingUpdatePayload = Omit<SystemBrandingFull, 'id' | 'domain' | 'assets' | 'updatedAt'>;
+
+/** GET /system/branding */
+export const getSystemBranding = () =>
+  api.get<SystemBrandingFull>('/system/branding');
+
+/** PUT /system/branding */
+export const updateSystemBranding = (payload: SystemBrandingUpdatePayload) =>
+  api.put<SystemBrandingFull>('/system/branding', payload);
+
+/** DELETE /system/branding */
+export const deleteSystemBranding = () =>
+  api.del<SystemBrandingFull>('/system/branding');
+
+/** POST /system/branding/activate */
+export const activateSystemBranding = () =>
+  api.post<SystemBrandingFull>('/system/branding/activate');
+
+/** GET /system/branding/assets */
+export async function getSystemBrandingAssets(): Promise<SystemBrandingAsset[]> {
+  const data = await api.get<unknown>('/system/branding/assets');
+  return Array.isArray(data) ? (data as SystemBrandingAsset[]) : [];
+}
+
+/** POST /system/branding/assets/{category} (multipart) */
+export async function uploadSystemBrandingAsset(category: string, file: File): Promise<SystemBrandingAsset> {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(`/bff/gw/system/branding/assets/${encodeURIComponent(category)}`, {
+    method: 'POST',
+    body: fd,
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error((body as Record<string, unknown>)?.message as string || `Upload failed (${res.status})`);
+  }
+  return res.json() as Promise<SystemBrandingAsset>;
+}
+
+/** DELETE /system/branding/assets/{assetId} */
+export const deleteSystemBrandingAsset = (assetId: string) =>
+  api.del<unknown>(`/system/branding/assets/${encodeURIComponent(assetId)}`);
+
+/* -------- System Tenant Payment Gateways (/system/tenants/{tenantId}/payment-gateways) */
+
+export type TenantPaymentGatewayAssignment = {
+  id?: string;
+  tenantId?: string;
+  providerId?: string;
+  gatewayType?: string;
+  environment?: string;
+  displayName?: string;
+  active?: boolean;
+  primaryGateway?: boolean;
+  allowCustomerCheckout?: boolean;
+  allowSubscriptionBilling?: boolean;
+  notes?: string;
+};
+
+export type AssignTenantGatewaysPayload = {
+  gatewayCodes: string[];
+  primaryGatewayCode?: string;
+  allowCustomerCheckout?: boolean;
+  allowSubscriptionBilling?: boolean;
+  notes?: string;
+};
+
+/** GET /system/tenants/{tenantId}/payment-gateways */
+export async function getSystemTenantPaymentGateways(tenantId: string): Promise<TenantPaymentGatewayAssignment[]> {
+  const data = await api.get<unknown>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways`);
+  return Array.isArray(data) ? (data as TenantPaymentGatewayAssignment[]) : [];
+}
+
+/** PUT /system/tenants/{tenantId}/payment-gateways */
+export const assignSystemTenantPaymentGateways = (tenantId: string, payload: AssignTenantGatewaysPayload) =>
+  api.put<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways`, payload);
+
+/** PATCH /system/tenants/{tenantId}/payment-gateways/{gatewayType}/activate */
+export const activateSystemTenantGateway = (tenantId: string, gatewayType: string) =>
+  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(gatewayType)}/activate`);
+
+/** PATCH /system/tenants/{tenantId}/payment-gateways/{gatewayType}/deactivate */
+export const deactivateSystemTenantGateway = (tenantId: string, gatewayType: string) =>
+  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(gatewayType)}/deactivate`);
+
+/** PATCH /system/tenants/{tenantId}/payment-gateways/{gatewayType}/primary */
+export const setSystemTenantPrimaryGateway = (tenantId: string, gatewayType: string) =>
+  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(gatewayType)}/primary`);
+
+/* -------- System Subscriptions (/system/subscriptions) --------------------- */
+
+export type SystemSubscription = {
+  id?: string;
+  tenantId?: string;
+  status?: string;
+  inTrial?: boolean;
+  autoRenewEnabled?: boolean;
+  trialStartedAt?: string;
+  trialEndsAt?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  nextBillingAt?: string;
+  pastDueAt?: string;
+  gracePeriodEndsAt?: string;
+  suspendedAt?: string;
+  expiredAt?: string;
+  canceledAt?: string;
+};
+
+export type SystemSubscriptionsPagedResponse = {
+  totalElements?: number;
+  totalPages?: number;
+  first?: boolean;
+  last?: boolean;
+  numberOfElements?: number;
+  size?: number;
+  number?: number;
+  empty?: boolean;
+  content?: SystemSubscription[];
+};
+
+/** GET /system/subscriptions (paginated) */
+export const getSystemSubscriptions = (page = 0, size = 20, status?: string) => {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (status) params.set('status', status);
+  return api.get<SystemSubscriptionsPagedResponse>(`/system/subscriptions?${params.toString()}`);
+};

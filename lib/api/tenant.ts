@@ -349,20 +349,53 @@ export async function getSelfGroupActivities(): Promise<import('@/types/groups')
   return [];
 }
 
-/* -------- Tenant Branding (confirmed: brand.js + auth-endpoints memory) ---- */
+/* -------- Tenant Branding (GET/PUT/DELETE /tenant/branding + assets) -------- */
 
-export type TenantBranding = {
+export type TenantBrandingFull = {
+  id?: string;
+  domain?: string;
+  title?: string;
+  name?: string;
+  /** Alias for `name` — kept for backward compatibility with existing components. */
   organizationName?: string;
-  logoUrl?: string;
-  faviconUrl?: string;
+  shortName?: string;
+  windowTitle?: string;
+  status?: string;
+  themeMode?: string;
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
+  backgroundColor?: string;
+  surfaceColor?: string;
+  textColor?: string;
+  mutedTextColor?: string;
+  borderColor?: string;
+  successColor?: string;
+  warningColor?: string;
+  errorColor?: string;
+  primaryFont?: string;
+  secondaryFont?: string;
+  /** Alias for `primaryFont` — kept for backward compatibility. */
   fontFamily?: string;
   tagline?: string;
   description?: string;
-  status?: string;
+  homeUrl?: string;
+  supportEmail?: string;
+  supportUrl?: string;
+  termsUrl?: string;
+  privacyUrl?: string;
+  docsUrl?: string;
+  twitterHandle?: string;
+  /** Alias for `twitterHandle` — kept for backward compatibility. */
+  logoUrl?: string;
+  faviconUrl?: string;
+  assets?: BrandingAsset[];
+  updatedAt?: string;
 };
+
+export type TenantBrandingUpdatePayload = Omit<TenantBrandingFull, 'id' | 'domain' | 'assets' | 'updatedAt'>;
+
+export type TenantBranding = TenantBrandingFull;
 
 export type BrandingAsset = {
   id: string;
@@ -371,61 +404,499 @@ export type BrandingAsset = {
   url: string;
   contentType: string;
   contentLength: number;
+  checksum?: string;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
-/** GET /tenant/admin/branding/brand */
-export async function getTenantBranding(): Promise<TenantBranding> {
-  const data = await api.get<R>('/tenant/admin/branding/brand');
-  const d = ((data as R)?.['data'] ?? data) as R;
-  return {
-    organizationName: fieldOf(d, ['organizationName', 'name', 'churchName']),
-    logoUrl:          fieldOf(d, ['logoUrl', 'logo']),
-    faviconUrl:       fieldOf(d, ['faviconUrl', 'favicon']),
-    primaryColor:     fieldOf(d, ['primaryColor', 'primary']),
-    secondaryColor:   fieldOf(d, ['secondaryColor', 'secondary']),
-    accentColor:      fieldOf(d, ['accentColor', 'accent']),
-    fontFamily:       fieldOf(d, ['fontFamily', 'font']),
-    tagline:          fieldOf(d, ['tagline', 'slogan']),
-    description:      fieldOf(d, ['description', 'about']),
-    status:           fieldOf(d, ['status', 'brandStatus']),
-  };
+/** GET /tenant/branding */
+export async function getTenantBranding(): Promise<TenantBrandingFull> {
+  const data = await api.get<R>('/tenant/branding');
+  const d = (data ?? {}) as TenantBrandingFull;
+  d.organizationName = d.organizationName ?? d.name;
+  d.fontFamily = d.fontFamily ?? d.primaryFont;
+  return d;
 }
 
-/** PUT /tenant/admin/branding/brand */
-export async function updateTenantBranding(payload: Partial<TenantBranding>): Promise<void> {
-  await api.put('/tenant/admin/branding/brand', payload);
+/** PUT /tenant/branding */
+export async function updateTenantBranding(payload: TenantBrandingUpdatePayload): Promise<TenantBrandingFull> {
+  return api.put<TenantBrandingFull>('/tenant/branding', payload);
 }
 
-/** POST /tenant/admin/branding/brand/ensure — ensure brand record exists (replaces non-existent /activate) */
-export async function activateTenantBranding(): Promise<void> {
-  await (api.post('/tenant/admin/branding/brand/ensure', {}) as Promise<unknown>);
+/** DELETE /tenant/branding */
+export async function deleteTenantBranding(): Promise<void> {
+  await api.del('/tenant/branding');
 }
 
-/** Assets are embedded in the brand record; no separate GET endpoint exists. Returns empty array. */
+/** PATCH /tenant/branding/activate */
+export async function activateTenantBranding(): Promise<TenantBrandingFull> {
+  return api.patch<TenantBrandingFull>('/tenant/branding/activate');
+}
+
+/** GET /tenant/branding/assets */
 export async function getTenantBrandingAssets(): Promise<BrandingAsset[]> {
-  return [];
+  const data = await api.get<unknown>('/tenant/branding/assets');
+  return Array.isArray(data) ? (data as BrandingAsset[]) : [];
 }
 
-/** POST /tenant/admin/branding/brand/assets/{category} (multipart) */
-export async function uploadBrandingAsset(category: string, file: File): Promise<void> {
+/** POST /tenant/branding/assets/{category} (multipart) */
+export async function uploadBrandingAsset(category: string, file: File): Promise<BrandingAsset> {
   const fd = new FormData();
   fd.append('file', file);
-  await fetch(`/bff/gw/tenant/admin/branding/brand/assets/${encodeURIComponent(category)}`, {
+  const res = await fetch(`/bff/gw/tenant/branding/assets/${encodeURIComponent(category)}`, {
     method: 'POST',
     body: fd,
     credentials: 'include',
-  }).then(async (r) => {
-    if (!r.ok) {
-      const body = await r.json().catch(() => null);
-      throw new Error((body as R)?.message as string || `Upload failed (${r.status})`);
-    }
   });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error((body as R)?.message as string || `Upload failed (${res.status})`);
+  }
+  return res.json() as Promise<BrandingAsset>;
 }
 
-/** DELETE /tenant/admin/branding/brand/assets/{category} */
-export async function deleteBrandingAsset(category: string): Promise<void> {
-  await api.del(`/tenant/admin/branding/brand/assets/${encodeURIComponent(category)}`);
+/** DELETE /tenant/branding/assets/{assetId} */
+export async function deleteBrandingAsset(assetId: string): Promise<void> {
+  await api.del(`/tenant/branding/assets/${encodeURIComponent(assetId)}`);
 }
+
+/* -------- Tenant User Lifecycle Actions (/tenant/admin/users/lifecycle) ----- */
+
+/** PATCH /tenant/admin/users/lifecycle/{userId}/activate */
+export const activateTenantUser = (userId: string) =>
+  api.patch<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}/activate`);
+
+/** PATCH /tenant/admin/users/lifecycle/{userId}/suspend */
+export const suspendTenantUser = (userId: string) =>
+  api.patch<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}/suspend`);
+
+/** PATCH /tenant/admin/users/lifecycle/{userId}/unlock */
+export const unlockTenantUser = (userId: string) =>
+  api.patch<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}/unlock`);
+
+/** POST /tenant/admin/users/lifecycle/{userId}/force-password-reset */
+export const forcePasswordResetTenantUser = (userId: string) =>
+  api.post<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}/force-password-reset`);
+
+/** POST /tenant/admin/users/lifecycle/{userId}/reset-mfa */
+export const resetMfaTenantUser = (userId: string) =>
+  api.post<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}/reset-mfa`);
+
+/** POST /tenant/admin/users/lifecycle/{userId}/revoke-sessions */
+export const revokeSessionsTenantUser = (userId: string) =>
+  api.post<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}/revoke-sessions`);
+
+/** DELETE /tenant/admin/users/lifecycle/{userId} */
+export const deleteTenantUser = (userId: string) =>
+  api.del<unknown>(`/tenant/admin/users/lifecycle/${encodeURIComponent(userId)}`);
+
+/* -------- Tenant Donations / Funds (/tenant/donations/funds) ---------------- */
+
+export type DonationFund = {
+  id?: string;
+  tenantId?: string;
+  name?: string;
+  code?: string;
+  fundType?: string;
+  status?: string;
+  description?: string;
+  defaultForOnline?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  deleted?: boolean;
+};
+
+export type CreateDonationFundPayload = {
+  name: string;
+  code?: string;
+  fundType?: string;
+  status?: string;
+  description?: string;
+  defaultForOnline?: boolean;
+};
+
+/** GET /tenant/donations/funds */
+export async function getDonationFunds(): Promise<DonationFund[]> {
+  const data = await api.get<unknown>('/tenant/donations/funds');
+  return Array.isArray(data) ? (data as DonationFund[]) : [];
+}
+
+/** POST /tenant/donations/funds */
+export const createDonationFund = (payload: CreateDonationFundPayload) =>
+  api.post<DonationFund>('/tenant/donations/funds', payload);
+
+/** GET /tenant/donations/funds/{fundId} */
+export const getDonationFund = (fundId: string) =>
+  api.get<DonationFund>(`/tenant/donations/funds/${encodeURIComponent(fundId)}`);
+
+/** PUT /tenant/donations/funds/{fundId} */
+export const updateDonationFund = (fundId: string, payload: Partial<CreateDonationFundPayload>) =>
+  api.put<DonationFund>(`/tenant/donations/funds/${encodeURIComponent(fundId)}`, payload);
+
+/** PATCH /tenant/donations/funds/{fundId}/deactivate */
+export const deactivateDonationFund = (fundId: string) =>
+  api.patch<unknown>(`/tenant/donations/funds/${encodeURIComponent(fundId)}/deactivate`);
+
+/* -------- Tenant Events Attendance (/tenant/events/attendance) -------------- */
+
+export type EventAttendanceRecord = {
+  id?: string;
+  tenantId?: string;
+  event?: {
+    id?: string;
+    name?: string;
+    eventType?: string;
+    startAt?: string;
+    endAt?: string;
+    location?: string;
+    status?: string;
+  };
+  userProfileId?: string;
+  status?: string;
+  source?: string;
+  checkInAt?: string;
+  checkOutAt?: string;
+  notes?: string;
+  campus?: {
+    id?: string;
+    code?: string;
+    name?: string;
+    address?: string;
+    active?: boolean;
+  };
+};
+
+export type RecordAttendancePayload = {
+  event?: { id: string };
+  userProfileId?: string;
+  status?: string;
+  source?: string;
+  checkInAt?: string;
+  checkOutAt?: string;
+  notes?: string;
+  campus?: { id: string };
+};
+
+/** POST /tenant/events/attendance */
+export const recordEventAttendance = (payload: RecordAttendancePayload) =>
+  api.post<EventAttendanceRecord>('/tenant/events/attendance', payload);
+
+/** GET /tenant/events/attendance/events/{eventId} */
+export async function getEventAttendance(eventId: string): Promise<EventAttendanceRecord[]> {
+  const data = await api.get<unknown>(`/tenant/events/attendance/events/${encodeURIComponent(eventId)}`);
+  return Array.isArray(data) ? (data as EventAttendanceRecord[]) : [];
+}
+
+/* -------- Tenant Events Registrations (/tenant/events/registrations) -------- */
+
+export type EventRegistration = {
+  id?: string;
+  tenantId?: string;
+  event?: {
+    id?: string;
+    name?: string;
+    eventType?: string;
+    startAt?: string;
+    endAt?: string;
+    status?: string;
+  };
+  userProfileId?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  registeredAt?: string;
+  checkedInAt?: string;
+};
+
+/** GET /tenant/events/registrations/events/{eventId} */
+export async function getEventRegistrations(eventId: string): Promise<EventRegistration[]> {
+  const data = await api.get<unknown>(`/tenant/events/registrations/events/${encodeURIComponent(eventId)}`);
+  return Array.isArray(data) ? (data as EventRegistration[]) : [];
+}
+
+/** GET /tenant/events/registrations/{registrationId} */
+export const getEventRegistration = (registrationId: string) =>
+  api.get<EventRegistration>(`/tenant/events/registrations/${encodeURIComponent(registrationId)}`);
+
+/** PATCH /tenant/events/registrations/{registrationId}/cancel */
+export const cancelEventRegistration = (registrationId: string) =>
+  api.patch<unknown>(`/tenant/events/registrations/${encodeURIComponent(registrationId)}/cancel`);
+
+/* -------- Tenant Campuses (/tenant/admin/campuses) -------------------------- */
+
+export type TenantCampus = {
+  id?: string;
+  code?: string;
+  name?: string;
+  address?: string;
+  active?: boolean;
+};
+
+export type CampusPayload = {
+  code: string;
+  name: string;
+  address?: string;
+};
+
+/** GET /tenant/admin/campuses */
+export async function getTenantCampuses(): Promise<TenantCampus[]> {
+  const data = await api.get<unknown>('/tenant/admin/campuses');
+  return Array.isArray(data) ? (data as TenantCampus[]) : [];
+}
+
+/** POST /tenant/admin/campuses */
+export const createTenantCampus = (payload: CampusPayload) =>
+  api.post<TenantCampus>('/tenant/admin/campuses', payload);
+
+/** PUT /tenant/admin/campuses/{campusId} */
+export const updateTenantCampus = (campusId: string, payload: Partial<CampusPayload>) =>
+  api.put<TenantCampus>(`/tenant/admin/campuses/${encodeURIComponent(campusId)}`, payload);
+
+/** DELETE /tenant/admin/campuses/{campusId} */
+export const deleteTenantCampus = (campusId: string) =>
+  api.del<unknown>(`/tenant/admin/campuses/${encodeURIComponent(campusId)}`);
+
+/* -------- Tenant Admin Security Posture (/tenant/admin/security/posture) ---- */
+
+/** GET /tenant/admin/security/posture */
+export const getTenantSecurityPosture = () =>
+  api.get<Record<string, unknown>>('/tenant/admin/security/posture');
+
+/* -------- Tenant Admin Organization Readiness (/tenant/admin/organization/readiness) */
+
+/** GET /tenant/admin/organization/readiness */
+export const getTenantOrganizationReadiness = () =>
+  api.get<Record<string, unknown>>('/tenant/admin/organization/readiness');
+
+/* -------- Shared Lookups (/shared/lookups) ---------------------------------- */
+
+/** GET /shared/lookups */
+export const getSharedLookups = () =>
+  api.get<Record<string, unknown>>('/shared/lookups');
+
+/** GET /shared/lookups/roles */
+export const getSharedLookupRoles = () =>
+  api.get<Record<string, unknown>>('/shared/lookups/roles');
+
+/* -------- Tenant Notifications Messages (/tenant/notifications/messages) ---- */
+
+export type NotificationMessage = {
+  id?: string;
+  tenantId?: string;
+  channel?: string;
+  ruleType?: string;
+  subject?: string;
+  body?: string;
+  templateKey?: string;
+  scheduledAt?: string;
+  sentAt?: string;
+  status?: string;
+  systemInitiated?: boolean;
+  notes?: string;
+  recipients?: Array<{
+    id?: string;
+    recipientType?: string;
+    channel?: string;
+    targetEmail?: string;
+    targetPhone?: string;
+    deliveryStatus?: string;
+    sentAt?: string;
+    errorMessage?: string;
+  }>;
+};
+
+/** GET /tenant/notifications/messages */
+export async function getTenantNotificationMessages(): Promise<NotificationMessage[]> {
+  const data = await api.get<unknown>('/tenant/notifications/messages');
+  return Array.isArray(data) ? (data as NotificationMessage[]) : [];
+}
+
+/** GET /tenant/notifications/messages/{messageId} */
+export const getTenantNotificationMessage = (messageId: string) =>
+  api.get<NotificationMessage>(`/tenant/notifications/messages/${encodeURIComponent(messageId)}`);
+
+/* -------- Tenant Site Templates (/tenant/site-templates) -------------------- */
+
+export type SiteTemplateContent = {
+  schemaVersion?: string;
+  templateCode?: string;
+  templateType?: string;
+  designTokens?: Record<string, unknown>;
+  applicationShell?: Record<string, unknown>;
+  views?: Record<string, unknown>;
+  responsiveRules?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+};
+
+export type SiteTemplate = {
+  id?: string;
+  name?: string;
+  code?: string;
+  templateType?: string;
+  templateVersion?: string;
+  schemaVersion?: string;
+  defaultThemeMode?: string;
+  status?: string;
+  source?: string;
+  description?: string;
+  system?: boolean;
+  defaultTemplate?: boolean;
+  customized?: boolean;
+  previewUrl?: string;
+  checksum?: string;
+  content?: SiteTemplateContent;
+  publishedAt?: string;
+  updatedAt?: string;
+};
+
+export type PublishTemplatePayload = {
+  expectedChecksum?: string;
+  releaseNote?: string;
+  makeDefault?: boolean;
+};
+
+/** GET /tenant/site-templates */
+export async function getTenantSiteTemplates(templateType?: string): Promise<SiteTemplate[]> {
+  const path = templateType
+    ? `/tenant/site-templates?templateType=${encodeURIComponent(templateType)}`
+    : '/tenant/site-templates';
+  const data = await api.get<unknown>(path);
+  return Array.isArray(data) ? (data as SiteTemplate[]) : [];
+}
+
+/** GET /tenant/site-templates/resolved */
+export const getResolvedSiteTemplate = (templateType?: string) => {
+  const path = templateType
+    ? `/tenant/site-templates/resolved?templateType=${encodeURIComponent(templateType)}`
+    : '/tenant/site-templates/resolved';
+  return api.get<SiteTemplate>(path);
+};
+
+/** GET /tenant/site-templates/{templateId}/content */
+export const getSiteTemplateContent = (templateId: string) =>
+  api.get<SiteTemplateContent>(`/tenant/site-templates/${encodeURIComponent(templateId)}/content`);
+
+/** POST /tenant/site-templates/{templateId}/publish */
+export const publishSiteTemplate = (templateId: string, payload: PublishTemplatePayload) =>
+  api.post<SiteTemplate>(`/tenant/site-templates/${encodeURIComponent(templateId)}/publish`, payload);
+
+/** DELETE /tenant/site-templates/{templateId} */
+export const deleteSiteTemplate = (templateId: string) =>
+  api.del<unknown>(`/tenant/site-templates/${encodeURIComponent(templateId)}`);
+
+/* -------- Notification Campaigns (/tenant/admin/notifications/campaigns) ---- */
+
+/** POST /tenant/admin/notifications/campaigns/{campaignId}/send */
+export const sendCampaign = (campaignId: string) =>
+  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/send`);
+
+/** PATCH /tenant/admin/notifications/campaigns/{campaignId}/cancel */
+export const cancelCampaign = (campaignId: string) =>
+  api.patch<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
+
+/* -------- Tenant Billing Subscription Lifecycle + Plans -------------------- */
+
+export type SubscriptionLifecycle = {
+  subscriptionId?: string;
+  previousStatus?: string;
+  currentStatus?: string;
+  reason?: string;
+  effectiveAt?: string;
+};
+
+export type SubscriptionPlan = {
+  id?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  billingCycle?: string;
+  trialPeriodDays?: number;
+  maxUsers?: number;
+  maxCampuses?: number;
+  active?: boolean;
+  publicPlan?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** GET /tenant/billing/subscription/lifecycle */
+export const getTenantSubscriptionLifecycle = () =>
+  api.get<SubscriptionLifecycle>('/tenant/billing/subscription/lifecycle');
+
+/** GET /tenant/billing/subscription/plans */
+export async function getTenantSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const data = await api.get<unknown>('/tenant/billing/subscription/plans');
+  return Array.isArray(data) ? (data as SubscriptionPlan[]) : [];
+}
+
+/* -------- Tenant Billing Payments (/tenant/billing/payments) --------------- */
+
+export type PaymentPayer = {
+  userId?: string;
+  userProfileId?: string;
+  name?: string;
+  email?: string;
+};
+
+export type PaymentBusinessReference = {
+  type?: string;
+  id?: string;
+};
+
+export type BillingPayment = {
+  id?: string;
+  tenantId?: string;
+  paymentReference?: string;
+  purpose?: string;
+  source?: string;
+  status?: string;
+  amount?: number;
+  currency?: string;
+  payer?: PaymentPayer;
+  businessReference?: PaymentBusinessReference;
+  gatewayType?: string;
+  gatewayReference?: string;
+  providerSessionId?: string;
+  paymentMethodId?: string;
+  integrationType?: string;
+  failureCode?: string;
+  failureReason?: string;
+  requestedAt?: string;
+  processingAt?: string;
+  authorizedAt?: string;
+  paidAt?: string;
+  failedAt?: string;
+  canceledAt?: string;
+  expiresAt?: string;
+};
+
+export type PagedResponse<T> = {
+  totalElements?: number;
+  totalPages?: number;
+  first?: boolean;
+  last?: boolean;
+  numberOfElements?: number;
+  size?: number;
+  number?: number;
+  empty?: boolean;
+  content?: T[];
+};
+
+/** GET /tenant/billing/payments (paginated) */
+export const getTenantBillingPayments = (page = 0, size = 20) =>
+  api.get<PagedResponse<BillingPayment>>(`/tenant/billing/payments?page=${page}&size=${size}`);
+
+/** GET /tenant/billing/payments/{paymentId} */
+export const getTenantBillingPayment = (paymentId: string) =>
+  api.get<BillingPayment>(`/tenant/billing/payments/${encodeURIComponent(paymentId)}`);
+
+/** POST /tenant/billing/payments/{paymentReference}/token */
+export const submitPaymentToken = (paymentReference: string, paymentToken: string) =>
+  api.post<unknown>(`/tenant/billing/payments/${encodeURIComponent(paymentReference)}/token`, { paymentToken });
 
 /* -------- Tenant Billing / Subscription (confirmed: auth-endpoints memory) -- */
 
