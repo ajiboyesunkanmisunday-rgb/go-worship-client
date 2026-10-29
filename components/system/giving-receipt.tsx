@@ -7,9 +7,8 @@ import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getTenantBranding } from '@/lib/api/tenant';
+import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -59,9 +58,9 @@ export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: s
     getTenantBranding().then((b) => {
       if (b.organizationName) setReceipt((prev) => ({ ...prev, org: prev.org === DEFAULT_RECEIPT.org ? b.organizationName! : prev.org }));
     }).catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const addr = String((d['address'] as string | undefined) ?? (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? '');
+    getTenantOrganization()
+      .then((o) => {
+        const addr = o.address ?? o.city ?? o.location ?? '';
         if (addr) setReceipt((prev) => ({ ...prev, orgAddress: prev.orgAddress === DEFAULT_RECEIPT.orgAddress ? addr : prev.orgAddress }));
       }).catch(() => {});
   }, []);

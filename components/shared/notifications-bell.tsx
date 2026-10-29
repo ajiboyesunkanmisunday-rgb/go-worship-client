@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { api } from '@/lib/api/client';
+import { getTenantNotificationMessages } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type Notification = {
@@ -51,20 +51,12 @@ export function NotificationsBell({
 
   useEffect(() => {
     if (!USE_LIVE_API || !endpoint) return;
-    (api.get<unknown>(endpoint) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantNotificationMessages()
+      .then((arr) => {
         const mapped: Notification[] = arr.slice(0, 8).map((n) => ({
-          title: String(n['subject'] ?? n['title'] ?? n['name'] ?? 'Notification'),
-          body: String(n['body'] ?? n['content'] ?? n['message'] ?? n['preview'] ?? ''),
-          unread: n['status'] === 'UNREAD' || n['read'] === false || n['isRead'] === false,
+          title: String(n.subject ?? 'Notification'),
+          body: String(n.body ?? n.notes ?? ''),
+          unread: n.status === 'UNREAD',
         })).filter((n) => n.title);
         if (mapped.length > 0) setNotifications(mapped);
       })

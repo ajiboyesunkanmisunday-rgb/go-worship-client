@@ -1032,6 +1032,10 @@ export type TenantOrganization = {
   shortName?: string;
   legalName?: string;
   billingEmail?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  websiteUrl?: string;
   countryCode?: string;
   currency?: string;
   customDomain?: string;

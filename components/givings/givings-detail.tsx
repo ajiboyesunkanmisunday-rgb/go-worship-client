@@ -7,8 +7,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { getCustomerPaymentById, type PaymentStatusResponse } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getTenantBranding } from '@/lib/api/tenant';
-import { api } from '@/lib/api/client';
+import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
 
 type Props = {
   isIntercepted?: boolean;
@@ -32,15 +31,13 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+    getTenantOrganization()
+      .then((o) => {
+        const loc = o.city ?? o.location ?? o.address ?? o.country;
         if (loc) setOrgLocation(loc);
-        const phone = d['phone'] as string | undefined;
-        if (phone) setOrgPhone(phone);
-        const email = d['email'] as string | undefined;
-        if (email) setOrgEmail(email);
-        const web = (d['website'] as string | undefined) ?? (d['websiteUrl'] as string | undefined);
+        if (o.phone) setOrgPhone(o.phone);
+        if (o.email) setOrgEmail(o.email);
+        const web = o.website ?? o.websiteUrl;
         if (web) setOrgWeb(web.replace(/^https?:\/\//, ''));
       }).catch(() => {});
   }, []);

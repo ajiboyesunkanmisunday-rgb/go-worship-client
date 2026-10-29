@@ -7,9 +7,7 @@ import {
   type Transaction,
 } from '@/components/ministry/shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { getCustomerPayments, paymentToGiving } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { api } from '@/lib/api/client';
 import { DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
@@ -20,12 +18,6 @@ const MOCK = {
   recurringGivers: '130',
   failedTransactions: '20',
 };
-
-function mapStatus(s?: string): Transaction['status'] {
-  if (s === 'SUCCEEDED') return 'Success';
-  if (s === 'FAILED' || s === 'CANCELED' || s === 'EXPIRED') return 'Failed';
-  return 'Pending';
-}
 
 export default function MinistryFinancePage() {
   const [totalGiving, setTotalGiving] = useState(USE_LIVE_API ? '$0' : MOCK.totalGiving);
@@ -39,31 +31,7 @@ export default function MinistryFinancePage() {
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
       .catch(() => { toast.error('Could not load dashboard stats.'); });
-    getCustomerPayments(0, 20)
-      .then((page) => {
-        const rows = (page?.content ?? []).map((p) => {
-          const g = paymentToGiving(p);
-          const fmt = (n: number, cur: string) =>
-            new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(n);
-          const date = g.date
-            ? new Date(g.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-            : '';
-          return {
-            status: mapStatus(g.status),
-            type: g.purpose,
-            amount: fmt(g.amount, g.currency),
-            date,
-          } satisfies Transaction;
-        });
-        if (rows.length > 0) {
-          setTxns(rows);
-          const failed = rows.filter((r) => r.status === 'Failed').length;
-          if (failed > 0) setFailedTransactions(String(failed));
-        }
-      })
-      .catch(() => { toast.error('Could not load payment data.'); });
-
-    // /tenant/admin/finance/summary not in backend API — disabled.
+    // /tenant/admin/finance/summary and giving transaction list not in backend API — disabled.
   }, []);
 
   return (

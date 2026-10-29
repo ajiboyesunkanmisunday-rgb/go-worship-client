@@ -25,6 +25,7 @@ import {
   updateTenantCampus,
   deleteTenantCampus,
   getTenantBillingPayments,
+  getTenantOrganization,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
@@ -35,7 +36,6 @@ import {
   type BillingPayment,
 } from '@/lib/api/tenant';
 import { getProfile, type Profile } from '@/lib/api/auth';
-import { api } from '@/lib/api/client';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -499,9 +499,9 @@ function ProfileTab() {
     if (!USE_LIVE_API) return;
     getTenantBranding().then(setBranding).catch(() => {});
     getProfile().then(setProfile).catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+    getTenantOrganization()
+      .then((o) => {
+        const loc = o.city ?? o.location ?? o.address ?? o.country;
         if (loc) setLocation(loc);
       }).catch(() => {});
   }, []);

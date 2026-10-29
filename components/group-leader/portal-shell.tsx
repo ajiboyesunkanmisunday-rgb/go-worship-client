@@ -17,8 +17,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { RoleSwitcher } from '@/components/shared/role-switcher';
 import { useState, useEffect } from 'react';
-import { getTenantBranding } from '@/lib/api/tenant';
-import { api } from '@/lib/api/client';
+import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const NAV_ITEMS = [
@@ -70,9 +69,9 @@ function Topbar() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => { if (b.organizationName) setOrgName(b.organizationName); }).catch(() => {});
-    (api.get<Record<string, unknown>>('/tenant/admin/organization') as Promise<Record<string, unknown>>)
-      .then((d) => {
-        const loc = (d['city'] as string | undefined) ?? (d['location'] as string | undefined) ?? (d['address'] as string | undefined) ?? (d['country'] as string | undefined);
+    getTenantOrganization()
+      .then((o) => {
+        const loc = o.city ?? o.location ?? o.address ?? o.country;
         if (loc) setOrgLocation(loc);
       }).catch(() => {});
   }, []);
