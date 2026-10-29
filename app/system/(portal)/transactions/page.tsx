@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 

@@ -11,7 +11,6 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { api } from '@/lib/api/client';
 
 /**
  * System → Analytics (778:38441). Distinct from the Ministry AnalyticsContent

@@ -5,7 +5,6 @@ import { FolderClosed, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /* ---------------- Quick Access ---------------- */

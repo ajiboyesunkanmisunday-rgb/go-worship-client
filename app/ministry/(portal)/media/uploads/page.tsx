@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { Music } from 'lucide-react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type UploadRow = { id: string; name: string; type: string; size: string; used: string; date: string };

@@ -7,7 +7,6 @@ import { DataCard, QuickAccess } from '@/components/sermon-admin/shared';
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { ArrowUpRight, FolderPlus, Music } from 'lucide-react';
 import Link from 'next/link';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type MediaFile = { id: string; name: string; type: string; size: string; used: string; date: string };

@@ -11,7 +11,6 @@ import {
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { ArrowUpRight, Layers } from 'lucide-react';
 import Link from 'next/link';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type Tag = { id: string; name: string; count: string; status: string; date: string };

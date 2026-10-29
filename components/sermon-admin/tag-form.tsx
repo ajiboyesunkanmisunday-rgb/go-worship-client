@@ -11,7 +11,6 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type TagData = { name: string; description: string; status: string };
