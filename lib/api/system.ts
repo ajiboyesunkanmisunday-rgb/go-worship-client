@@ -514,3 +514,11 @@ export const getSystemSubscriptions = (page = 0, size = 20, status?: string) => 
   if (status) params.set('status', status);
   return api.get<SystemSubscriptionsPagedResponse>(`/system/subscriptions?${params.toString()}`);
 };
+
+/** GET /system/subscriptions/tenant/{tenantId} */
+export const getSystemTenantSubscription = (tenantId: string) =>
+  api.get<SystemSubscription>(`/system/subscriptions/tenant/${encodeURIComponent(tenantId)}`);
+
+/** GET /system/subscriptions/tenant/{tenantId}/lifecycle */
+export const getSystemTenantSubscriptionLifecycle = (tenantId: string) =>
+  api.get<Record<string, unknown>>(`/system/subscriptions/tenant/${encodeURIComponent(tenantId)}/lifecycle`);
