@@ -6,8 +6,7 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
-import { api } from '@/lib/api/client';
+import { getSystemTenants, suspendSystemTenant, type SystemTenant } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -49,7 +48,7 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
           setConfirm(false);
           if (USE_LIVE_API) {
             try {
-              await (api.patch(`/system/tenants/${id}/suspend`, {}) as Promise<unknown>);
+              await suspendSystemTenant(id);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : 'Failed to suspend tenant');
               return;

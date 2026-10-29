@@ -13,6 +13,7 @@ import { ArrowLeft, Bell, Mail, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { api } from '@/lib/api/client';
+import { sendCampaign } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
@@ -68,9 +69,9 @@ export function NewMessageForm() {
       };
       try {
         const created = await (api.post('/tenant/admin/notifications/campaigns', payload) as Promise<Record<string, unknown>>);
-        const campaignId = created?.['id'] ?? created?.['campaignId'];
+        const campaignId = String(created?.['id'] ?? created?.['campaignId'] ?? '');
         if (campaignId && !schedule) {
-          await (api.post(`/tenant/admin/notifications/campaigns/${campaignId}/send`, {}) as Promise<unknown>);
+          await sendCampaign(campaignId);
         }
       } catch {}
     }

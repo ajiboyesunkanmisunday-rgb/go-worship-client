@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSystemTenant, type SystemTenant } from '@/lib/api/system';
+import { getSystemTenant, getSystemTenantPaymentGateways, suspendSystemTenant, softDeleteSystemTenant, type SystemTenant, type TenantPaymentGatewayAssignment } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { api } from '@/lib/api/client';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   ArrowLeft,
@@ -28,6 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
+import { toast } from 'sonner';
 
 /**
  * System → Tenant detail page (778:38441, "Edit Tenants" row). Header with
@@ -71,7 +71,7 @@ const MOCK_TENANT: SystemTenant = {
   createdAt: 'Jan 10, 2025',
 };
 
-type PaymentGateway = {
+type PaymentGateway = TenantPaymentGatewayAssignment & {
   id: string;
   gatewayType: string;
   displayName: string;
@@ -91,28 +91,59 @@ export function TenantDetail({ id }: { id: string }) {
     USE_LIVE_API ? { id: '', name: '', domain: '', status: 'Active', plan: '', members: 0, createdAt: '' } : MOCK_TENANT
   );
   const [gateways, setGateways] = useState<PaymentGateway[]>([]);
+  const [suspending, setSuspending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const stats = buildStats(tenant);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getSystemTenant(id).then((t: SystemTenant | null) => { if (t) setTenant(t); }).catch(() => {});
-    (api.get<unknown>(`/system/tenants/${id}/payment-gateways`) as Promise<unknown>)
+    getSystemTenantPaymentGateways(id)
       .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data) ? (data as R[]) : Array.isArray((data as R)?.['data']) ? ((data as R)['data'] as R[]) : Array.isArray((data as R)?.['content']) ? ((data as R)['content'] as R[]) : [];
-        const mapped: PaymentGateway[] = arr.map((g) => ({
-          id:                     String(g['id'] ?? ''),
-          gatewayType:            String(g['gatewayType'] ?? ''),
-          displayName:            String(g['displayName'] ?? g['gatewayType'] ?? ''),
-          active:                 Boolean(g['active']),
-          primaryGateway:         Boolean(g['primaryGateway']),
-          allowCustomerCheckout:  Boolean(g['allowCustomerCheckout']),
-          allowSubscriptionBilling: Boolean(g['allowSubscriptionBilling']),
+        const mapped: PaymentGateway[] = data.map((g) => ({
+          ...g,
+          id:                     String(g.id ?? ''),
+          gatewayType:            String(g.gatewayType ?? ''),
+          displayName:            String(g.displayName ?? g.gatewayType ?? ''),
+          active:                 Boolean(g.active),
+          primaryGateway:         Boolean(g.primaryGateway),
+          allowCustomerCheckout:  Boolean(g.allowCustomerCheckout),
+          allowSubscriptionBilling: Boolean(g.allowSubscriptionBilling),
         }));
         if (mapped.length > 0) setGateways(mapped);
       })
       .catch(() => {});
   }, [id]);
+
+  const handleSuspend = async () => {
+    if (!USE_LIVE_API) return;
+    setMenu(false);
+    setSuspending(true);
+    try {
+      await suspendSystemTenant(id);
+      setTenant((prev) => ({ ...prev, status: 'Suspended' }));
+      toast.success('Tenant suspended');
+    } catch {
+      toast.error('Failed to suspend tenant');
+    } finally {
+      setSuspending(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!USE_LIVE_API) { setDel(false); router.push(back); return; }
+    setDeleting(true);
+    try {
+      await softDeleteSystemTenant(id);
+      toast.success('Tenant deleted');
+      router.push(back);
+    } catch {
+      toast.error('Failed to delete tenant');
+    } finally {
+      setDeleting(false);
+      setDel(false);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
@@ -171,11 +202,12 @@ export function TenantDetail({ id }: { id: string }) {
             >
               <button
                 type="button"
-                onClick={() => setMenu(false)}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-[13px] text-[#ff8d28] hover:bg-[#fff7ef]"
+                onClick={handleSuspend}
+                disabled={suspending}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-[13px] text-[#ff8d28] hover:bg-[#fff7ef] disabled:opacity-50"
               >
                 <Ban className="size-4" />
-                Suspend
+                {suspending ? 'Suspending…' : 'Suspend'}
               </button>
               <button
                 type="button"
@@ -317,10 +349,7 @@ export function TenantDetail({ id }: { id: string }) {
       <ConfirmModal
         open={del}
         onOpenChange={setDel}
-        onConfirm={() => {
-          setDel(false);
-          router.push(back);
-        }}
+        onConfirm={handleDelete}
       />
     </div>
   );
