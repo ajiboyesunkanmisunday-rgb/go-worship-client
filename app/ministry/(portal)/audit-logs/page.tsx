@@ -5,7 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Download, MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
-import { api } from '@/lib/api/client';
+import { getTenantAuditEventsRecent, getTenantAuditSecurityEvents } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -132,15 +132,15 @@ export default function MinistryAuditLogsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/audit/events/recent') as Promise<unknown>)
-      .then((data) => {
-        const rows = parseArr(data).map(mapRow).filter((r) => r.action);
+    getTenantAuditEventsRecent()
+      .then((arr) => {
+        const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
         if (rows.length > 0) setAllLogs(rows);
       })
       .catch(() => { toast.error('Could not load audit logs.'); });
-    (api.get<unknown>('/tenant/audit/security-events') as Promise<unknown>)
-      .then((data) => {
-        const rows = parseArr(data).map(mapRow).filter((r) => r.action);
+    getTenantAuditSecurityEvents()
+      .then((arr) => {
+        const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
         if (rows.length > 0) setSecurityLogs(rows);
       })
       .catch(() => { toast.error('Could not load security events.'); });

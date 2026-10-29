@@ -522,3 +522,142 @@ export const getSystemTenantSubscription = (tenantId: string) =>
 /** GET /system/subscriptions/tenant/{tenantId}/lifecycle */
 export const getSystemTenantSubscriptionLifecycle = (tenantId: string) =>
   api.get<Record<string, unknown>>(`/system/subscriptions/tenant/${encodeURIComponent(tenantId)}/lifecycle`);
+
+/* -------- System Audit (/system/audit) ------------------------------------ */
+
+export type SystemAuditEvent = {
+  id?: string;
+  eventType?: string;
+  action?: string;
+  actorId?: string;
+  actorEmail?: string;
+  targetType?: string;
+  targetId?: string;
+  description?: string;
+  ipAddress?: string;
+  createdAt?: string;
+  severity?: string;
+};
+
+/** GET /system/audit/events/recent */
+export async function getSystemAuditEventsRecent(): Promise<SystemAuditEvent[]> {
+  const data = await api.get<unknown>('/system/audit/events/recent');
+  return Array.isArray(data) ? (data as SystemAuditEvent[]) : [];
+}
+
+/* -------- System Billing Plans (/system/billing/plans) ------------------- */
+
+export type SystemBillingPlan = {
+  id?: string;
+  planId?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  billingCycle?: string;
+  trialPeriodDays?: number;
+  maxUsers?: number;
+  maxCampuses?: number;
+  features?: string[];
+  active?: boolean;
+  publicPlan?: boolean;
+  createdAt?: string;
+};
+
+export type BillingPlanPayload = {
+  code?: string;
+  name: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  billingCycle?: string;
+  trialPeriodDays?: number;
+  maxUsers?: number;
+  maxCampuses?: number;
+  features?: string[];
+  active?: boolean;
+  publicPlan?: boolean;
+};
+
+/** GET /system/billing/plans */
+export async function getSystemBillingPlans(): Promise<SystemBillingPlan[]> {
+  const data = await api.get<unknown>('/system/billing/plans');
+  return Array.isArray(data) ? (data as SystemBillingPlan[]) : [];
+}
+
+/** POST /system/billing/plans */
+export const createSystemBillingPlan = (payload: BillingPlanPayload) =>
+  api.post<SystemBillingPlan>('/system/billing/plans', payload);
+
+/** GET /system/billing/plans/{planId} */
+export const getSystemBillingPlan = (planId: string) =>
+  api.get<SystemBillingPlan>(`/system/billing/plans/${encodeURIComponent(planId)}`);
+
+/** PUT /system/billing/plans/{planId} */
+export const updateSystemBillingPlan = (planId: string, payload: Partial<BillingPlanPayload>) =>
+  api.put<SystemBillingPlan>(`/system/billing/plans/${encodeURIComponent(planId)}`, payload);
+
+/** DELETE /system/billing/plans/{planId} */
+export const deleteSystemBillingPlan = (planId: string) =>
+  api.del<unknown>(`/system/billing/plans/${encodeURIComponent(planId)}`);
+
+/* -------- System Roles (/system/roles) ------------------------------------ */
+
+export type SystemRole = {
+  id?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  type?: string;
+  active?: boolean;
+};
+
+export type SystemRolePayload = {
+  code?: string;
+  name: string;
+  description?: string;
+  type?: string;
+};
+
+/** GET /system/roles */
+export async function getSystemRoles(): Promise<SystemRole[]> {
+  const data = await api.get<unknown>('/system/roles');
+  return Array.isArray(data) ? (data as SystemRole[]) : [];
+}
+
+/** POST /system/roles */
+export const createSystemRole = (payload: SystemRolePayload) =>
+  api.post<SystemRole>('/system/roles', payload);
+
+/** GET /system/roles/{id} */
+export const getSystemRole = (id: string) =>
+  api.get<SystemRole>(`/system/roles/${encodeURIComponent(id)}`);
+
+/** PUT /system/roles/{id} */
+export const updateSystemRole = (id: string, payload: Partial<SystemRolePayload>) =>
+  api.put<SystemRole>(`/system/roles/${encodeURIComponent(id)}`, payload);
+
+/** DELETE /system/roles/{id} */
+export const deleteSystemRole = (id: string) =>
+  api.del<unknown>(`/system/roles/${encodeURIComponent(id)}`);
+
+/** PUT /system/roles/{id}/permissions */
+export const updateSystemRolePermissions = (id: string, payload: { permissionIds: string[] }) =>
+  api.put<SystemRole>(`/system/roles/${encodeURIComponent(id)}/permissions`, payload);
+
+/* -------- System Permissions (/system/permissions) ----------------------- */
+
+export type SystemPermission = {
+  id?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  type?: string;
+};
+
+/** GET /system/permissions */
+export async function getSystemPermissions(): Promise<SystemPermission[]> {
+  const data = await api.get<unknown>('/system/permissions');
+  return Array.isArray(data) ? (data as SystemPermission[]) : [];
+}

@@ -5,7 +5,7 @@ import { StatCard } from '@/components/ministry/shared';
 import { SERIES_STATUSES } from '@/components/sermon-admin/dashboard';
 import { DataCard, QuickAccess, StatusText, ViewEditButton } from '@/components/sermon-admin/shared';
 import type { SmartRow } from '@/components/shared/smart-table';
-import { api } from '@/lib/api/client';
+import { getTenantSeries, publishTenantSeries, unpublishTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type Series = { id: string; name: string; desc: string; count: string; status: string; date: string };
@@ -23,31 +23,23 @@ export default function SermonAdminSeriesPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/content/series') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantSeries()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Series[] = arr.map((s) => {
-          const rawDate = String(s['createdAt'] ?? s['publishedAt'] ?? s['date'] ?? '');
+          const rawDate = String(s.createdAt ?? s.publishedAt ?? '');
           const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          const rawStatus = String(s['status'] ?? 'Draft');
+          const rawStatus = String(s.status ?? 'Draft');
           const st = rawStatus.toUpperCase();
           const status = st.includes('PUBLISH') || st === 'ACTIVE' || st === 'LIVE' ? 'Published'
             : st.includes('SCHEDUL') ? 'Scheduled'
             : st.includes('UPLOAD') || st.includes('PROCESS') ? 'Uploading'
             : 'Draft';
           return {
-            id: String(s['id'] ?? s['seriesId'] ?? ''),
-            name: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
-            desc: String(s['description'] ?? s['desc'] ?? ''),
-            count: String(s['sermonCount'] ?? s['totalSermons'] ?? s['count'] ?? '0'),
+            id: String(s.id ?? s.seriesId ?? ''),
+            name: String(s.title ?? ''),
+            desc: String(s.description ?? ''),
+            count: '0',
             status,
             date,
           };
@@ -62,10 +54,8 @@ export default function SermonAdminSeriesPage() {
   const togglePublish = (idx: number) => {
     const s = series[idx];
     if (!USE_LIVE_API || !s.id) return;
-    const endpoint = s.status === 'Published'
-      ? `/tenant/admin/content/series/${s.id}/unpublish`
-      : `/tenant/admin/content/series/${s.id}/publish`;
-    (api.patch<unknown>(endpoint, {}) as Promise<unknown>)
+    const fn = s.status === 'Published' ? unpublishTenantSeries : publishTenantSeries;
+    fn(s.id)
       .then(() => {
         setSeries((prev) => prev.map((item, i) =>
           i === idx ? { ...item, status: item.status === 'Published' ? 'Draft' : 'Published' } : item

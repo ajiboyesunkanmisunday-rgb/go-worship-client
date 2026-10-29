@@ -5,10 +5,9 @@ import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, XAxis, YAxis } from 'recharts';
-import { type SystemStats } from '@/lib/api/system';
+import { type SystemStats, getSystemAuditEventsRecent, getSystemBillingPlans } from '@/lib/api/system';
 import { getUnifiedDashboard, type DashboardSection } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { api } from '@/lib/api/client';
 
 const MOCK_TREND = [
   { month: 'May', value: 220 }, { month: 'Jun', value: 180 },
@@ -218,24 +217,16 @@ export function SystemDashboard() {
 
     loadFamily('PLATFORM');
 
-    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getSystemAuditEventsRecent()
+      .then((arr) => {
         const mapped = arr.slice(0, 5).map((e) => {
-          const action = String(e['action'] ?? e['eventType'] ?? e['type'] ?? 'Event');
-          const resource = String(e['resource'] ?? e['entityType'] ?? e['target'] ?? '');
-          const actor = String(e['performedBy'] ?? e['actor'] ?? e['tenantName'] ?? '');
-          const at = e['createdAt'] ?? e['timestamp'] ?? e['eventTime'];
+          const action = String(e.action ?? e.eventType ?? 'Event');
+          const resource = String(e.targetType ?? e.targetId ?? '');
+          const actor = String(e.actorEmail ?? e.actorId ?? '');
+          const at = e.createdAt;
           let meta = actor;
           if (at) {
-            const dt = new Date(String(at));
+            const dt = new Date(at);
             if (!isNaN(dt.getTime())) {
               const diffH = Math.floor((Date.now() - dt.getTime()) / 3600000);
               meta += diffH < 24 ? ` · ${diffH}h ago` : ` · ${Math.floor(diffH / 24)}d ago`;
@@ -249,22 +240,11 @@ export function SystemDashboard() {
       .catch(() => {});
 
     // Plan distribution
-    (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getSystemBillingPlans()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: [string, string][] = arr
-          .map((p) => [
-            String(p['name'] ?? p['planName'] ?? ''),
-            String(p['tenantCount'] ?? p['count'] ?? p['subscribers'] ?? '0'),
-          ] as [string, string])
+          .map((p) => [String(p.name ?? ''), '0'] as [string, string])
           .filter(([name]) => name);
         if (mapped.length > 0) setPlans(mapped);
       })

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { cn } from '@/lib/utils';
 import { ShieldCheck, ClipboardList } from 'lucide-react';
-import { api } from '@/lib/api/client';
+import { getSystemRoles, getSystemPermissions } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type Role = {
@@ -79,45 +79,29 @@ export default function SystemRolesPage() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
-    (api.get<unknown>('/system/roles') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getSystemRoles()
+      .then((arr) => {
         const mapped: Role[] = arr.map((r) => ({
-          id: String(r['id'] ?? r['roleId'] ?? ''),
-          name: String(r['name'] ?? r['roleName'] ?? r['code'] ?? ''),
-          type: String(r['type'] ?? r['roleType'] ?? 'System'),
-          scope: String(r['scope'] ?? 'Platform'),
-          permissionCount: Number(r['permissionCount'] ?? r['permissions'] ?? 0),
-          status: String(r['status'] ?? 'Active').charAt(0).toUpperCase() + String(r['status'] ?? 'Active').slice(1).toLowerCase() as 'Active' | 'Inactive',
+          id: String(r.id ?? r.code ?? ''),
+          name: String(r.name ?? r.code ?? ''),
+          type: String(r.type ?? 'System'),
+          scope: 'Platform',
+          permissionCount: 0,
+          status: r.active === false ? 'Inactive' : 'Active',
         })).filter((r) => r.name);
         if (mapped.length > 0) setRoles(mapped);
       })
       .catch(() => {});
 
-    (api.get<unknown>('/system/permissions') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getSystemPermissions()
+      .then((arr) => {
         const mapped: Permission[] = arr.map((p) => ({
-          id: String(p['id'] ?? p['permissionId'] ?? ''),
-          name: String(p['name'] ?? p['code'] ?? p['permissionName'] ?? ''),
-          category: String(p['category'] ?? p['group'] ?? p['module'] ?? ''),
-          scope: String(p['scope'] ?? 'System'),
-          description: String(p['description'] ?? p['desc'] ?? ''),
-          status: String(p['status'] ?? 'Active'),
+          id: String(p.id ?? p.code ?? ''),
+          name: String(p.name ?? p.code ?? ''),
+          category: String(p.type ?? ''),
+          scope: 'System',
+          description: String(p.description ?? ''),
+          status: 'Active',
         })).filter((p) => p.name);
         if (mapped.length > 0) setPermissions(mapped);
       })

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Music } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api/client';
+import { getTenantSermonById, publishTenantSermon, unpublishTenantSermon } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -40,24 +40,22 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
-    (api.get<unknown>(`/tenant/admin/content/sermons/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const rawDate = String(d['publishedAt'] ?? d['scheduledAt'] ?? d['createdAt'] ?? d['date'] ?? '');
+    getTenantSermonById(id)
+      .then((d) => {
+        const rawDate = String(d.publishedAt ?? d.createdAt ?? d.sermonDate ?? '');
         const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        const rawStatus = String(d['status'] ?? 'Published');
+        const rawStatus = String(d.status ?? 'Published');
         const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
         setSermon({
-          title: String(d['title'] ?? d['sermonTitle'] ?? MOCK_SERMON.title),
+          title: String(d.title ?? MOCK_SERMON.title),
           status,
-          speaker: String(d['speaker'] ?? d['speakerName'] ?? d['preacher'] ?? MOCK_SERMON.speaker),
-          series: String(d['seriesName'] ?? d['series'] ?? MOCK_SERMON.series),
+          speaker: String(d.speakerName ?? MOCK_SERMON.speaker),
+          series: MOCK_SERMON.series,
           date: date || MOCK_SERMON.date,
-          duration: String(d['duration'] ?? d['durationMins'] ? `${d['durationMins']} mins` : MOCK_SERMON.duration),
-          videoUrl: String(d['videoUrl'] ?? d['youtubeUrl'] ?? d['streamUrl'] ?? MOCK_SERMON.videoUrl),
-          description: String(d['description'] ?? d['summary'] ?? MOCK_SERMON.description),
-          fileName: String(d['fileName'] ?? d['mediaFile'] ?? MOCK_SERMON.fileName),
+          duration: MOCK_SERMON.duration,
+          videoUrl: MOCK_SERMON.videoUrl,
+          description: String(d.description ?? MOCK_SERMON.description),
+          fileName: MOCK_SERMON.fileName,
         });
       })
       .catch(() => {});
@@ -135,7 +133,7 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
                 if (USE_LIVE_API && id) {
                   const action = sermon.status.toUpperCase() === 'PUBLISHED' ? 'unpublish' : 'publish';
                   try {
-                    await (api.patch(`/tenant/admin/content/sermons/${id}/${action}`, {}) as Promise<unknown>);
+                    await (action === 'unpublish' ? unpublishTenantSermon(id) : publishTenantSermon(id));
                     toast.success(action === 'publish' ? 'Sermon published' : 'Sermon unpublished');
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : `Failed to ${action} sermon`);

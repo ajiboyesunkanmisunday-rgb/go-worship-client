@@ -5,8 +5,7 @@ import { cn } from '@/lib/utils';
 import { Check, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getSystemStats } from '@/lib/api/system';
-import { api } from '@/lib/api/client';
+import { getSystemStats, getSystemBillingPlans } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -135,34 +134,24 @@ export default function SystemPlansPage() {
     if (!USE_LIVE_API) return;
     // /system/billing/stats not in backend API — disabled.
 
-    (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getSystemBillingPlans()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Plan[] = arr.map((p, i) => {
-          const featureRaw = p['features'] ?? p['featureList'];
-          const features: string[] = Array.isArray(featureRaw)
-            ? (featureRaw as unknown[]).map(String)
-            : typeof featureRaw === 'string'
-              ? featureRaw.split(/\n|,/).map((s) => s.trim()).filter(Boolean)
-              : (PLANS[i % PLANS.length]?.features ?? []);
-          const priceNum = Number(p['price'] ?? p['amount'] ?? p['monthlyPrice'] ?? 0);
+          const featureRaw = p.features;
+          const features: string[] = Array.isArray(featureRaw) && featureRaw.length > 0
+            ? featureRaw
+            : (PLANS[i % PLANS.length]?.features ?? []);
+          const priceNum = Number(p.price ?? 0);
           const price = priceNum
             ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(priceNum)
-            : String(p['price'] ?? '$0');
+            : String(p.price ?? '$0');
           return {
-            id: Number(p['id'] ?? p['planId'] ?? i + 1),
-            name: String(p['name'] ?? p['planName'] ?? ''),
+            id: Number(p.id ?? p.planId ?? i + 1),
+            name: String(p.name ?? ''),
             price,
-            cycle: String(p['billingCycle'] ?? p['cycle'] ?? '/monthly'),
-            blurb: String(p['description'] ?? p['blurb'] ?? ''),
+            cycle: String(p.billingCycle ?? '/monthly'),
+            blurb: String(p.description ?? ''),
             features,
             highlight: i === 1,
           };

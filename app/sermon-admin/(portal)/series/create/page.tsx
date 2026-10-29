@@ -8,7 +8,7 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { api } from '@/lib/api/client';
+import { createTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const back = '/sermon-admin/series';
@@ -29,7 +29,7 @@ export default function SermonAdminAddSeriesPage() {
       };
       try {
         setSubmitting(true);
-        await (api.post('/tenant/admin/content/series', payload) as Promise<unknown>);
+        await createTenantSeries(payload);
       } catch {
         // fall through
       } finally {

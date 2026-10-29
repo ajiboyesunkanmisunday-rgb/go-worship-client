@@ -8,7 +8,7 @@ import { ResultModal } from '@/components/system/result-modal';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
+import { getSystemBillingPlan, createSystemBillingPlan, updateSystemBillingPlan, deleteSystemBillingPlan } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -46,18 +46,16 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
 
   useEffect(() => {
     if (!USE_LIVE_API || !isEdit || !id) return;
-    (api.get<unknown>(`/system/billing/plans/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const featureRaw = d['features'] ?? d['featureList'];
+    getSystemBillingPlan(id)
+      .then((d) => {
+        const featureRaw = d.features;
         const features = Array.isArray(featureRaw)
-          ? (featureRaw as unknown[]).map(String).join('\n')
+          ? featureRaw.join('\n')
           : typeof featureRaw === 'string' ? featureRaw : PLAN.features;
         setPlan({
-          name: String(d['name'] ?? d['planName'] ?? PLAN.name),
-          price: String(d['price'] ?? d['amount'] ?? d['monthlyPrice'] ?? PLAN.price),
-          users: String(d['maxUsers'] ?? d['userLimit'] ?? d['users'] ?? PLAN.users),
+          name: String(d.name ?? PLAN.name),
+          price: String(d.price ?? PLAN.price),
+          users: String(d.maxUsers ?? PLAN.users),
           features,
         });
         setFormKey((k) => k + 1);
@@ -78,9 +76,9 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
     if (USE_LIVE_API) {
       try {
         if (isEdit && id) {
-          await (api.put(`/system/billing/plans/${id}`, payload) as Promise<unknown>);
+          await updateSystemBillingPlan(id, payload);
         } else {
-          await (api.post('/system/billing/plans', payload) as Promise<unknown>);
+          await createSystemBillingPlan(payload);
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to save plan. Please try again.');
@@ -167,7 +165,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
               onClick={async () => {
                 if (USE_LIVE_API && id) {
                   try {
-                    await (api.del(`/system/billing/plans/${id}`) as Promise<unknown>);
+                    await deleteSystemBillingPlan(id);
                   } catch {}
                 }
                 setResult('error');

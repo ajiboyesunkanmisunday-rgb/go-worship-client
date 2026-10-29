@@ -5,7 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
-import { api } from '@/lib/api/client';
+import { getSystemAuditEventsRecent } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -156,9 +156,9 @@ export default function SystemAuditLogsPage() {
     // Only /system/audit/events/recent confirmed in spec — other tab-specific paths
     // are absent; load the full list once and filter client-side via matchesTab.
     if (tab !== 'All activity') return;
-    (api.get<unknown>('/system/audit/events/recent') as Promise<unknown>)
-      .then((data) => {
-        const rows = parseArr(data).map(mapLogRow).filter((l) => l.action || l.resource);
+    getSystemAuditEventsRecent()
+      .then((arr) => {
+        const rows = arr.map((e) => mapLogRow(e as unknown as Record<string, unknown>)).filter((l) => l.action || l.resource);
         if (rows.length > 0) setLogs(rows);
       })
       .catch(() => { toast.error('Could not load audit logs.'); });

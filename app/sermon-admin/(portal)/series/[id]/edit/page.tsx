@@ -7,7 +7,7 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
+import { getTenantSeriesById, updateTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const back = '/sermon-admin/series';
@@ -24,13 +24,11 @@ export default function SermonAdminEditSeriesPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
-    (api.get<unknown>(`/tenant/admin/content/series/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
+    getTenantSeriesById(id)
+      .then((d) => {
         setSeries({
-          title: String(d['title'] ?? d['name'] ?? d['seriesName'] ?? MOCK.title),
-          description: String(d['description'] ?? d['desc'] ?? MOCK.description),
+          title: String(d.title ?? MOCK.title),
+          description: String(d.description ?? MOCK.description),
         });
         setFormKey((k) => k + 1);
       })
@@ -48,7 +46,7 @@ export default function SermonAdminEditSeriesPage() {
       };
       try {
         setSubmitting(true);
-        await (api.put(`/tenant/admin/content/series/${id}`, payload) as Promise<unknown>);
+        await updateTenantSeries(id, payload);
       } catch {
         // fall through
       } finally {

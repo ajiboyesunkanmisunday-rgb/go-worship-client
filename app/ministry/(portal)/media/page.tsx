@@ -7,7 +7,7 @@ import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { FolderPlus } from 'lucide-react';
-import { api } from '@/lib/api/client';
+import { getTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -50,28 +50,20 @@ export default function MinistryMediaPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/content/series') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantSeries()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Series[] = arr.map((s) => {
-          const rawDate = String(s['createdAt'] ?? s['publishedAt'] ?? s['date'] ?? '');
+          const rawDate = String(s.createdAt ?? s.publishedAt ?? '');
           const date = rawDate
             ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             : '';
           return {
-            id: String(s['id'] ?? s['seriesId'] ?? s['uuid'] ?? ''),
-            name: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
-            desc: String(s['description'] ?? s['desc'] ?? ''),
-            sermons: Number(s['sermonCount'] ?? s['totalSermons'] ?? s['count'] ?? 0),
-            status: normalizeSeriesStatus(String(s['status'] ?? 'Published')),
+            id: String(s.id ?? s.seriesId ?? ''),
+            name: String(s.title ?? ''),
+            desc: String(s.description ?? ''),
+            sermons: 0,
+            status: normalizeSeriesStatus(String(s.status ?? 'Published')),
             date,
           };
         }).filter((s) => s.name);

@@ -9,7 +9,6 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ResultModal } from '@/components/system/result-modal';
 import { updateSystemTenant, getSystemTenant } from '@/lib/api/system';
-import { api } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
@@ -75,20 +74,8 @@ export function EditTenantForm({ id }: { id: string }) {
           plan: t.plan || DEFAULT_TENANT.plan,
           memberCount: String(t.members || DEFAULT_TENANT.memberCount),
         };
-        (api.get<unknown>(`/system/tenants/${id}`) as Promise<unknown>)
-          .then((data) => {
-            type R = Record<string, unknown>;
-            const d = data as R;
-            const email = String(d['email'] ?? d['adminEmail'] ?? d['contactEmail'] ?? '');
-            const phone = String(d['phone'] ?? d['contactPhone'] ?? d['adminPhone'] ?? '');
-            setTenantForm({
-              ...base,
-              email: email || base.email,
-              phone: phone || base.phone,
-            });
-          })
-          .catch(() => { setTenantForm(base); })
-          .finally(() => setFormKey((k) => k + 1));
+        setTenantForm(base);
+        setFormKey((k) => k + 1);
       })
       .catch(() => {});
   }, [id]);

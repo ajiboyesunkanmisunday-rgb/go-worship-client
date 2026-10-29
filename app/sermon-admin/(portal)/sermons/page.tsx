@@ -9,7 +9,7 @@ import {
   StatusText,
   ViewEditButton,
 } from '@/components/sermon-admin/shared';
-import { api } from '@/lib/api/client';
+import { getTenantSermons, publishTenantSermon, unpublishTenantSermon } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 type Sermon = { id: string; title: string; speaker: string; series: string; date: string; status: string };
@@ -27,30 +27,22 @@ export default function SermonAdminSermonsPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/content/sermons') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantSermons()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Sermon[] = arr.map((s) => {
-          const rawDate = String(s['publishedAt'] ?? s['scheduledAt'] ?? s['createdAt'] ?? s['date'] ?? '');
+          const rawDate = String(s.publishedAt ?? s.createdAt ?? '');
           const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-          const rawStatus = String(s['status'] ?? 'Draft');
+          const rawStatus = String(s.status ?? 'Draft');
           const st = rawStatus.toUpperCase();
           const status = st.includes('PUBLISH') ? 'Published'
             : st.includes('SCHEDUL') ? 'Scheduled'
             : 'Draft';
           return {
-            id: String(s['id'] ?? s['sermonId'] ?? ''),
-            title: String(s['title'] ?? s['sermonTitle'] ?? s['name'] ?? ''),
-            speaker: String(s['speaker'] ?? s['speakerName'] ?? s['preacher'] ?? ''),
-            series: String(s['seriesName'] ?? s['series'] ?? s['seriesTitle'] ?? ''),
+            id: String(s.id ?? s.sermonId ?? ''),
+            title: String(s.title ?? ''),
+            speaker: String(s.speakerName ?? ''),
+            series: '',
             date,
             status,
           };
@@ -65,10 +57,8 @@ export default function SermonAdminSermonsPage() {
   const togglePublish = (idx: number) => {
     const s = sermons[idx];
     if (!USE_LIVE_API || !s.id) return;
-    const endpoint = s.status === 'Published'
-      ? `/tenant/admin/content/sermons/${s.id}/unpublish`
-      : `/tenant/admin/content/sermons/${s.id}/publish`;
-    (api.patch<unknown>(endpoint, {}) as Promise<unknown>)
+    const fn = s.status === 'Published' ? unpublishTenantSermon : publishTenantSermon;
+    fn(s.id)
       .then(() => {
         setSermons((prev) => prev.map((item, i) =>
           i === idx ? { ...item, status: item.status === 'Published' ? 'Draft' : 'Published' } : item

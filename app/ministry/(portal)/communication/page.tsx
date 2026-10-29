@@ -6,7 +6,7 @@ import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Bell, Mail, Plus } from 'lucide-react';
-import { api } from '@/lib/api/client';
+import { getTenantCampaigns } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -27,25 +27,15 @@ export default function MinistryCommunicationPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/notifications/campaigns') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantCampaigns()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Message[] = arr.map((m) => ({
-          title: String(m['subject'] ?? m['title'] ?? m['name'] ?? ''),
-          recipients: String(m['recipientGroup'] ?? m['recipients'] ?? m['target'] ?? ''),
-          status: String(m['status'] ?? m['deliveryStatus'] ?? 'Sent'),
-          rate: Number(m['readRate'] ?? m['openRate'] ?? m['deliveryRate'] ?? 0),
-          date: String(m['sentAt'] ?? m['scheduledAt'] ?? m['createdAt'] ?? ''),
-          recipientCount: m['recipientCount'] != null ? Number(m['recipientCount']) : m['totalRecipients'] != null ? Number(m['totalRecipients']) : undefined,
-          channels: Array.isArray(m['channels']) ? (m['channels'] as string[]).map(String) : Array.isArray(m['deliveryChannels']) ? (m['deliveryChannels'] as string[]).map(String) : undefined,
+          title: String(m.subject ?? m.name ?? ''),
+          recipients: String(m.audienceType ?? ''),
+          status: String(m.status ?? 'Sent'),
+          rate: 0,
+          date: String(m.sentAt ?? m.scheduledAt ?? m.createdAt ?? ''),
         })).filter((m) => m.title);
         if (mapped.length > 0) setMessages(mapped);
       })

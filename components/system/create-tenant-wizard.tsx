@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { ResultModal } from '@/components/system/result-modal';
 import { StepUpMfaDialog, isStepUpChallenge } from '@/components/shared/step-up-mfa-dialog';
 import type { StepUpMfaChallengeResponse } from '@/components/shared/step-up-mfa-dialog';
-import { provisionTenant } from '@/lib/api/system';
-import { ApiError, api } from '@/lib/api/client';
+import { provisionTenant, getSystemBillingPlans } from '@/lib/api/system';
+import { ApiError } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
@@ -149,23 +149,15 @@ export function CreateTenantWizard() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/system/billing/plans') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getSystemBillingPlans()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Plan[] = arr.map((p) => {
-          const rawPrice = Number(p['price'] ?? p['amount'] ?? p['monthlyPrice'] ?? 0);
-          const price = rawPrice ? `$${rawPrice.toLocaleString()}` : String(p['priceLabel'] ?? p['price'] ?? '$0');
+          const rawPrice = Number(p.price ?? 0);
+          const price = rawPrice ? `$${rawPrice.toLocaleString()}` : String(p.price ?? '$0');
           return {
-            key: String(p['key'] ?? p['planKey'] ?? p['code'] ?? p['id'] ?? ''),
-            tier: String(p['name'] ?? p['tier'] ?? p['displayName'] ?? ''),
+            key: String(p.code ?? p.id ?? p.planId ?? ''),
+            tier: String(p.name ?? ''),
             price,
           };
         }).filter((p) => p.key && p.tier);

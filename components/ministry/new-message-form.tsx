@@ -12,8 +12,7 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, Bell, Mail, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { api } from '@/lib/api/client';
-import { sendCampaign } from '@/lib/api/tenant';
+import { sendCampaign, createTenantCampaign, type CreateCampaignPayload } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
@@ -60,16 +59,15 @@ export function NewMessageForm() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     if (USE_LIVE_API) {
-      const payload = {
-        title: String(fd.get('title') ?? ''),
-        recipients: String(fd.get('recipients') ?? ''),
-        channels,
+      const payload: CreateCampaignPayload = {
+        name: String(fd.get('title') ?? ''),
         body: String(fd.get('body') ?? ''),
+        audienceType: String(fd.get('recipients') ?? '') || undefined,
         scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
       };
       try {
-        const created = await (api.post('/tenant/admin/notifications/campaigns', payload) as Promise<Record<string, unknown>>);
-        const campaignId = String(created?.['id'] ?? created?.['campaignId'] ?? '');
+        const created = await createTenantCampaign(payload);
+        const campaignId = String(created?.id ?? created?.campaignId ?? '');
         if (campaignId && !schedule) {
           await sendCampaign(campaignId);
         }

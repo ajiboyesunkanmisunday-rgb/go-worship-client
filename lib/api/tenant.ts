@@ -1023,3 +1023,243 @@ export async function getTenantSecuritySettings(): Promise<TenantSecuritySetting
 export async function updateTenantSecuritySettings(settings: Partial<TenantSecuritySettings>): Promise<void> {
   await api.put('/tenant/admin/security/settings', settings);
 }
+
+/* -------- Tenant Organization (/tenant/admin/organization) --------------- */
+
+export type TenantOrganization = {
+  id?: string;
+  name?: string;
+  shortName?: string;
+  legalName?: string;
+  billingEmail?: string;
+  countryCode?: string;
+  currency?: string;
+  customDomain?: string;
+  subDomain?: string;
+  city?: string;
+  location?: string;
+  address?: string;
+  country?: string;
+};
+
+export type TenantOrganizationUpdatePayload = {
+  name?: string;
+  shortName?: string;
+  legalName?: string;
+  billingEmail?: string;
+  countryCode?: string;
+  currency?: string;
+  customDomain?: string;
+  subDomain?: string;
+};
+
+/** GET /tenant/admin/organization */
+export const getTenantOrganization = () =>
+  api.get<TenantOrganization>('/tenant/admin/organization');
+
+/** PUT /tenant/admin/organization */
+export const updateTenantOrganization = (payload: TenantOrganizationUpdatePayload) =>
+  api.put<TenantOrganization>('/tenant/admin/organization', payload);
+
+/* -------- Tenant Admin Roles (/tenant/admin/roles) ----------------------- */
+
+export type TenantRole = {
+  id?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  type?: string;
+};
+
+/** GET /tenant/admin/roles */
+export async function getTenantRoles(): Promise<TenantRole[]> {
+  const data = await api.get<unknown>('/tenant/admin/roles');
+  return Array.isArray(data) ? (data as TenantRole[]) : findTableRows(data).map((r) => r as TenantRole);
+}
+
+/* -------- Tenant Audit (/tenant/audit) ------------------------------------ */
+
+export type TenantAuditEvent = {
+  id?: string;
+  eventType?: string;
+  action?: string;
+  actorId?: string;
+  actorEmail?: string;
+  targetType?: string;
+  targetId?: string;
+  description?: string;
+  ipAddress?: string;
+  createdAt?: string;
+  severity?: string;
+};
+
+/** GET /tenant/audit/events/recent */
+export async function getTenantAuditEventsRecent(): Promise<TenantAuditEvent[]> {
+  const data = await api.get<unknown>('/tenant/audit/events/recent');
+  return Array.isArray(data) ? (data as TenantAuditEvent[]) : findTableRows(data).map((r) => r as TenantAuditEvent);
+}
+
+/** GET /tenant/audit/security-events */
+export async function getTenantAuditSecurityEvents(): Promise<TenantAuditEvent[]> {
+  const data = await api.get<unknown>('/tenant/audit/security-events');
+  return Array.isArray(data) ? (data as TenantAuditEvent[]) : findTableRows(data).map((r) => r as TenantAuditEvent);
+}
+
+/* -------- Tenant Notification Campaigns (/tenant/admin/notifications/campaigns) */
+
+export type TenantCampaign = {
+  id?: string;
+  campaignId?: string;
+  name?: string;
+  subject?: string;
+  body?: string;
+  notificationType?: string;
+  audienceType?: string;
+  scheduledAt?: string;
+  status?: string;
+  sentAt?: string;
+  createdAt?: string;
+};
+
+export type CreateCampaignPayload = {
+  name: string;
+  subject?: string;
+  body: string;
+  notificationType?: string;
+  audienceType?: string;
+  recipientIds?: string[];
+  campusId?: string;
+  roleCode?: string;
+  eventId?: string;
+  scheduledAt?: string;
+  variables?: Record<string, string>;
+};
+
+/** GET /tenant/admin/notifications/campaigns */
+export async function getTenantCampaigns(): Promise<TenantCampaign[]> {
+  const data = await api.get<unknown>('/tenant/admin/notifications/campaigns');
+  return Array.isArray(data) ? (data as TenantCampaign[]) : findTableRows(data).map((r) => r as TenantCampaign);
+}
+
+/** POST /tenant/admin/notifications/campaigns */
+export const createTenantCampaign = (payload: CreateCampaignPayload) =>
+  api.post<TenantCampaign>('/tenant/admin/notifications/campaigns', payload);
+
+/* -------- Tenant Content: Series (/tenant/admin/content/series) ---------- */
+
+export type TenantSeries = {
+  id?: string;
+  seriesId?: string;
+  title?: string;
+  description?: string;
+  slug?: string;
+  bannerObjectKey?: string;
+  bannerUrl?: string;
+  displayOrder?: number;
+  status?: string;
+  publishedAt?: string;
+  createdAt?: string;
+};
+
+export type SeriesPayload = {
+  title: string;
+  description?: string;
+  slug?: string;
+  bannerObjectKey?: string;
+  displayOrder?: number;
+};
+
+/** GET /tenant/admin/content/series */
+export async function getTenantSeries(): Promise<TenantSeries[]> {
+  const data = await api.get<unknown>('/tenant/admin/content/series');
+  return Array.isArray(data) ? (data as TenantSeries[]) : findTableRows(data).map((r) => r as TenantSeries);
+}
+
+/** POST /tenant/admin/content/series */
+export const createTenantSeries = (payload: SeriesPayload) =>
+  api.post<TenantSeries>('/tenant/admin/content/series', payload);
+
+/** GET /tenant/admin/content/series/{seriesId} */
+export const getTenantSeriesById = (seriesId: string) =>
+  api.get<TenantSeries>(`/tenant/admin/content/series/${encodeURIComponent(seriesId)}`);
+
+/** PUT /tenant/admin/content/series/{seriesId} */
+export const updateTenantSeries = (seriesId: string, payload: Partial<SeriesPayload>) =>
+  api.put<TenantSeries>(`/tenant/admin/content/series/${encodeURIComponent(seriesId)}`, payload);
+
+/** DELETE /tenant/admin/content/series/{seriesId} */
+export const deleteTenantSeries = (seriesId: string) =>
+  api.del<unknown>(`/tenant/admin/content/series/${encodeURIComponent(seriesId)}`);
+
+/** PATCH /tenant/admin/content/series/{seriesId}/publish */
+export const publishTenantSeries = (seriesId: string) =>
+  api.patch<TenantSeries>(`/tenant/admin/content/series/${encodeURIComponent(seriesId)}/publish`);
+
+/** PATCH /tenant/admin/content/series/{seriesId}/unpublish */
+export const unpublishTenantSeries = (seriesId: string) =>
+  api.patch<TenantSeries>(`/tenant/admin/content/series/${encodeURIComponent(seriesId)}/unpublish`);
+
+/* -------- Tenant Content: Sermons (/tenant/admin/content/sermons) --------- */
+
+export type TenantSermon = {
+  id?: string;
+  sermonId?: string;
+  seriesId?: string;
+  campusId?: string;
+  title?: string;
+  description?: string;
+  speakerName?: string;
+  scriptureReference?: string;
+  mediaObjectKey?: string;
+  mediaUrl?: string;
+  notesObjectKey?: string;
+  thumbnailObjectKey?: string;
+  thumbnailUrl?: string;
+  sermonDate?: string;
+  status?: string;
+  publishedAt?: string;
+  createdAt?: string;
+};
+
+export type SermonPayload = {
+  seriesId?: string;
+  campusId?: string;
+  title: string;
+  description?: string;
+  speakerName?: string;
+  scriptureReference?: string;
+  mediaObjectKey?: string;
+  notesObjectKey?: string;
+  thumbnailObjectKey?: string;
+  sermonDate?: string;
+};
+
+/** GET /tenant/admin/content/sermons */
+export async function getTenantSermons(): Promise<TenantSermon[]> {
+  const data = await api.get<unknown>('/tenant/admin/content/sermons');
+  return Array.isArray(data) ? (data as TenantSermon[]) : findTableRows(data).map((r) => r as TenantSermon);
+}
+
+/** POST /tenant/admin/content/sermons */
+export const createTenantSermon = (payload: SermonPayload) =>
+  api.post<TenantSermon>('/tenant/admin/content/sermons', payload);
+
+/** GET /tenant/admin/content/sermons/{sermonId} */
+export const getTenantSermonById = (sermonId: string) =>
+  api.get<TenantSermon>(`/tenant/admin/content/sermons/${encodeURIComponent(sermonId)}`);
+
+/** PUT /tenant/admin/content/sermons/{sermonId} */
+export const updateTenantSermon = (sermonId: string, payload: Partial<SermonPayload>) =>
+  api.put<TenantSermon>(`/tenant/admin/content/sermons/${encodeURIComponent(sermonId)}`, payload);
+
+/** DELETE /tenant/admin/content/sermons/{sermonId} */
+export const deleteTenantSermon = (sermonId: string) =>
+  api.del<unknown>(`/tenant/admin/content/sermons/${encodeURIComponent(sermonId)}`);
+
+/** PATCH /tenant/admin/content/sermons/{sermonId}/publish */
+export const publishTenantSermon = (sermonId: string) =>
+  api.patch<TenantSermon>(`/tenant/admin/content/sermons/${encodeURIComponent(sermonId)}/publish`);
+
+/** PATCH /tenant/admin/content/sermons/{sermonId}/unpublish */
+export const unpublishTenantSermon = (sermonId: string) =>
+  api.patch<TenantSermon>(`/tenant/admin/content/sermons/${encodeURIComponent(sermonId)}/unpublish`);

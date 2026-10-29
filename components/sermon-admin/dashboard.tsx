@@ -8,7 +8,7 @@ import { getTenantBranding } from '@/lib/api/tenant';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { api } from '@/lib/api/client';
+import { getTenantSeries as fetchTenantSeries } from '@/lib/api/tenant';
 
 export const SERIES = [
   { name: 'Faith in Action', desc: 'Weekly faith teaching', count: '12', status: 'Published', date: 'Jan 10, 2025' },
@@ -67,30 +67,22 @@ export function SermonAdminDashboard() {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
 
-    (api.get<unknown>('/tenant/admin/content/series') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    fetchTenantSeries()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: SeriesItem[] = arr.map((s) => {
-          const rawDate = String(s['createdAt'] ?? s['publishedAt'] ?? s['date'] ?? '');
+          const rawDate = String(s.createdAt ?? s.publishedAt ?? '');
           const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-          const rawStatus = String(s['status'] ?? 'Draft');
+          const rawStatus = String(s.status ?? 'Draft');
           const st = rawStatus.toUpperCase();
           const status = st.includes('PUBLISH') || st === 'ACTIVE' || st === 'LIVE' ? 'Published'
             : st.includes('SCHEDUL') ? 'Scheduled'
             : st.includes('UPLOAD') || st.includes('PROCESS') ? 'Uploading'
             : 'Draft';
           return {
-            name: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
-            desc: String(s['description'] ?? s['desc'] ?? ''),
-            count: String(s['sermonCount'] ?? s['totalSermons'] ?? s['count'] ?? '0'),
+            name: String(s.title ?? ''),
+            desc: String(s.description ?? ''),
+            count: '0',
             status, date,
           };
         }).filter((s) => s.name);

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { api } from '@/lib/api/client';
+import { getTenantSeriesById, publishTenantSeries, unpublishTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const back = '/sermon-admin/series';
@@ -35,19 +35,17 @@ export default function SermonAdminSeriesDetailPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
-    (api.get<unknown>(`/tenant/admin/content/series/${id}`) as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const d = data as R;
-        const rawDate = String(d['createdAt'] ?? d['publishedAt'] ?? '');
+    getTenantSeriesById(id)
+      .then((d) => {
+        const rawDate = String(d.createdAt ?? d.publishedAt ?? '');
         const createdAt = rawDate
           ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : MOCK.createdAt;
-        const rawStatus = String(d['status'] ?? 'Published');
+        const rawStatus = String(d.status ?? 'Published');
         setSeries({
-          title: String(d['title'] ?? d['name'] ?? d['seriesName'] ?? MOCK.title),
-          description: String(d['description'] ?? d['desc'] ?? MOCK.description),
-          sermonCount: String(d['sermonCount'] ?? d['totalSermons'] ?? d['count'] ?? MOCK.sermonCount),
+          title: String(d.title ?? MOCK.title),
+          description: String(d.description ?? MOCK.description),
+          sermonCount: MOCK.sermonCount,
           status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase(),
           createdAt,
         });
@@ -57,12 +55,12 @@ export default function SermonAdminSeriesDetailPage() {
 
   const togglePublish = () => {
     if (!USE_LIVE_API || !id) return;
-    const action = series.status.toUpperCase() === 'PUBLISHED' ? 'unpublish' : 'publish';
-    (api.patch(`/tenant/admin/content/series/${id}/${action}`, {}) as Promise<unknown>)
+    const fn = series.status.toUpperCase() === 'PUBLISHED' ? unpublishTenantSeries : publishTenantSeries;
+    fn(id)
       .then(() => {
         setSeries((prev) => ({
           ...prev,
-          status: action === 'publish' ? 'Published' : 'Draft',
+          status: prev.status.toUpperCase() === 'PUBLISHED' ? 'Draft' : 'Published',
         }));
       })
       .catch(() => {});

@@ -11,7 +11,7 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Music, Pencil, UploadCloud, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
-import { api } from '@/lib/api/client';
+import { getTenantSeries, getTenantSermonById, createTenantSermon, updateTenantSermon } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -130,20 +130,12 @@ export function SermonForm({
   useEffect(() => {
     if (!USE_LIVE_API) return;
 
-    (api.get<unknown>('/tenant/admin/content/series') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantSeries()
+      .then((arr) => {
         const opts = arr
           .map((s) => ({
-            value: String(s['id'] ?? s['seriesId'] ?? ''),
-            label: String(s['name'] ?? s['title'] ?? s['seriesName'] ?? ''),
+            value: String(s.id ?? s.seriesId ?? ''),
+            label: String(s.title ?? ''),
           }))
           .filter((o) => o.label);
         if (opts.length > 0) setSeriesOpts(opts);
@@ -151,18 +143,16 @@ export function SermonForm({
       .catch(() => {});
 
     if (isEdit && id) {
-      (api.get<unknown>(`/tenant/admin/content/sermons/${id}`) as Promise<unknown>)
-        .then((data) => {
-          type R = Record<string, unknown>;
-          const d = data as R;
-          const rawDate = String(d['sermonDate'] ?? d['date'] ?? d['createdAt'] ?? '');
+      getTenantSermonById(id)
+        .then((d) => {
+          const rawDate = String(d.sermonDate ?? d.createdAt ?? '');
           const date = rawDate ? rawDate.split('T')[0] : SERMON.date;
           setSermon({
-            title: String(d['title'] ?? d['sermonTitle'] ?? SERMON.title),
-            speaker: String(d['speaker'] ?? d['speakerName'] ?? SERMON.speaker),
+            title: String(d.title ?? SERMON.title),
+            speaker: String(d.speakerName ?? SERMON.speaker),
             date,
-            description: String(d['description'] ?? d['summary'] ?? SERMON.description),
-            link: String(d['videoUrl'] ?? d['youtubeUrl'] ?? d['link'] ?? SERMON.link),
+            description: String(d.description ?? SERMON.description),
+            link: SERMON.link,
           });
           setFormKey((k) => k + 1);
         })
@@ -183,10 +173,9 @@ export function SermonForm({
       };
       try {
         if (isEdit && id) {
-          await (api.put(`/tenant/admin/content/sermons/${id}`, payload) as Promise<unknown>)
-            .catch(() => api.patch(`/tenant/admin/content/sermons/${id}`, payload) as Promise<unknown>);
+          await updateTenantSermon(id, payload);
         } else {
-          await (api.post('/tenant/admin/content/sermons', payload) as Promise<unknown>);
+          await createTenantSermon(payload);
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to save sermon. Please try again.');

@@ -6,7 +6,7 @@ import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
-import { api } from '@/lib/api/client';
+import { getTenantRoles } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
@@ -42,31 +42,20 @@ export default function MinistryAdminManagementPage() {
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    (api.get<unknown>('/tenant/admin/roles') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
+    getTenantRoles()
+      .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Role[] = arr.map((r) => {
-          const rawStatus = String(r['status'] ?? r['roleStatus'] ?? 'Active');
-          const status = rawStatus.toUpperCase() === 'INACTIVE' || rawStatus.toUpperCase() === 'DISABLED'
-            ? 'Inactive' : 'Active';
-          const apiId = String(r['id'] ?? r['roleId'] ?? r['uuid'] ?? '');
+          const apiId = String(r.id ?? '');
           return {
-            id: String(r['code'] ?? r['roleCode'] ?? apiId),
+            id: String(r.code ?? apiId),
             apiId,
-            role: String(r['name'] ?? r['roleName'] ?? r['displayName'] ?? ''),
-            desc: String(r['description'] ?? r['desc'] ?? ''),
-            users: Number(r['assignedUsers'] ?? r['userCount'] ?? r['members'] ?? 0),
-            status,
-            by: String(r['createdBy'] ?? r['creator'] ?? ''),
-            updated: String(r['updatedAt'] ?? r['lastUpdated'] ?? r['createdAt'] ?? ''),
+            role: String(r.name ?? ''),
+            desc: String(r.description ?? ''),
+            users: 0,
+            status: 'Active' as const,
+            by: '',
+            updated: '',
           };
         }).filter((r) => r.role);
         if (mapped.length > 0) setRoles(mapped);
