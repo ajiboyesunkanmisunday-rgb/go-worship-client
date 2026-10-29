@@ -20,12 +20,19 @@ import {
   updateTenantNotificationSettings,
   getTenantSecuritySettings,
   updateTenantSecuritySettings,
+  getTenantCampuses,
+  createTenantCampus,
+  updateTenantCampus,
+  deleteTenantCampus,
+  getTenantBillingPayments,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
   type TenantInvoice,
   type TenantNotificationSettings,
   type TenantSecuritySettings,
+  type TenantCampus,
+  type BillingPayment,
 } from '@/lib/api/tenant';
 import { getProfile, type Profile } from '@/lib/api/auth';
 import { api } from '@/lib/api/client';
@@ -575,22 +582,15 @@ function NotificationsTab() {
 }
 
 function PaymentBillingTab() {
-  const [payments, setPayments] = useState<Record<string, unknown>[]>([]);
+  const [payments, setPayments] = useState<BillingPayment[]>([]);
   const [loading, setLoading] = useState(USE_LIVE_API);
 
   useEffect(() => {
     if (!USE_LIVE_API) { setLoading(false); return; }
-    (api.get<unknown>('/tenant/billing/invoices') as Promise<unknown>)
+    getTenantBillingPayments()
       .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        setPayments(arr);
+        const arr = data?.content ?? [];
+        if (arr.length > 0) setPayments(arr);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -632,16 +632,16 @@ function PaymentBillingTab() {
           </thead>
           <tbody>
             {payments.map((p, i) => {
-              const ref = String(p['paymentReference'] ?? p['reference'] ?? p['id'] ?? '—');
-              const currency = String(p['currency'] ?? '');
-              const amount = p['amount'] != null ? `${currency} ${p['amount']}` : '—';
-              const status = String(p['status'] ?? '—');
-              const date = fmtDate(String(p['createdAt'] ?? p['paidAt'] ?? ''));
+              const ref = p.paymentReference ?? p.id ?? '—';
+              const currency = p.currency ?? '';
+              const amount = p.amount != null ? `${currency} ${p.amount}` : '—';
+              const status = p.status ?? '—';
+              const date = fmtDate(p.requestedAt ?? p.paidAt ?? '');
               const statusColor = status.toLowerCase() === 'success' || status.toLowerCase() === 'paid'
                 ? 'text-[#34a853]' : status.toLowerCase().includes('fail') || status.toLowerCase() === 'failed'
                 ? 'text-[#eb0000]' : 'text-[#ff8d28]';
               return (
-                <tr key={i} className="border-b border-[#f2f2f2]">
+                <tr key={p.id ?? i} className="border-b border-[#f2f2f2]">
                   <td className="py-3 font-mono">{ref}</td>
                   <td className="py-3">{amount}</td>
                   <td className={cn('py-3 font-medium', statusColor)}>{status}</td>
@@ -674,23 +674,17 @@ function CampusesTab() {
 
   useEffect(() => {
     if (!USE_LIVE_API) { setLoading(false); return; }
-    (api.get<unknown>('/tenant/admin/campuses') as Promise<unknown>)
-      .then((data) => {
-        type R = Record<string, unknown>;
-        const arr: R[] = Array.isArray(data)
-          ? (data as R[])
-          : Array.isArray((data as R)?.['content'])
-            ? ((data as R)['content'] as R[])
-            : Array.isArray((data as R)?.['data'])
-              ? ((data as R)['data'] as R[])
-              : [];
-        const mapped: Campus[] = arr.map((c) => ({
-          id: String(c['id'] ?? c['campusId'] ?? ''),
-          code: String(c['code'] ?? ''),
-          name: String(c['name'] ?? c['campusName'] ?? ''),
-          address: String(c['address'] ?? ''),
-          active: c['active'] !== false,
-        })).filter((c) => c.id || c.name);
+    getTenantCampuses()
+      .then((data: TenantCampus[]) => {
+        const mapped: Campus[] = data
+          .map((c) => ({
+            id: String(c.id ?? ''),
+            code: String(c.code ?? ''),
+            name: String(c.name ?? ''),
+            address: String(c.address ?? ''),
+            active: c.active !== false,
+          }))
+          .filter((c) => c.id || c.name);
         if (mapped.length > 0) setCampuses(mapped);
       })
       .catch(() => {})
@@ -713,13 +707,11 @@ function CampusesTab() {
     }
     try {
       if (adding) {
-        const res = await (api.post<unknown>('/tenant/admin/campuses', form) as Promise<unknown>);
-        type R = Record<string, unknown>;
-        const d = (res ?? {}) as R;
-        const newId = String(d['id'] ?? d['campusId'] ?? Date.now());
+        const res = await createTenantCampus(form);
+        const newId = String(res?.id ?? Date.now());
         setCampuses((prev) => [...prev, { id: newId, ...form, active: true }]);
       } else if (editId) {
-        await (api.put(`/tenant/admin/campuses/${editId}`, form) as Promise<unknown>);
+        await updateTenantCampus(editId, form);
         setCampuses((prev) => prev.map((c) => c.id === editId ? { ...c, ...form } : c));
       }
       cancel();
@@ -729,7 +721,7 @@ function CampusesTab() {
   const deleteCampus = async (id: string) => {
     if (!USE_LIVE_API) { setCampuses((prev) => prev.filter((c) => c.id !== id)); return; }
     try {
-      await (api.del(`/tenant/admin/campuses/${id}`) as Promise<unknown>);
+      await deleteTenantCampus(id);
       setCampuses((prev) => prev.filter((c) => c.id !== id));
     } catch {}
   };

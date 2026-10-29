@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
-import { api, ApiError } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/client';
+import { getSystemBranding, updateSystemBranding, type SystemBrandingUpdatePayload } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences, isStepUpChallenge } from '@/lib/api/auth';
 import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
@@ -490,7 +491,7 @@ export function SystemSettings() {
       }
     };
     const flat: ConfigMap = {};
-    (api.get<unknown>('/system/branding') as Promise<unknown>)
+    getSystemBranding()
       .then((data) => {
         if (data && typeof data === 'object') {
           flattenInto(data as Record<string, unknown>, flat);
@@ -508,7 +509,7 @@ export function SystemSettings() {
     fd.forEach((v, k) => { payload[k] = String(v); });
     if (USE_LIVE_API && tab === 'Branding') {
       try {
-        await (api.put('/system/branding', payload) as Promise<unknown>);
+        await updateSystemBranding(payload as SystemBrandingUpdatePayload);
         toast.success('Branding settings saved');
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to save branding settings');
