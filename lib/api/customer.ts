@@ -6,7 +6,7 @@
  *   GET  /customer/payments/{id}       → EntityTransport
  *   GET  /customer/payment-methods     → PaymentMethodResponse[]
  *   GET  /customer/recurring-giving    → RecurringGivingSchedule[]
- *   POST /customer/donations/intents   → ContributionResponse (checkout intent)
+ *   POST /customer/payments/donations  → CheckoutSessionResponse
  *
  * Backend (CustomerReceiptController at /api/v1/customer/receipts):
  *   GET  /customer/receipts/{id}       → GivingReceipt
@@ -14,6 +14,7 @@
  */
 
 import { api } from './client';
+import type { CheckoutSessionResponse, IntegrationType, RedirectPreference } from './checkout';
 
 export type PaymentResponse = {
   id: string;
@@ -142,23 +143,23 @@ export function receiptUrl(receiptId: string) {
   return `/bff/gw/customer/receipts/${receiptId}/pdf`;
 }
 
-/* -------- Customer donation intent (authenticated giving flow) -------- */
+/* -------- Customer donation checkout (authenticated giving flow) -------- */
 
 export type CustomerDonationRequest = {
-  fundId?: string;
+  campusId: string;
+  fundId: string;
   amount: number;
   currency: string;
+  idempotencyKey: string;
+  integrationType: IntegrationType;
+  redirectPreference: RedirectPreference;
+  checkoutLinkToken?: string;
+  paymentMethodId?: string;
   donorName?: string;
   donorEmail?: string;
-  userProfileId?: string;
+  note?: string;
 };
 
-export type CustomerDonationResponse = {
-  donationId: string;
-  tenantId?: string;
-  [key: string]: unknown;
-};
-
-/** POST /customer/payments/donations — creates a donation payment for an authenticated member. */
+/** POST /customer/payments/donations — creates a donation payment, returns session with redirectUrl. */
 export const createCustomerDonation = (payload: CustomerDonationRequest) =>
-  api.post<CustomerDonationResponse>('/customer/payments/donations', payload);
+  api.post<CheckoutSessionResponse>('/customer/payments/donations', payload);

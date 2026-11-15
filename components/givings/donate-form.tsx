@@ -3,15 +3,12 @@
 /**
  * Member giving form — authenticated customer checkout.
  *
- * Uses the real LeadRemit / CollectCheckout gateway when USE_LIVE_API=true.
+ * Uses the LeadRemit gateway when USE_LIVE_API=true.
  * Falls back to the mock /dashboard/givings/give/pay walkthrough in demo mode.
  *
  * Live flow (backend-confirmed):
- *   POST /customer/donations/intents           → ContributionResponse { donationId, tenantId }
- *   GET  /public/payments/leadremit/checkout-config/{donationId}?tenantId=...
- *       → { scriptUrl, checkoutPublicKey }
- *   CollectCheckout.redirectToCheckout(...)   → hosted page, page navigates away
- *   On return: /dashboard/givings/give/success?ref=...  OR  /dashboard/givings/give
+ *   POST /customer/payments/donations   → CheckoutSessionResponse { requiresRedirect, redirectUrl }
+ *   window.location.href = redirectUrl  → hosted payment page navigates away
  */
 
 import { z } from 'zod';
@@ -35,7 +32,7 @@ import { Input } from '../ui/input';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 import { Button } from '../ui/button';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getCheckoutConfig, getLeadremitCheckoutConfig, launchHostedCheckout, type CheckoutConfig } from '@/lib/api/checkout';
+import { getCheckoutConfig, chooseIntegration, type CheckoutConfig } from '@/lib/api/checkout';
 import { createCustomerDonation } from '@/lib/api/customer';
 
 const schema = z.object({
@@ -102,31 +99,24 @@ export function DonateForm() {
     const currency = data.currency || 'USD';
 
     try {
-      // 1. Create the authenticated donation intent
-      const donation = await createCustomerDonation({
-        fundId: data.purpose || undefined,
+      const integrationType = chooseIntegration(config ?? {});
+      const session = await createCustomerDonation({
+        campusId: data.campusId ?? '',
+        fundId: data.purpose,
         amount,
         currency,
+        idempotencyKey: crypto.randomUUID(),
+        integrationType,
+        redirectPreference: 'PAYMENT_STATUS',
         donorName: data.fullName || undefined,
         donorEmail: data.email,
       });
 
-      // 2. Fetch LeadRemit checkout config for this donation
-      const checkoutCfg = await getLeadremitCheckoutConfig(
-        donation.donationId,
-        donation.tenantId
-      );
-
-      if (!checkoutCfg.scriptUrl || !checkoutCfg.checkoutPublicKey) {
-        throw new Error('Checkout configuration is unavailable. Please try again.');
+      if (!session.redirectUrl) {
+        throw new Error('Checkout session did not return a redirect URL. Please try again.');
       }
 
-      // 3. Launch hosted checkout — page navigates away to LeadRemit
-      await launchHostedCheckout({
-        scriptUrl: checkoutCfg.scriptUrl,
-        checkoutPublicKey: checkoutCfg.checkoutPublicKey,
-        lineItems: [],
-      });
+      window.location.href = session.redirectUrl;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Payment failed');
     } finally {

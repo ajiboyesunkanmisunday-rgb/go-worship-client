@@ -15,8 +15,7 @@ import {
   type CheckoutConfig,
   createDonation,
   getCheckoutConfig,
-  getLeadremitCheckoutConfig,
-  launchHostedCheckout,
+  chooseIntegration,
 } from '@/lib/api/checkout';
 import { USE_LIVE_API } from '@/lib/api/config';
 
@@ -85,31 +84,24 @@ export default function CheckoutGivingPage() {
 
     setSubmitting(true);
     try {
-      // 1. Create the guest donation intent
-      const donation = await createDonation({
+      const integrationType = chooseIntegration(config);
+      const session = await createDonation({
+        campusId: campusId ?? '',
+        fundId: fundId ?? '',
+        amount,
+        currency,
+        idempotencyKey: crypto.randomUUID(),
+        integrationType,
+        redirectPreference: 'PAYMENT_STATUS',
         donorName: donorName || undefined,
         donorEmail,
-        currency,
-        amount,
-        fundId,
       });
 
-      // 2. Fetch LeadRemit checkout config for this donation
-      const checkoutCfg = await getLeadremitCheckoutConfig(
-        donation.donationId,
-        donation.tenantId
-      );
-
-      if (!checkoutCfg.scriptUrl || !checkoutCfg.checkoutPublicKey) {
-        throw new Error('Checkout configuration is unavailable. Please try again.');
+      if (!session.redirectUrl) {
+        throw new Error('Checkout session did not return a redirect URL. Please try again.');
       }
 
-      // 3. Launch hosted checkout — page navigates away
-      await launchHostedCheckout({
-        scriptUrl: checkoutCfg.scriptUrl,
-        checkoutPublicKey: checkoutCfg.checkoutPublicKey,
-        lineItems: [],
-      });
+      window.location.href = session.redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment could not be completed. Please try again.');
     } finally {

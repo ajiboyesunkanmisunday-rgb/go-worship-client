@@ -1,108 +1,122 @@
 /**
  * Public giving checkout API.
  *
- * Backend reality (no /public/checkout/* endpoints exist):
+ * Confirmed from live OpenAPI spec:
+ *   GET  /public/checkout/config
+ *   POST /public/checkout/donations
+ *   POST /public/checkout/donations/{paymentReference}/token
+ *   GET  /public/checkout/sessions/{checkoutToken}/status
+ *   GET  /public/checkout/links/{opaqueToken}
+ *   GET  /public/checkout/links/{opaqueToken}/qr
  *
- *   Guest donation intent:
- *     POST /public/contributions/guest/intents
- *     Request:  ContributionIntentRequest { fundId, amount, currency, donorName, donorEmail, userProfileId }
- *     Response: ContributionResponse { donationId, tenantId, fundId, amount, currency, status, ... }
+ * Flow: getCheckoutConfig → createDonation (returns CheckoutSessionResponse with redirectUrl)
+ *       → window.location.href = session.redirectUrl
  *
- *   LeadRemit checkout config (after donation intent is created):
- *     GET  /public/payments/leadremit/checkout-config/{donationId}?tenantId={tenantId}
- *     Response: { paymentReference, tenantId, scriptUrl (checkoutScriptUrl), checkoutPublicKey,
- *                 successUrl, cancelUrl, qrUrl }
- *
- *   The actual card capture is fully hosted by LeadRemit CollectCheckout:
- *     CollectCheckout.redirectToCheckout({ scriptUrl, checkoutPublicKey, lineItems: [] })
- *   The page navigates away; the user is redirected back to successUrl/cancelUrl.
- *
- *   NOTE: There is no global /public/checkout/config endpoint, no /public/checkout/donations,
- *   no /public/checkout/payments, and no payment-status polling endpoint.
- *   getCheckoutConfig() returns an empty config; campuses/funds are not publicly served.
+ * For COLLECT_JS integration type: createDonation first (get paymentReference),
+ * then CollectJS captures card → exchangeCollectJsToken → redirect.
  */
 
 import { api } from './client';
 
-/* -------- Pre-checkout config (stub — no backend endpoint) -------- */
+/* -------- Pre-checkout config (CheckoutConfigurationResponse) -------- */
 
 export type CheckoutConfig = {
+  tenantId?: string;
   tenantDisplayName?: string;
-  branding?: { primaryColor?: string };
+  gatewayType?: 'LEADREMIT_PAY' | 'STRIPE' | 'PAYPAL';
+  environment?: 'LOCAL' | 'STAGING' | 'SANDBOX' | 'PRODUCTION';
+  supportedIntegrationTypes?: ('COLLECT_JS' | 'COLLECT_CHECKOUT' | 'PROVIDER_REDIRECT' | 'TOKENIZED')[];
+  publicKey?: string;
+  checkoutUrl?: string;
+  branding?: Record<string, unknown>;
+  /** Not in current spec — may be populated by future backend additions. */
   campuses?: { id: string; name: string }[];
   funds?: { id: string; name: string }[];
   currencies?: string[];
-  publicKey?: string;
-  supportedIntegrationTypes?: ('COLLECT_JS' | 'COLLECT_CHECKOUT')[];
 };
 
-/**
- * No global checkout config endpoint exists in the backend.
- * Returns an empty config so the checkout form renders with its defaults.
- */
-export const getCheckoutConfig = async (): Promise<CheckoutConfig> => ({});
+/** GET /public/checkout/config */
+export const getCheckoutConfig = () =>
+  api.get<CheckoutConfig>('/public/checkout/config').catch((): CheckoutConfig => ({}));
 
-/* -------- Guest donation intent -------- */
+/* -------- Guest donation checkout (DonationCheckoutRequest) -------- */
+
+export type IntegrationType = 'COLLECT_JS' | 'COLLECT_CHECKOUT' | 'PROVIDER_REDIRECT' | 'TOKENIZED';
+export type RedirectPreference =
+  | 'APPLICATION_DEFAULT'
+  | 'PAYMENT_STATUS'
+  | 'DONATION_CONFIRMATION'
+  | 'SUBSCRIPTION_BILLING'
+  | 'NONE';
 
 export type CreateDonationRequest = {
-  fundId?: string;
+  campusId: string;
+  fundId: string;
   amount: number;
   currency: string;
-  donorName?: string;
-  donorEmail: string;
-  userProfileId?: string;
-};
-
-export type DonationResponse = {
-  donationId: string;
-  tenantId?: string;
-  fundId?: string;
-  amount?: number;
-  currency?: string;
-  status?: string;
+  idempotencyKey: string;
+  integrationType: IntegrationType;
+  redirectPreference: RedirectPreference;
+  checkoutLinkToken?: string;
+  paymentMethodId?: string;
   donorName?: string;
   donorEmail?: string;
-  receivedAt?: string;
-  [key: string]: unknown;
+  note?: string;
 };
 
-/** POST /public/contributions/guest/intents — creates a guest donation intent. */
-export const createDonation = (payload: CreateDonationRequest) =>
-  api.post<DonationResponse>('/public/contributions/guest/intents', payload);
-
-/* -------- LeadRemit hosted checkout config -------- */
-
-export type LeadremitCheckoutConfig = {
+/** Returned by all donation creation + token exchange endpoints. */
+export type CheckoutSessionResponse = {
+  checkoutSessionId?: string;
+  paymentId?: string;
   paymentReference?: string;
-  tenantId?: string;
-  scriptUrl?: string;
-  checkoutPublicKey?: string;
-  successUrl?: string;
-  cancelUrl?: string;
-  qrUrl?: string;
-  [key: string]: unknown;
+  paymentStatus?: 'PENDING' | 'PROCESSING' | 'REQUIRES_ACTION' | 'AUTHORIZED' | 'SUCCEEDED' | 'FAILED' | 'CANCELED' | 'EXPIRED' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
+  sessionStatus?: 'ACTIVE' | 'COMPLETED' | 'CANCELED' | 'EXPIRED' | 'REVOKED';
+  gatewayType?: 'LEADREMIT_PAY' | 'STRIPE' | 'PAYPAL';
+  integrationType?: IntegrationType;
+  requiresRedirect?: boolean;
+  redirectUrl?: string;
+  issuedAt?: string;
+  expiresAt?: string;
 };
+
+/** POST /public/checkout/donations — creates a guest donation, returns session with redirectUrl. */
+export const createDonation = (payload: CreateDonationRequest) =>
+  api.post<CheckoutSessionResponse>('/public/checkout/donations', payload);
 
 /**
- * GET /public/payments/leadremit/checkout-config/{donationId}?tenantId={tenantId}
+ * POST /public/checkout/donations/{paymentReference}/token
  *
- * Called after creating a donation intent; returns the CollectCheckout script URL
- * and public key needed to launch the hosted payment page.
+ * COLLECT_JS flow only: exchange a CollectJS paymentToken for a checkout session.
+ * For COLLECT_CHECKOUT / PROVIDER_REDIRECT, createDonation already returns redirectUrl.
  */
-export const getLeadremitCheckoutConfig = (donationId: string, tenantId?: string) => {
-  const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : '';
-  return api.get<LeadremitCheckoutConfig>(
-    `/public/payments/leadremit/checkout-config/${encodeURIComponent(donationId)}${qs}`
+export const exchangeCollectJsToken = (paymentReference: string, paymentToken: string) =>
+  api.post<CheckoutSessionResponse>(
+    `/public/checkout/donations/${encodeURIComponent(paymentReference)}/token`,
+    { paymentToken }
   );
-};
 
 /* -------- Gateway helpers -------- */
 
-export function chooseIntegration(
-  config: CheckoutConfig
-): 'COLLECT_JS' | 'COLLECT_CHECKOUT' {
+/** GET /public/checkout/sessions/{checkoutToken}/status */
+export const getCheckoutSessionStatus = (checkoutToken: string) =>
+  api.get<{ status?: string; paymentReference?: string; [key: string]: unknown }>(
+    `/public/checkout/sessions/${encodeURIComponent(checkoutToken)}/status`
+  );
+
+/** GET /public/checkout/links/{opaqueToken} */
+export const getCheckoutLink = (opaqueToken: string) =>
+  api.get<Record<string, unknown>>(`/public/checkout/links/${encodeURIComponent(opaqueToken)}`);
+
+/** GET /public/checkout/links/{opaqueToken}/qr */
+export const getCheckoutLinkQr = (opaqueToken: string) =>
+  api.get<unknown>(`/public/checkout/links/${encodeURIComponent(opaqueToken)}/qr`);
+
+export function chooseIntegration(config: CheckoutConfig): IntegrationType {
   const supported = config.supportedIntegrationTypes ?? [];
-  return supported.includes('COLLECT_JS') ? 'COLLECT_JS' : 'COLLECT_CHECKOUT';
+  if (supported.includes('COLLECT_CHECKOUT')) return 'COLLECT_CHECKOUT';
+  if (supported.includes('PROVIDER_REDIRECT')) return 'PROVIDER_REDIRECT';
+  if (supported.includes('COLLECT_JS')) return 'COLLECT_JS';
+  return 'COLLECT_CHECKOUT';
 }
 
 export async function loadScript(src: string): Promise<void> {
