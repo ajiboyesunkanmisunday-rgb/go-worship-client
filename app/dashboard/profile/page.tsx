@@ -10,7 +10,7 @@ import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
 
-const dummyUser: UserProfile = {
+const PREVIEW_PROFILE: UserProfile = {
   id: '1',
   firstName: 'Natashia',
   lastName: 'Khalerira',
@@ -35,7 +35,7 @@ const emptyProfile: UserProfile = {
 };
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserProfile>(USE_LIVE_API ? emptyProfile : dummyUser);
+  const [user, setUser] = useState<UserProfile>(USE_LIVE_API ? emptyProfile : PREVIEW_PROFILE);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
