@@ -162,6 +162,18 @@ export const createCustomerDonation = (payload: CustomerDonationRequest) =>
   api.post<CheckoutSessionResponse>('/customer/payments/donations', payload);
 
 /**
+ * POST /customer/payments/donations/{paymentReference}/token
+ *
+ * COLLECT_JS flow (authenticated): exchange a CollectJS paymentToken for a checkout session.
+ * Authenticated counterpart to the public exchangeCollectJsToken in checkout.ts.
+ */
+export const exchangeCustomerCollectJsToken = (paymentReference: string, paymentToken: string) =>
+  api.post<CheckoutSessionResponse>(
+    `/customer/payments/donations/${encodeURIComponent(paymentReference)}/token`,
+    { paymentToken }
+  );
+
+/**
  * GET /customer/documents/{documentId}/download
  * Returns a redirect or signed URL to download the document.
  * Use via BFF proxy; the response may be a redirect to a presigned MinIO URL.

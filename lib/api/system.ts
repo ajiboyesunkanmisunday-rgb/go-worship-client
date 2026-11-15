@@ -741,6 +741,85 @@ export async function getSystemPermissions(): Promise<SystemPermission[]> {
   return Array.isArray(data) ? (data as SystemPermission[]) : [];
 }
 
+/** POST /system/permissions */
+export const createSystemPermission = (payload: Partial<SystemPermission>) =>
+  api.post<SystemPermission>('/system/permissions', payload);
+
+/** GET /system/permissions/{id} */
+export const getSystemPermissionById = (id: string) =>
+  api.get<SystemPermission>(`/system/permissions/${encodeURIComponent(id)}`);
+
+/** PUT /system/permissions/{id} */
+export const updateSystemPermission = (id: string, payload: Partial<SystemPermission>) =>
+  api.put<SystemPermission>(`/system/permissions/${encodeURIComponent(id)}`, payload);
+
+/** DELETE /system/permissions/{id} */
+export const deleteSystemPermission = (id: string) =>
+  api.del<unknown>(`/system/permissions/${encodeURIComponent(id)}`);
+
+/** GET /system/permissions/code/{code} */
+export const getSystemPermissionByCode = (code: string) =>
+  api.get<SystemPermission>(`/system/permissions/code/${encodeURIComponent(code)}`);
+
+/** GET /system/permissions/type/{type} */
+export const getSystemPermissionsByType = (type: string) =>
+  api.get<SystemPermission[]>(`/system/permissions/type/${encodeURIComponent(type)}`);
+
+/* -------- System Site Templates (/system/site-templates) --------------- */
+
+/** GET /system/site-templates */
+export const getSystemSiteTemplates = () =>
+  api.get<Record<string, unknown>[]>('/system/site-templates');
+
+/** POST /system/site-templates */
+export const createSystemSiteTemplate = (payload: Record<string, unknown>) =>
+  api.post<Record<string, unknown>>('/system/site-templates', payload);
+
+/** PUT /system/site-templates/{templateId} */
+export const updateSystemSiteTemplate = (templateId: string, payload: Record<string, unknown>) =>
+  api.put<Record<string, unknown>>(`/system/site-templates/${encodeURIComponent(templateId)}`, payload);
+
+/** DELETE /system/site-templates/{templateId} */
+export const deleteSystemSiteTemplate = (templateId: string) =>
+  api.del<unknown>(`/system/site-templates/${encodeURIComponent(templateId)}`);
+
+/** GET /system/site-templates/{templateId}/content */
+export const getSystemSiteTemplateContent = (templateId: string) =>
+  api.get<Record<string, unknown>>(`/system/site-templates/${encodeURIComponent(templateId)}/content`);
+
+/** POST /system/site-templates/{templateId}/publish */
+export const publishSystemSiteTemplate = (templateId: string) =>
+  api.post<Record<string, unknown>>(`/system/site-templates/${encodeURIComponent(templateId)}/publish`);
+
+/* -------- System Audit extended (/system/audit) ----------------------- */
+
+/** GET /system/audit/events/{eventId} */
+export const getSystemAuditEventById = (eventId: string) =>
+  api.get<SystemAuditEvent>(`/system/audit/events/${encodeURIComponent(eventId)}`);
+
+/** GET /system/audit/export/recent.csv */
+export function systemAuditExportUrl(): string {
+  return '/bff/gw/system/audit/export/recent.csv';
+}
+
+/** GET /system/audit/payment-gateway-changes/recent */
+export async function getSystemAuditPaymentGatewayChanges(): Promise<SystemAuditEvent[]> {
+  const data = await api.get<unknown>('/system/audit/payment-gateway-changes/recent');
+  return Array.isArray(data) ? (data as SystemAuditEvent[]) : [];
+}
+
+/** GET /system/audit/role-permission-changes/recent */
+export async function getSystemAuditRolePermissionChanges(): Promise<SystemAuditEvent[]> {
+  const data = await api.get<unknown>('/system/audit/role-permission-changes/recent');
+  return Array.isArray(data) ? (data as SystemAuditEvent[]) : [];
+}
+
+/** GET /system/audit/sensitive-actions/recent */
+export async function getSystemAuditSensitiveActions(): Promise<SystemAuditEvent[]> {
+  const data = await api.get<unknown>('/system/audit/sensitive-actions/recent');
+  return Array.isArray(data) ? (data as SystemAuditEvent[]) : [];
+}
+
 /* -------- System Payment Gateway Platform Default --------------------- */
 
 /** PATCH /system/payment-gateways/{providerId}/platform-default */

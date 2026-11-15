@@ -569,6 +569,10 @@ export const updateDonationFund = (fundId: string, payload: Partial<CreateDonati
 export const deactivateDonationFund = (fundId: string) =>
   api.patch<unknown>(`/tenant/donations/funds/${encodeURIComponent(fundId)}/deactivate`);
 
+/** DELETE /tenant/donations/funds/{fundId} */
+export const deleteDonationFund = (fundId: string) =>
+  api.del<unknown>(`/tenant/donations/funds/${encodeURIComponent(fundId)}`);
+
 /* -------- Tenant Events Attendance (/tenant/events/attendance) -------------- */
 
 export type EventAttendanceRecord = {
@@ -703,6 +707,10 @@ export const getTenantOrganizationReadiness = () =>
 
 /* -------- Shared Lookups (/shared/lookups) ---------------------------------- */
 
+/** GET /shared/auth-capabilities */
+export const getSharedAuthCapabilities = () =>
+  api.get<Record<string, unknown>>('/shared/auth-capabilities');
+
 /** GET /shared/lookups */
 export const getSharedLookups = () =>
   api.get<Record<string, unknown>>('/shared/lookups');
@@ -812,6 +820,10 @@ export const getSiteTemplateContent = (templateId: string) =>
 /** POST /tenant/site-templates/{templateId}/publish */
 export const publishSiteTemplate = (templateId: string, payload: PublishTemplatePayload) =>
   api.post<SiteTemplate>(`/tenant/site-templates/${encodeURIComponent(templateId)}/publish`, payload);
+
+/** PUT /tenant/site-templates/{templateId} */
+export const updateSiteTemplate = (templateId: string, payload: Partial<SiteTemplate>) =>
+  api.put<SiteTemplate>(`/tenant/site-templates/${encodeURIComponent(templateId)}`, payload);
 
 /** DELETE /tenant/site-templates/{templateId} */
 export const deleteSiteTemplate = (templateId: string) =>
@@ -1168,6 +1180,14 @@ export async function getTenantRoles(): Promise<TenantRole[]> {
   return Array.isArray(data) ? (data as TenantRole[]) : findTableRows(data).map((r) => r as TenantRole);
 }
 
+/** GET /tenant/admin/roles/{roleId} */
+export const getTenantRoleById = (roleId: string) =>
+  api.get<TenantRole>(`/tenant/admin/roles/${encodeURIComponent(roleId)}`);
+
+/** GET /tenant/admin/roles/code/{code} */
+export const getTenantRoleByCode = (code: string) =>
+  api.get<TenantRole>(`/tenant/admin/roles/code/${encodeURIComponent(code)}`);
+
 /* -------- Tenant Audit (/tenant/audit) ------------------------------------ */
 
 export type TenantAuditEvent = {
@@ -1194,6 +1214,15 @@ export async function getTenantAuditEventsRecent(): Promise<TenantAuditEvent[]> 
 export async function getTenantAuditSecurityEvents(): Promise<TenantAuditEvent[]> {
   const data = await api.get<unknown>('/tenant/audit/security-events');
   return Array.isArray(data) ? (data as TenantAuditEvent[]) : findTableRows(data).map((r) => r as TenantAuditEvent);
+}
+
+/** GET /tenant/audit/events/{eventId} */
+export const getTenantAuditEventById = (eventId: string) =>
+  api.get<TenantAuditEvent>(`/tenant/audit/events/${encodeURIComponent(eventId)}`);
+
+/** GET /tenant/audit/export/recent.csv */
+export function tenantAuditExportUrl(): string {
+  return '/bff/gw/tenant/audit/export/recent.csv';
 }
 
 /* -------- Tenant Notification Campaigns (/tenant/admin/notifications/campaigns) */
@@ -1376,6 +1405,14 @@ export async function getTenantPermissions(): Promise<TenantPermission[]> {
   const data = await api.get<unknown>('/tenant/admin/permissions');
   return Array.isArray(data) ? (data as TenantPermission[]) : [];
 }
+
+/** GET /tenant/admin/permissions/{permissionId} */
+export const getTenantPermissionById = (permissionId: string) =>
+  api.get<TenantPermission>(`/tenant/admin/permissions/${encodeURIComponent(permissionId)}`);
+
+/** GET /tenant/admin/permissions/code/{code} */
+export const getTenantPermissionByCode = (code: string) =>
+  api.get<TenantPermission>(`/tenant/admin/permissions/code/${encodeURIComponent(code)}`);
 
 /* -------- Tenant Custom Domain (/tenant/admin/organization/custom-domain) */
 
