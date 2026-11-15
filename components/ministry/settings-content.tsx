@@ -25,7 +25,6 @@ import {
   updateTenantCampus,
   deleteTenantCampus,
   getTenantBillingPayments,
-  getTenantOrganization,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
@@ -499,11 +498,6 @@ function ProfileTab() {
     if (!USE_LIVE_API) return;
     getTenantBranding().then(setBranding).catch(() => {});
     getProfile().then(setProfile).catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const loc = o.city ?? o.location ?? o.address ?? o.country;
-        if (loc) setLocation(loc);
-      }).catch(() => {});
   }, []);
 
   return (

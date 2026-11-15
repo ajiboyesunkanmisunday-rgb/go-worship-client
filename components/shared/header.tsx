@@ -9,7 +9,7 @@ import { ProfileMenu } from '@/components/shared/profile-menu';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function CompanyInfo() {
@@ -21,11 +21,6 @@ function CompanyInfo() {
     getTenantBranding().then((b) => {
       if (b.organizationName) setName(b.organizationName);
     }).catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const loc = o.city ?? o.location ?? o.address ?? o.country;
-        if (loc) setLocation(loc);
-      }).catch(() => {});
   }, []);
 
   return (

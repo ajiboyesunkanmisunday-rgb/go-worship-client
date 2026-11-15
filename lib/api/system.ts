@@ -116,17 +116,67 @@ function mapTenant(row: R): SystemTenant {
   return { id, name, domain, status, plan, members, createdAt, email, phone, slug: slug || undefined, lastActive, adminUsers, totalGiving };
 }
 
-export async function getSystemTenants(): Promise<SystemTenant[]> {
-  // All tried paths (/system/admin/tenants, /system/tenants, /system/organizations,
-  // /system/dashboard/admin/tenants) returned 404 in localhost HAR — disabled until
-  // the correct endpoint is confirmed from live DO.
-  return [];
+export async function getSystemTenants(page = 0, size = 25): Promise<SystemTenant[]> {
+  const data = await api.get<unknown>(`/system/tenants?page=${page}&size=${size}&sort=name,asc`);
+  const rows = findTableRows(data, 'tenant');
+  return rows.map(mapTenant).filter((t) => t.name);
 }
 
-export async function getSystemTenant(_id: string): Promise<SystemTenant | null> {
-  // Endpoint absent from OpenAPI spec — disabled.
-  return null;
+export async function getSystemTenant(id: string): Promise<SystemTenant | null> {
+  try {
+    const data = await api.get<unknown>(`/system/tenants/${encodeURIComponent(id)}/management`);
+    if (!data || typeof data !== 'object') return null;
+    const mgmt = data as Record<string, unknown>;
+    const tenant = (mgmt['tenant'] ?? mgmt) as R;
+    return mapTenant(tenant);
+  } catch {
+    return null;
+  }
 }
+
+export type SystemTenantManagementResponse = {
+  tenant: {
+    id: string;
+    name: string;
+    shortName?: string;
+    legalName?: string;
+    slug: string;
+    status: string;
+    billingEmail?: string;
+    active: boolean;
+    customDomain?: string;
+    customDomainVerified: boolean;
+    subDomain?: string;
+    countryCode?: string;
+    currency?: string;
+    lastActivityAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  administrator: {
+    id: string;
+    email: string;
+    displayName?: string;
+    status: string;
+    firstLoginRequired: boolean;
+  } | null;
+  canReissueInvitation: boolean;
+  reissueUnavailableReason?: string | null;
+};
+
+/** GET /system/tenants/management (paginated list with administrator info) */
+export const getSystemTenantManagementPage = (page = 0, size = 25) =>
+  api.get<{ content?: SystemTenantManagementResponse[]; totalElements?: number; totalPages?: number }>(
+    `/system/tenants/management?page=${page}&size=${size}&sort=name,asc`
+  );
+
+/** GET /system/tenants/{tenantId}/management */
+export const getSystemTenantManagement = (tenantId: string) =>
+  api.get<SystemTenantManagementResponse>(`/system/tenants/${encodeURIComponent(tenantId)}/management`);
+
+/** POST /system/tenants/{tenantId}/first-login-invitation/reissue */
+export const reissueSystemTenantInvitation = (tenantId: string) =>
+  api.post<unknown>(`/system/tenants/${encodeURIComponent(tenantId)}/first-login-invitation/reissue`);
 
 /* -------- System user list -------- */
 

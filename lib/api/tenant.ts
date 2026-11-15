@@ -788,13 +788,13 @@ export const deleteSiteTemplate = (templateId: string) =>
 
 /* -------- Notification Campaigns (/tenant/admin/notifications/campaigns) ---- */
 
-/** POST /tenant/admin/notifications/campaigns/{campaignId}/send */
+/** POST /tenant/admin/notifications/campaigns/{campaignId}/execute */
 export const sendCampaign = (campaignId: string) =>
-  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/send`);
+  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/execute`);
 
-/** PATCH /tenant/admin/notifications/campaigns/{campaignId}/cancel */
+/** POST /tenant/admin/notifications/campaigns/{campaignId}/cancel */
 export const cancelCampaign = (campaignId: string) =>
-  api.patch<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
+  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
 
 /* -------- Tenant Billing Subscription Lifecycle + Plans -------------------- */
 
@@ -1027,23 +1027,20 @@ export async function updateTenantSecuritySettings(settings: Partial<TenantSecur
 /* -------- Tenant Organization (/tenant/admin/organization) --------------- */
 
 export type TenantOrganization = {
+  tenantId?: string;
   id?: string;
   name?: string;
   shortName?: string;
   legalName?: string;
+  slug?: string;
   billingEmail?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  websiteUrl?: string;
   countryCode?: string;
   currency?: string;
   customDomain?: string;
+  customDomainVerified?: boolean;
   subDomain?: string;
-  city?: string;
-  location?: string;
-  address?: string;
-  country?: string;
+  domainRoutingMode?: string;
+  status?: string;
 };
 
 export type TenantOrganizationUpdatePayload = {

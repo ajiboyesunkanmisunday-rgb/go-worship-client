@@ -7,7 +7,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { getCustomerPaymentById, type PaymentStatusResponse } from '@/lib/api/customer';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
 
 type Props = {
   isIntercepted?: boolean;
@@ -31,15 +31,6 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const loc = o.city ?? o.location ?? o.address ?? o.country;
-        if (loc) setOrgLocation(loc);
-        if (o.phone) setOrgPhone(o.phone);
-        if (o.email) setOrgEmail(o.email);
-        const web = o.website ?? o.websiteUrl;
-        if (web) setOrgWeb(web.replace(/^https?:\/\//, ''));
-      }).catch(() => {});
   }, []);
 
   useEffect(() => {

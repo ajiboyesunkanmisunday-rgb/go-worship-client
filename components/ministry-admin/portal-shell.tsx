@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { RoleSwitcher } from '@/components/shared/role-switcher';
 import { useState, useEffect } from 'react';
-import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const NAV_ITEMS = [
@@ -75,11 +75,6 @@ function Topbar() {
   useEffect(() => {
     if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => { if (b.organizationName) setOrgName(b.organizationName); }).catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const loc = o.city ?? o.location ?? o.address ?? o.country;
-        if (loc) setOrgLocation(loc);
-      }).catch(() => {});
   }, []);
   return (
     <header className="flex h-[64px] items-center justify-between gap-4 rounded-[10px] bg-[#f8fbff] px-4">

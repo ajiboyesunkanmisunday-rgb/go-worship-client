@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -58,11 +58,6 @@ export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: s
     getTenantBranding().then((b) => {
       if (b.organizationName) setReceipt((prev) => ({ ...prev, org: prev.org === DEFAULT_RECEIPT.org ? b.organizationName! : prev.org }));
     }).catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const addr = o.address ?? o.city ?? o.location ?? '';
-        if (addr) setReceipt((prev) => ({ ...prev, orgAddress: prev.orgAddress === DEFAULT_RECEIPT.orgAddress ? addr : prev.orgAddress }));
-      }).catch(() => {});
   }, []);
 
   useEffect(() => {

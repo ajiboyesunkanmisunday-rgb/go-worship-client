@@ -8,7 +8,7 @@ import { UserProfile } from '@/types/user';
 import { getProfile, listSessions, revokeSession, type SessionInfo } from '@/lib/api/auth';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
-import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
 
 const dummyUser: UserProfile = {
   id: '1',
@@ -58,11 +58,6 @@ export default function ProfilePage() {
     getTenantBranding().then((b) => {
       if (b.organizationName) setUser((prev) => ({ ...prev, church: prev.church || b.organizationName! }));
     }).catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const loc = o.city ?? o.location ?? o.address ?? o.country;
-        if (loc) setUser((prev) => ({ ...prev, location: prev.location || loc }));
-      }).catch(() => {});
     listSessions().then((data) => {
       if (Array.isArray(data)) setSessions(data);
     }).catch(() => {});

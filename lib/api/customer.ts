@@ -1,20 +1,16 @@
 /**
- * Customer (member) giving history and donation intents.
+ * Customer (member) payment history, payment methods and recurring giving.
  *
- * Backend (CustomerDonationController at /api/v1/customer/donations):
- *   GET  /customer/donations           → List<ContributionResponse>
- *   GET  /customer/donations/{id}      → ContributionResponse
- *   POST /customer/donations/intents   → ContributionResponse
- *
- * ContributionResponse: { donationId, tenantId, fundId, amount, currency,
- *   status, donorName, donorEmail, userProfileId, receivedAt }
+ * Backend:
+ *   GET  /customer/payments            → Page<EntityTransport>
+ *   GET  /customer/payments/{id}       → EntityTransport
+ *   GET  /customer/payment-methods     → PaymentMethodResponse[]
+ *   GET  /customer/recurring-giving    → RecurringGivingSchedule[]
+ *   POST /customer/donations/intents   → ContributionResponse (checkout intent)
  *
  * Backend (CustomerReceiptController at /api/v1/customer/receipts):
  *   GET  /customer/receipts/{id}       → GivingReceipt
  *   GET  /customer/receipts/{id}/pdf   → FileReferenceResponse (MinIO PDF link)
- *
- * NOTE: No /customer/payments endpoint exists. Payment is embedded in the
- * contribution intent; the hosted checkout redirect is via LeadRemit.
  */
 
 import { api } from './client';
@@ -42,10 +38,11 @@ export type CustomerPaymentsPage = {
 type R = Record<string, unknown>;
 
 function mapContribution(c: R): PaymentResponse {
-  const receivedAt = c['receivedAt'] as string | undefined;
+  const receivedAt = (c['receivedAt'] ?? c['paidAt'] ?? c['requestedAt']) as string | undefined;
+  const id = String(c['id'] ?? c['donationId'] ?? '');
   return {
-    id: String(c['donationId'] ?? ''),
-    paymentReference: String(c['donationId'] ?? ''),
+    id,
+    paymentReference: String(c['paymentReference'] ?? id),
     status: String(c['status'] ?? ''),
     amount: c['amount'] != null ? Number(c['amount']) : undefined,
     currency: String(c['currency'] ?? 'USD'),
@@ -71,17 +68,15 @@ export function paymentToGiving(p: PaymentResponse) {
   };
 }
 
-/** GET /customer/donations — returns list; client-side paged for component compatibility. */
+/** GET /customer/payments — server-paged payment history. */
 export const getCustomerPayments = async (page = 0, size = 20): Promise<CustomerPaymentsPage> => {
-  const data = await api.get<unknown>('/customer/donations');
-  const arr: R[] = Array.isArray(data) ? (data as R[]) : [];
-  const all = arr.map(mapContribution);
-  const start = page * size;
-  const content = all.slice(start, start + size);
+  const data = await api.get<unknown>(`/customer/payments?page=${page}&size=${size}`);
+  const d = (data && typeof data === 'object') ? data as R : {};
+  const arr: R[] = Array.isArray(d['content']) ? (d['content'] as R[]) : Array.isArray(data) ? (data as R[]) : [];
   return {
-    content,
-    totalElements: all.length,
-    totalPages: Math.ceil(all.length / size) || 1,
+    content: arr.map(mapContribution),
+    totalElements: d['totalElements'] != null ? Number(d['totalElements']) : arr.length,
+    totalPages: d['totalPages'] != null ? Number(d['totalPages']) : (Math.ceil(arr.length / size) || 1),
     page,
     size,
   };
@@ -96,18 +91,27 @@ export type PaymentStatusResponse = {
   [key: string]: unknown;
 };
 
-/** GET /customer/donations/{id} */
+/** GET /customer/payments/{id} */
 export const getCustomerPaymentById = async (id: string): Promise<PaymentStatusResponse> => {
-  const data = await api.get<R>(`/customer/donations/${encodeURIComponent(id)}`);
+  const data = await api.get<R>(`/customer/payments/${encodeURIComponent(id)}`);
+  const resolvedId = String(data['id'] ?? data['donationId'] ?? '');
   return {
-    id: String(data['donationId'] ?? ''),
-    paymentReference: String(data['donationId'] ?? ''),
+    id: resolvedId,
+    paymentReference: String(data['paymentReference'] ?? resolvedId),
     status: String(data['status'] ?? ''),
     amount: data['amount'] != null ? Number(data['amount']) : undefined,
     currency: String(data['currency'] ?? 'USD'),
     ...data,
   };
 };
+
+/** GET /customer/payment-methods */
+export const getCustomerPaymentMethods = () =>
+  api.get<R[]>('/customer/payment-methods').then((d) => Array.isArray(d) ? d : []);
+
+/** GET /customer/recurring-giving */
+export const getCustomerRecurringGiving = () =>
+  api.get<R[]>('/customer/recurring-giving').then((d) => Array.isArray(d) ? d : []);
 
 /** URL to view a giving receipt PDF (MinIO reference via BFF proxy). */
 export function receiptUrl(receiptId: string) {

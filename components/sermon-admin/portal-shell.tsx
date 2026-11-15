@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { RoleSwitcher } from '@/components/shared/role-switcher';
 import { useState, useEffect } from 'react';
-import { getTenantBranding, getTenantOrganization } from '@/lib/api/tenant';
+import { getTenantBranding } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 const NAV_ITEMS = [
@@ -70,12 +70,6 @@ function Topbar() {
     getTenantBranding()
       .then((b) => {
         if (b.organizationName) setOrgName(b.organizationName);
-      })
-      .catch(() => {});
-    getTenantOrganization()
-      .then((o) => {
-        const loc = o.city ?? o.location ?? o.address ?? o.country;
-        if (loc) setOrgLocation(loc);
       })
       .catch(() => {});
   }, []);
