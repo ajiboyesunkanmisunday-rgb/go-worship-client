@@ -510,21 +510,17 @@ export async function getSystemTenantPaymentGateways(tenantId: string): Promise<
   return Array.isArray(data) ? (data as TenantPaymentGatewayAssignment[]) : [];
 }
 
-/** PUT /system/tenants/{tenantId}/payment-gateways */
+/** POST /system/tenants/{tenantId}/payment-gateways */
 export const assignSystemTenantPaymentGateways = (tenantId: string, payload: AssignTenantGatewaysPayload) =>
-  api.put<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways`, payload);
+  api.post<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways`, payload);
 
-/** PATCH /system/tenants/{tenantId}/payment-gateways/{gatewayType}/activate */
-export const activateSystemTenantGateway = (tenantId: string, gatewayType: string) =>
-  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(gatewayType)}/activate`);
+/** PATCH /system/tenants/{tenantId}/payment-gateways/{assignmentId}/active */
+export const setSystemTenantGatewayActive = (tenantId: string, assignmentId: string, active: boolean) =>
+  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(assignmentId)}/active`, { active });
 
-/** PATCH /system/tenants/{tenantId}/payment-gateways/{gatewayType}/deactivate */
-export const deactivateSystemTenantGateway = (tenantId: string, gatewayType: string) =>
-  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(gatewayType)}/deactivate`);
-
-/** PATCH /system/tenants/{tenantId}/payment-gateways/{gatewayType}/primary */
-export const setSystemTenantPrimaryGateway = (tenantId: string, gatewayType: string) =>
-  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(gatewayType)}/primary`);
+/** PATCH /system/tenants/{tenantId}/payment-gateways/{assignmentId}/primary */
+export const setSystemTenantPrimaryGateway = (tenantId: string, assignmentId: string) =>
+  api.patch<TenantPaymentGatewayAssignment>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/${encodeURIComponent(assignmentId)}/primary`);
 
 /* -------- System Subscriptions (/system/subscriptions) --------------------- */
 
@@ -711,3 +707,32 @@ export async function getSystemPermissions(): Promise<SystemPermission[]> {
   const data = await api.get<unknown>('/system/permissions');
   return Array.isArray(data) ? (data as SystemPermission[]) : [];
 }
+
+/* -------- System Payment Gateway Platform Default --------------------- */
+
+/** PATCH /system/payment-gateways/{providerId}/platform-default */
+export const setSystemPlatformDefaultGateway = (providerId: string, environment?: string) =>
+  api.patch<unknown>(
+    `/system/payment-gateways/${encodeURIComponent(providerId)}/platform-default${environment ? `?environment=${encodeURIComponent(environment)}` : ''}`
+  );
+
+/* -------- System Tenant Domain Reactivation --------------------------- */
+
+/** GET /system/tenants/{tenantId}/custom-domain/reactivation */
+export const getSystemTenantDomainReactivation = (tenantId: string) =>
+  api.get<Record<string, unknown>>(`/system/tenants/${encodeURIComponent(tenantId)}/custom-domain/reactivation`);
+
+/** POST /system/tenants/{tenantId}/custom-domain/reactivation */
+export const approveSystemTenantDomainReactivation = (tenantId: string) =>
+  api.post<unknown>(`/system/tenants/${encodeURIComponent(tenantId)}/custom-domain/reactivation`);
+
+/* -------- System Tenant Merchant Account ------------------------------ */
+
+/** GET /system/tenants/{tenantId}/payment-gateways/merchant-account */
+export const getSystemTenantMerchantAccount = (tenantId: string) =>
+  api.get<Record<string, unknown>>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/merchant-account`);
+
+/** PATCH /system/tenants/{tenantId}/payment-gateways/merchant-account */
+export const updateSystemTenantMerchantAccount = (tenantId: string, payload: Record<string, unknown>) =>
+  api.patch<unknown>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/merchant-account`, payload);
+

@@ -788,13 +788,17 @@ export const deleteSiteTemplate = (templateId: string) =>
 
 /* -------- Notification Campaigns (/tenant/admin/notifications/campaigns) ---- */
 
-/** POST /tenant/admin/notifications/campaigns/{campaignId}/execute */
+/** POST /tenant/admin/notifications/campaigns/{campaignId}/send */
 export const sendCampaign = (campaignId: string) =>
-  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/execute`);
+  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/send`);
 
-/** POST /tenant/admin/notifications/campaigns/{campaignId}/cancel */
+/** PATCH /tenant/admin/notifications/campaigns/{campaignId}/cancel */
 export const cancelCampaign = (campaignId: string) =>
-  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
+  api.patch<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
+
+/** PUT /tenant/admin/notifications/campaigns/{campaignId} */
+export const updateTenantCampaign = (campaignId: string, payload: Partial<CreateCampaignPayload>) =>
+  api.put<TenantCampaign>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}`, payload);
 
 /* -------- Tenant Billing Subscription Lifecycle + Plans -------------------- */
 
@@ -1264,3 +1268,103 @@ export const publishTenantSermon = (sermonId: string) =>
 /** PATCH /tenant/admin/content/sermons/{sermonId}/unpublish */
 export const unpublishTenantSermon = (sermonId: string) =>
   api.patch<TenantSermon>(`/tenant/admin/content/sermons/${encodeURIComponent(sermonId)}/unpublish`);
+
+/* -------- Tenant Single Donation (/tenant/donations/{donationId}) ----- */
+
+/** GET /tenant/donations/{donationId} */
+export const getTenantDonation = (donationId: string) =>
+  api.get<Record<string, unknown>>(`/tenant/donations/${encodeURIComponent(donationId)}`);
+
+/* -------- Tenant Admin Permissions (/tenant/admin/permissions) -------- */
+
+export type TenantPermission = {
+  id?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  type?: string;
+};
+
+/** GET /tenant/admin/permissions */
+export async function getTenantPermissions(): Promise<TenantPermission[]> {
+  const data = await api.get<unknown>('/tenant/admin/permissions');
+  return Array.isArray(data) ? (data as TenantPermission[]) : [];
+}
+
+/* -------- Tenant Custom Domain (/tenant/admin/organization/custom-domain) */
+
+export type CustomDomainStatusResponse = {
+  customDomain?: string;
+  claimId?: string;
+  status?: string;
+  dnsTarget?: string;
+  verifiedAt?: string;
+  expiresAt?: string;
+};
+
+/** GET /tenant/admin/organization/custom-domain/status */
+export const getTenantCustomDomainStatus = () =>
+  api.get<CustomDomainStatusResponse>('/tenant/admin/organization/custom-domain/status');
+
+/** POST /tenant/admin/organization/custom-domain/prepare */
+export const prepareTenantCustomDomain = (payload: { customDomain: string }) =>
+  api.post<CustomDomainStatusResponse>('/tenant/admin/organization/custom-domain/prepare', payload);
+
+/** POST /tenant/admin/organization/custom-domain/{claimId}/verify */
+export const verifyTenantCustomDomain = (claimId: string) =>
+  api.post<CustomDomainStatusResponse>(`/tenant/admin/organization/custom-domain/${encodeURIComponent(claimId)}/verify`);
+
+/** POST /tenant/admin/organization/custom-domain/reactivation */
+export const reactivateTenantCustomDomain = () =>
+  api.post<unknown>('/tenant/admin/organization/custom-domain/reactivation');
+
+/* -------- Tenant Merchant Account (/tenant/payment-gateway/merchant-account) */
+
+/** GET /tenant/payment-gateway/merchant-account */
+export const getTenantMerchantAccount = () =>
+  api.get<Record<string, unknown>>('/tenant/payment-gateway/merchant-account');
+
+/** POST /tenant/payment-gateway/merchant-account/start */
+export const startTenantMerchantAccountOnboarding = () =>
+  api.post<Record<string, unknown>>('/tenant/payment-gateway/merchant-account/start');
+
+/** POST /tenant/payment-gateway/merchant-account/submit */
+export const submitTenantMerchantAccount = (payload: Record<string, unknown>) =>
+  api.post<unknown>('/tenant/payment-gateway/merchant-account/submit', payload);
+
+/* -------- Tenant Subscription Checkout (/tenant/billing/subscription/checkout) */
+
+/** POST /tenant/billing/subscription/checkout */
+export const tenantSubscriptionCheckout = (payload: { planId: string; [key: string]: unknown }) =>
+  api.post<{ checkoutUrl?: string; sessionId?: string; [key: string]: unknown }>(
+    '/tenant/billing/subscription/checkout',
+    payload
+  );
+
+/* -------- Tenant Checkout Links (/tenant/checkout-links) -------------- */
+
+export type TenantCheckoutLink = {
+  id?: string;
+  tenantId?: string;
+  opaqueToken?: string;
+  label?: string;
+  fundId?: string;
+  amount?: number;
+  currency?: string;
+  active?: boolean;
+  createdAt?: string;
+};
+
+/** POST /tenant/checkout-links */
+export const createTenantCheckoutLink = (payload: Partial<TenantCheckoutLink>) =>
+  api.post<TenantCheckoutLink>('/tenant/checkout-links', payload);
+
+/** DELETE /tenant/checkout-links/{checkoutLinkId} */
+export const deleteTenantCheckoutLink = (checkoutLinkId: string) =>
+  api.del<unknown>(`/tenant/checkout-links/${encodeURIComponent(checkoutLinkId)}`);
+
+/* -------- Tenant Organization Analytics (/tenant/admin/organization/analytics) */
+
+/** GET /tenant/admin/organization/analytics */
+export const getTenantOrganizationAnalytics = () =>
+  api.get<Record<string, unknown>>('/tenant/admin/organization/analytics');

@@ -113,6 +113,30 @@ export const getCustomerPaymentMethods = () =>
 export const getCustomerRecurringGiving = () =>
   api.get<R[]>('/customer/recurring-giving').then((d) => Array.isArray(d) ? d : []);
 
+/** POST /customer/recurring-giving */
+export const createCustomerRecurringGiving = (payload: R) =>
+  api.post<R>('/customer/recurring-giving', payload);
+
+/** PATCH /customer/recurring-giving/{scheduleId}/pause */
+export const pauseCustomerRecurringGiving = (scheduleId: string) =>
+  api.patch<unknown>(`/customer/recurring-giving/${encodeURIComponent(scheduleId)}/pause`);
+
+/** PATCH /customer/recurring-giving/{scheduleId}/resume */
+export const resumeCustomerRecurringGiving = (scheduleId: string) =>
+  api.patch<unknown>(`/customer/recurring-giving/${encodeURIComponent(scheduleId)}/resume`);
+
+/** PATCH /customer/recurring-giving/{scheduleId}/cancel */
+export const cancelCustomerRecurringGiving = (scheduleId: string) =>
+  api.patch<unknown>(`/customer/recurring-giving/${encodeURIComponent(scheduleId)}/cancel`);
+
+/** DELETE /customer/payment-methods/{paymentMethodId} */
+export const revokeCustomerPaymentMethod = (paymentMethodId: string) =>
+  api.del<unknown>(`/customer/payment-methods/${encodeURIComponent(paymentMethodId)}`);
+
+/** PATCH /customer/payment-methods/{paymentMethodId}/default */
+export const setDefaultCustomerPaymentMethod = (paymentMethodId: string) =>
+  api.patch<unknown>(`/customer/payment-methods/${encodeURIComponent(paymentMethodId)}/default`);
+
 /** URL to view a giving receipt PDF (MinIO reference via BFF proxy). */
 export function receiptUrl(receiptId: string) {
   return `/bff/gw/customer/receipts/${receiptId}/pdf`;
@@ -135,6 +159,6 @@ export type CustomerDonationResponse = {
   [key: string]: unknown;
 };
 
-/** POST /customer/donations/intents — creates a contribution intent for an authenticated member. */
+/** POST /customer/payments/donations — creates a donation payment for an authenticated member. */
 export const createCustomerDonation = (payload: CustomerDonationRequest) =>
-  api.post<CustomerDonationResponse>('/customer/donations/intents', payload);
+  api.post<CustomerDonationResponse>('/customer/payments/donations', payload);
