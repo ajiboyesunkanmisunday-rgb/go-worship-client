@@ -768,8 +768,16 @@ export const getSystemPermissionsByType = (type: string) =>
 /* -------- System Site Templates (/system/site-templates) --------------- */
 
 /** GET /system/site-templates */
-export const getSystemSiteTemplates = () =>
-  api.get<Record<string, unknown>[]>('/system/site-templates');
+export const getSystemSiteTemplates = (templateType?: string) =>
+  api.get<Record<string, unknown>[]>(
+    templateType ? `/system/site-templates?templateType=${encodeURIComponent(templateType)}` : '/system/site-templates'
+  );
+
+/** GET /system/site-templates/resolved */
+export const getResolvedSystemSiteTemplate = (templateType?: string) =>
+  api.get<Record<string, unknown>>(
+    templateType ? `/system/site-templates/resolved?templateType=${encodeURIComponent(templateType)}` : '/system/site-templates/resolved'
+  );
 
 /** POST /system/site-templates */
 export const createSystemSiteTemplate = (payload: Record<string, unknown>) =>
