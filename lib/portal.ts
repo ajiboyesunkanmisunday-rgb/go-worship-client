@@ -55,7 +55,7 @@ export function isRoleAllowedForPortal(
   portal: PortalKind
 ): GateResult {
   const r = (roles ?? []).map((x) => String(x).toUpperCase());
-  const hasSystem  = r.some((x) => x.startsWith('SYSTEM_') || x === 'SYSTEM');
+  const hasSystem  = r.some((x) => x.includes('SYSTEM'));
   const hasMinistry = r.some((x) =>
     x.startsWith('TENANT_') ||
     x === 'MINISTRY_ADMIN' ||
