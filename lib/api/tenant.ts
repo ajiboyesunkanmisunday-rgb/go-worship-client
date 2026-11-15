@@ -262,14 +262,14 @@ export type CreateGroupPayload = {
   isPublic?: boolean;
 };
 
-/** POST /tenant/admin/groups — no groups endpoint exists in the backend API. */
+/** POST /tenant/admin/groups — not implemented in backend; listed in KNOWN_LIMITATIONS. */
 export async function createTenantGroup(_payload: CreateGroupPayload): Promise<void> {
-  // /tenant/admin/groups not in backend API — no-op
+  throw new Error('Group creation is not available — this endpoint does not exist in the current backend version.');
 }
 
-/** PUT /tenant/admin/groups/:id — no groups endpoint exists in the backend API. */
+/** PUT /tenant/admin/groups/:id — not implemented in backend; listed in KNOWN_LIMITATIONS. */
 export async function updateTenantGroup(_id: string, _payload: Partial<CreateGroupPayload>): Promise<void> {
-  // /tenant/admin/groups not in backend API — no-op
+  throw new Error('Group editing is not available — this endpoint does not exist in the current backend version.');
 }
 
 /* -------- Tenant Admin Dashboard Stats -------- */
@@ -329,9 +329,10 @@ export type ProvisionTenantUserPayload = {
   };
 };
 
-/** TN-006  POST /tenant/admin/users/provision — not in backend API — disabled. */
-export const provisionTenantUser = (_payload: ProvisionTenantUserPayload): Promise<unknown> =>
-  Promise.resolve(null);
+/** TN-006  POST /tenant/admin/users/provision — not implemented in backend; listed in KNOWN_LIMITATIONS. */
+export const provisionTenantUser = (_payload: ProvisionTenantUserPayload): Promise<unknown> => {
+  throw new Error('Admin user provisioning is not available — this endpoint does not exist in the current backend version.');
+};
 
 /* -------- Member Provisioning (confirmed: TN-007) -------- */
 

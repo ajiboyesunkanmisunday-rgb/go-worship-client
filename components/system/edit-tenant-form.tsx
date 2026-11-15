@@ -58,6 +58,7 @@ export function EditTenantForm({ id }: { id: string }) {
   const back = `/system/tenants/${id}`;
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [tenantForm, setTenantForm] = useState<TenantFormData>(USE_LIVE_API ? { name: '', tenantUrl: '', email: '', phone: '', created: '', plan: '', memberCount: '' } : DEFAULT_TENANT);
   const [formKey, setFormKey] = useState(0);
 
@@ -95,9 +96,15 @@ export function EditTenantForm({ id }: { id: string }) {
     if (USE_LIVE_API) {
       try {
         setSubmitting(true);
+        setSubmitError(null);
         await updateSystemTenant(id, payload);
-      } catch { /* show success regardless — mirrors existing UX */ }
-      finally { setSubmitting(false); }
+        setDone(true);
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Save failed.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
     }
     setDone(true);
   };
@@ -160,6 +167,12 @@ export function EditTenantForm({ id }: { id: string }) {
           <Field label={<>Church Members<Req /></>}>
             <Input name="memberCount" type="number" className={H} defaultValue={tenantForm.memberCount} />
           </Field>
+
+          {submitError && (
+            <p role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+              {submitError}
+            </p>
+          )}
 
           <Button size="lg" type="submit" className="mt-1 h-[52px] w-full" disabled={submitting}>
             {submitting ? 'Saving…' : 'Update Tenant'}

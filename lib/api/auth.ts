@@ -409,12 +409,14 @@ export const verifyGuestOtp = (email: string, tokenId: string, code: string) =>
     { email, tokenId, code }
   );
 
-/** POST /tenant/admin/users/guests/upgrade-to-customer — not in backend API — disabled. */
+/** POST /tenant/admin/users/guests/upgrade-to-customer — not implemented in backend; listed in KNOWN_LIMITATIONS. */
 export const upgradeGuestToCustomer = (_payload: {
   displayName?: string;
   rawPassword?: string;
   confirmPassword?: string;
-}): Promise<unknown> => Promise.resolve(null);
+}): Promise<unknown> => {
+  throw new Error('Guest account upgrade is not available — this endpoint does not exist in the current backend version.');
+};
 
 /* -------- In-App Communications (/in-app/communications) --------------- */
 

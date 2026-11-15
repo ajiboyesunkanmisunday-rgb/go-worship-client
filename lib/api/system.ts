@@ -288,9 +288,10 @@ export type UpdateTenantPayload = {
   [key: string]: unknown;
 };
 
-/** PUT /system/tenants/:id — no such endpoint in backend API — disabled. */
-export const updateSystemTenant = (_id: string, _payload: UpdateTenantPayload): Promise<unknown> =>
-  Promise.resolve(null);
+/** PUT /system/tenants/:id — not implemented in backend; listed in KNOWN_LIMITATIONS. */
+export const updateSystemTenant = (_id: string, _payload: UpdateTenantPayload): Promise<unknown> => {
+  throw new Error('Tenant editing is not available — this endpoint does not exist in the current backend version.');
+};
 
 /* -------- Platform user provisioning -------- */
 
