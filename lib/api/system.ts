@@ -313,6 +313,34 @@ export type ProvisionSystemUserPayload = {
 export const provisionSystemUser = (payload: ProvisionSystemUserPayload) =>
   api.post<unknown>('/system/users/provision', payload);
 
+/** GET /system/users/{userId} */
+export const getSystemUser = (userId: string) =>
+  api.get<SystemUser>(`/system/users/${encodeURIComponent(userId)}`);
+
+/** PUT /system/users/{userId} */
+export const updateSystemUser = (userId: string, payload: Partial<ProvisionSystemUserPayload>) =>
+  api.put<SystemUser>(`/system/users/${encodeURIComponent(userId)}`, payload);
+
+/** DELETE /system/users/{userId} */
+export const deleteSystemUser = (userId: string) =>
+  api.del<unknown>(`/system/users/${encodeURIComponent(userId)}`);
+
+/** PATCH /system/users/{userId}/activate */
+export const activateSystemUser = (userId: string) =>
+  api.patch<unknown>(`/system/users/${encodeURIComponent(userId)}/activate`);
+
+/** PATCH /system/users/{userId}/suspend */
+export const suspendSystemUser = (userId: string) =>
+  api.patch<unknown>(`/system/users/${encodeURIComponent(userId)}/suspend`);
+
+/** GET /system/users/{userId}/roles */
+export const getSystemUserRoles = (userId: string) =>
+  api.get<unknown[]>(`/system/users/${encodeURIComponent(userId)}/roles`);
+
+/** POST /system/users/{userId}/roles */
+export const setSystemUserRoles = (userId: string, payload: { roleIds: string[] }) =>
+  api.post<unknown>(`/system/users/${encodeURIComponent(userId)}/roles`, payload);
+
 /* -------- System Tenant Lifecycle Actions (/system/tenants/{tenantId}/*) ---- */
 
 export type TenantActionResponse = {
@@ -378,13 +406,12 @@ export const createSystemPaymentGateway = (payload: CreatePaymentGatewayPayload)
 export const updateSystemPaymentGateway = (providerId: string, payload: Partial<CreatePaymentGatewayPayload>) =>
   api.put<SystemPaymentGateway>(`/system/payment-gateways/${encodeURIComponent(providerId)}`, payload);
 
-/** PATCH /system/payment-gateways/{providerId}/activate */
-export const activateSystemPaymentGateway = (providerId: string) =>
-  api.patch<SystemPaymentGateway>(`/system/payment-gateways/${encodeURIComponent(providerId)}/activate`);
-
-/** PATCH /system/payment-gateways/{providerId}/deactivate */
-export const deactivateSystemPaymentGateway = (providerId: string) =>
-  api.patch<SystemPaymentGateway>(`/system/payment-gateways/${encodeURIComponent(providerId)}/deactivate`);
+/** PATCH /system/payment-gateways/{providerId}/active */
+export const setSystemPaymentGatewayActive = (providerId: string, active: boolean) =>
+  api.patch<SystemPaymentGateway>(
+    `/system/payment-gateways/${encodeURIComponent(providerId)}/active`,
+    { active }
+  );
 
 /* -------- System Branding (/system/branding) -------------------------------- */
 
@@ -644,7 +671,7 @@ export const getSystemBillingPlan = (planId: string) =>
 export const updateSystemBillingPlan = (planId: string, payload: Partial<BillingPlanPayload>) =>
   api.put<SystemBillingPlan>(`/system/billing/plans/${encodeURIComponent(planId)}`, payload);
 
-/** DELETE /system/billing/plans/{planId} */
+/** DELETE /system/billing/plans/{planId} — not in live OpenAPI spec (GET PUT only); backend will reject. */
 export const deleteSystemBillingPlan = (planId: string) =>
   api.del<unknown>(`/system/billing/plans/${encodeURIComponent(planId)}`);
 
@@ -687,6 +714,12 @@ export const updateSystemRole = (id: string, payload: Partial<SystemRolePayload>
 /** DELETE /system/roles/{id} */
 export const deleteSystemRole = (id: string) =>
   api.del<unknown>(`/system/roles/${encodeURIComponent(id)}`);
+
+/** GET /system/roles/{id}/permissions */
+export const getSystemRolePermissions = (id: string) =>
+  api.get<{ permissionIds?: string[]; permissions?: SystemPermission[]; [key: string]: unknown }>(
+    `/system/roles/${encodeURIComponent(id)}/permissions`
+  );
 
 /** PUT /system/roles/{id}/permissions */
 export const updateSystemRolePermissions = (id: string, payload: { permissionIds: string[] }) =>
@@ -736,3 +769,21 @@ export const getSystemTenantMerchantAccount = (tenantId: string) =>
 export const updateSystemTenantMerchantAccount = (tenantId: string, payload: Record<string, unknown>) =>
   api.patch<unknown>(`/system/tenants/${encodeURIComponent(tenantId)}/payment-gateways/merchant-account`, payload);
 
+
+/* -------- System Communications (/system/communications) --------------- */
+
+/** POST /system/communications */
+export const sendSystemCommunication = (payload: Record<string, unknown>) =>
+  api.post<unknown>('/system/communications', payload);
+
+/** GET /system/communications/sent */
+export const getSystemCommunicationsSent = (page = 0, size = 20) =>
+  api.get<unknown>(`/system/communications/sent?page=${page}&size=${size}`);
+
+/** GET /system/communications/sent/{batchId}/recipients */
+export const getSystemCommunicationRecipients = (batchId: string) =>
+  api.get<unknown[]>(`/system/communications/sent/${encodeURIComponent(batchId)}/recipients`);
+
+/** GET /system/communications/targets/tenants */
+export const getSystemCommunicationTargets = () =>
+  api.get<unknown[]>('/system/communications/targets/tenants');

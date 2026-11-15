@@ -119,7 +119,22 @@ export function chooseIntegration(config: CheckoutConfig): IntegrationType {
   return 'COLLECT_CHECKOUT';
 }
 
-export async function loadScript(src: string): Promise<void> {
+declare global {
+  interface Window {
+    CollectJS?: {
+      configure(opts: {
+        variant: 'lightbox' | 'inline';
+        callback?: (token: { token: string }) => void;
+        [key: string]: unknown;
+      }): void;
+    };
+  }
+}
+
+const COLLECT_JS_CDN =
+  'https://leadremit.transactiongateway.com/token/Collect.js';
+
+function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) return resolve();
     const s = document.createElement('script');
@@ -131,31 +146,9 @@ export async function loadScript(src: string): Promise<void> {
   });
 }
 
-declare global {
-  interface Window {
-    CollectJS?: {
-      configure(opts: {
-        variant: 'lightbox' | 'inline';
-        callback?: (token: { token: string }) => void;
-        [key: string]: unknown;
-      }): void;
-    };
-    CollectCheckout?: {
-      redirectToCheckout(opts: {
-        scriptUrl: string;
-        checkoutPublicKey: string;
-        lineItems: unknown[];
-        [key: string]: unknown;
-      }): void;
-    };
-  }
-}
-
-const COLLECT_JS_CDN =
-  'https://leadremit.transactiongateway.com/token/Collect.js';
-
 /**
- * Load the Collect.js script, show the lightbox, return the payment token.
+ * COLLECT_JS flow: load the Collect.js lightbox, return the payment token.
+ * Pass the token to exchangeCollectJsToken to complete the checkout session.
  */
 export async function startCollectJs(publicKey: string): Promise<string> {
   await loadScript(`${COLLECT_JS_CDN}?tokenization-key=${publicKey}`);
@@ -172,23 +165,4 @@ export async function startCollectJs(publicKey: string): Promise<string> {
     btn.click();
     document.body.removeChild(btn);
   });
-}
-
-/**
- * Trigger the CollectCheckout hosted redirect.
- * The page navigates away and never returns; call sites should treat this as final.
- */
-export async function launchHostedCheckout(opts: {
-  scriptUrl: string;
-  checkoutPublicKey: string;
-  lineItems?: unknown[];
-  [key: string]: unknown;
-}): Promise<never> {
-  await loadScript(opts.scriptUrl);
-  if (!window.CollectCheckout) throw new Error('CollectCheckout not available');
-  window.CollectCheckout.redirectToCheckout({
-    ...opts,
-    lineItems: opts.lineItems ?? [],
-  });
-  return new Promise(() => {}); // never resolves — page navigates away
 }

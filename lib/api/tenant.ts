@@ -115,6 +115,22 @@ export async function getTenantEvents(): Promise<TenantEvent[]> {
   return findTableRows(data, 'event').map(mapEvent).filter((e) => e.name);
 }
 
+/** PUT /tenant/events/{eventId} */
+export const updateTenantEvent = (eventId: string, payload: Partial<CreateEventPayload>) =>
+  api.put<TenantEvent>(`/tenant/events/${encodeURIComponent(eventId)}`, payload);
+
+/** PATCH /tenant/events/{eventId}/publish */
+export const publishTenantEvent = (eventId: string) =>
+  api.patch<unknown>(`/tenant/events/${encodeURIComponent(eventId)}/publish`);
+
+/** PATCH /tenant/events/{eventId}/unpublish */
+export const unpublishTenantEvent = (eventId: string) =>
+  api.patch<unknown>(`/tenant/events/${encodeURIComponent(eventId)}/unpublish`);
+
+/** PATCH /tenant/events/{eventId}/archive */
+export const archiveTenantEvent = (eventId: string) =>
+  api.patch<unknown>(`/tenant/events/${encodeURIComponent(eventId)}/archive`);
+
 /** GET /tenant/events/{eventId} */
 export async function getTenantEvent(id: string): Promise<TenantEvent | null> {
   try {
@@ -913,9 +929,9 @@ export const getTenantBillingPayments = (page = 0, size = 20) =>
 export const getTenantBillingPayment = (paymentId: string) =>
   api.get<BillingPayment>(`/tenant/billing/payments/${encodeURIComponent(paymentId)}`);
 
-/** POST /tenant/billing/payments/{paymentReference}/token */
+/** POST /tenant/billing/invoices/payments/{paymentReference}/token */
 export const submitPaymentToken = (paymentReference: string, paymentToken: string) =>
-  api.post<unknown>(`/tenant/billing/payments/${encodeURIComponent(paymentReference)}/token`, { paymentToken });
+  api.post<unknown>(`/tenant/billing/invoices/payments/${encodeURIComponent(paymentReference)}/token`, { paymentToken });
 
 /* -------- Tenant Billing / Subscription (confirmed: auth-endpoints memory) -- */
 
@@ -984,6 +1000,12 @@ export const checkoutTenantInvoice = (invoiceId: string, payload?: Record<string
   api.post<{ checkoutUrl?: string; [key: string]: unknown }>(
     `/tenant/billing/invoices/${encodeURIComponent(invoiceId)}/checkout`,
     payload
+  );
+
+/** POST /tenant/billing/invoices/{invoiceId}/document */
+export const generateTenantInvoiceDocument = (invoiceId: string) =>
+  api.post<{ documentId?: string; [key: string]: unknown }>(
+    `/tenant/billing/invoices/${encodeURIComponent(invoiceId)}/document`
   );
 
 /** POST /tenant/billing/payments/{paymentId}/receipt */
