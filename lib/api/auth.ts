@@ -79,6 +79,17 @@ export const completeFirstLogin = (payload: CompleteFirstLoginRequest) =>
     payload
   );
 
+export type ConsumeFirstLoginResponse = {
+  ok: boolean;
+  tenantId?: string | null;
+  nextAction?: string | null;
+  loginUrl?: string | null;
+};
+
+/** POST /bff/auth/first-login/consume — exchanges a single-use provisioning link token. */
+export const consumeFirstLoginToken = (token: string) =>
+  authRoute<ConsumeFirstLoginResponse>('/bff/auth/first-login/consume', { token });
+
 /* ---------------- Login MFA (no session yet) ---------------- */
 
 export type MfaBeginRequest = {

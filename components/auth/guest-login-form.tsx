@@ -26,6 +26,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { startGuestOtp, verifyGuestOtp } from '@/lib/api/auth';
 import { executeRecaptcha } from '@/lib/recaptcha';
 
 type Props = {
@@ -55,17 +56,11 @@ export function GuestLoginForm({
     try {
       const captchaToken = await executeRecaptcha('guest_otp_start');
       if (!captchaToken) { setError('Security check failed. Please try again.'); return; }
-      const res = await fetch('/bff/auth/guest/otp/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, captchaToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data?.message ?? 'Failed to send OTP'); return; }
-      setTokenId(data?.tokenId ?? data?.sessionId ?? '');
+      const data = await startGuestOtp(email, captchaToken);
+      setTokenId(data.tokenId ?? data.sessionId ?? '');
       setStep('otp');
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
     } finally { setBusy(false); }
   };
 
@@ -76,22 +71,16 @@ export function GuestLoginForm({
     if (code.length < 6) { setError('Please enter the 6-digit code'); return; }
     setBusy(true);
     try {
-      const res = await fetch('/bff/auth/guest/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, tokenId, code }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data?.message ?? 'Invalid code'); return; }
+      const data = await verifyGuestOtp(email, tokenId, code);
       // If the backend says the guest can upgrade, offer the upgrade flow first.
       // The upgrade page has a "Continue as guest" skip link that goes to redirectTo.
-      if (data?.canUpgrade) {
+      if (data.canUpgrade) {
         router.push('/auth/upgrade-account');
       } else {
         router.push(redirectTo);
       }
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
     } finally { setBusy(false); }
   };
 

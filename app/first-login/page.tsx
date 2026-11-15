@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { AuthLayout } from '@/components/auth/layout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { consumeFirstLoginToken } from '@/lib/api/auth';
 
 /**
  * Landing page for the provisioning email link:
@@ -37,24 +38,12 @@ function FirstLoginInner() {
 
     (async () => {
       try {
-        const res = await fetch('/bff/auth/first-login/consume', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok) {
-          setError(data?.message ?? 'This link is invalid or has expired.');
-          return;
-        }
-
+        const data = await consumeFirstLoginToken(token);
         const qs = new URLSearchParams({ firstLogin: '1' });
-        if (data?.tenantId) qs.set('tenant', data.tenantId);
+        if (data.tenantId) qs.set('tenant', data.tenantId);
         router.replace(`/auth/login?${qs.toString()}`);
-      } catch {
-        setError('Could not reach the server. Please try again.');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not reach the server. Please try again.');
       }
     })();
   }, [token, router]);
