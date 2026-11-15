@@ -1,16 +1,13 @@
 /**
- * Customer (member) payment history, payment methods and recurring giving.
+ * Customer (member) payment history, payment methods, recurring giving and documents.
  *
  * Backend:
- *   GET  /customer/payments            → Page<EntityTransport>
- *   GET  /customer/payments/{id}       → EntityTransport
- *   GET  /customer/payment-methods     → PaymentMethodResponse[]
- *   GET  /customer/recurring-giving    → RecurringGivingSchedule[]
- *   POST /customer/payments/donations  → CheckoutSessionResponse
- *
- * Backend (CustomerReceiptController at /api/v1/customer/receipts):
- *   GET  /customer/receipts/{id}       → GivingReceipt
- *   GET  /customer/receipts/{id}/pdf   → FileReferenceResponse (MinIO PDF link)
+ *   GET  /customer/payments                    → Page<EntityTransport>
+ *   GET  /customer/payments/{id}               → EntityTransport
+ *   GET  /customer/payment-methods             → PaymentMethodResponse[]
+ *   GET  /customer/recurring-giving            → RecurringGivingSchedule[]
+ *   POST /customer/payments/donations          → CheckoutSessionResponse
+ *   GET  /customer/documents/{documentId}/download
  */
 
 import { api } from './client';
@@ -163,3 +160,12 @@ export type CustomerDonationRequest = {
 /** POST /customer/payments/donations — creates a donation payment, returns session with redirectUrl. */
 export const createCustomerDonation = (payload: CustomerDonationRequest) =>
   api.post<CheckoutSessionResponse>('/customer/payments/donations', payload);
+
+/**
+ * GET /customer/documents/{documentId}/download
+ * Returns a redirect or signed URL to download the document.
+ * Use via BFF proxy; the response may be a redirect to a presigned MinIO URL.
+ */
+export function customerDocumentDownloadUrl(documentId: string): string {
+  return `/bff/gw/customer/documents/${encodeURIComponent(documentId)}/download`;
+}

@@ -438,3 +438,76 @@ export const sendInAppMessage = (conversationId: string, payload: { body: string
 /** GET /in-app/communications/events/upcoming */
 export const getInAppUpcomingEvents = () =>
   api.get<unknown[]>('/in-app/communications/events/upcoming');
+
+/** GET /in-app/communications/conversations/{conversationId} */
+export const getInAppConversation = (conversationId: string) =>
+  api.get<unknown>(`/in-app/communications/conversations/${encodeURIComponent(conversationId)}`);
+
+export type EventNotificationPreference = {
+  eventNotificationsEnabled?: boolean;
+};
+
+/** GET /in-app/communications/events/notification-preference */
+export const getInAppEventNotificationPreference = () =>
+  api.get<EventNotificationPreference>('/in-app/communications/events/notification-preference');
+
+/** PUT /in-app/communications/events/notification-preference */
+export const updateInAppEventNotificationPreference = (payload: EventNotificationPreference) =>
+  api.put<EventNotificationPreference>('/in-app/communications/events/notification-preference', payload);
+
+/**
+ * Returns an EventSource URL for the SSE notification stream.
+ * GET /in-app/communications/stream (Server-Sent Events)
+ * Usage: new EventSource(inAppStreamUrl(), { withCredentials: true })
+ */
+export function inAppStreamUrl(): string {
+  return '/bff/gw/in-app/communications/stream';
+}
+
+/* -------- Auth utility endpoints -------- */
+
+/** GET /auth/captcha/site-key */
+export const getAuthCaptchaSiteKey = () =>
+  api.get<{ siteKey?: string; [key: string]: unknown }>('/auth/captcha/site-key');
+
+/** GET /auth/routes */
+export const getAuthRoutes = () =>
+  api.get<Record<string, unknown>>('/auth/routes');
+
+/* -------- Public central authentication -------- */
+
+export type CentralAuthContextResponse = {
+  contextReference?: string;
+  tenantDomain?: string;
+  returnPath?: string;
+  entryPoint?: string;
+  expiresAt?: string;
+};
+
+export type CentralAuthStartRequest = {
+  returnPath?: string;
+  entryPoint: string;
+};
+
+export type CentralAuthStartResponse = {
+  authenticationUrl?: string;
+  expiresAt?: string;
+};
+
+/** GET /public/auth/central/contexts/{contextReference} */
+export const getPublicAuthCentralContext = (contextReference: string) =>
+  api.get<CentralAuthContextResponse>(
+    `/public/auth/central/contexts/${encodeURIComponent(contextReference)}`
+  );
+
+/** POST /public/auth/central/start */
+export const startPublicAuthCentral = (payload: CentralAuthStartRequest) =>
+  api.post<CentralAuthStartResponse>('/public/auth/central/start', payload);
+
+/** POST /public/auth/central/workspace-context — no body; derives context from request origin. */
+export const getPublicAuthCentralWorkspaceContext = () =>
+  api.post<CentralAuthContextResponse>('/public/auth/central/workspace-context');
+
+/** POST /public/auth/central/custom-domain-context — no body; derives context from custom domain. */
+export const getPublicAuthCentralCustomDomainContext = () =>
+  api.post<CentralAuthContextResponse>('/public/auth/central/custom-domain-context');
