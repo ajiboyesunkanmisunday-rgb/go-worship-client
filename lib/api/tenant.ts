@@ -155,17 +155,32 @@ function mapMember(row: R): TenantMember {
   };
 }
 
-/** GET /tenant/admin/users/customers — list endpoint not in backend API; use POST to create only. */
+/** GET /tenant/admin/users */
 export async function getTenantMembers(): Promise<TenantMember[]> {
-  // GET /tenant/admin/users/customers not in backend API — return empty
-  return [];
+  const data = await api.get<unknown>('/tenant/admin/users');
+  return findTableRows(data, 'user').map(mapMember).filter((m) => m.email);
 }
 
-/** GET /tenant/admin/users/customers/:id — list endpoint not in backend API. */
+/** No individual user GET endpoint in backend API — returns null. */
 export async function getTenantMember(_id: string): Promise<TenantMember | null> {
-  // GET /tenant/admin/users/customers not in backend API — return null
   return null;
 }
+
+/** PUT /tenant/admin/users/{userId} */
+export const updateTenantUser = (userId: string, payload: Record<string, unknown>) =>
+  api.put<unknown>(`/tenant/admin/users/${encodeURIComponent(userId)}`, payload);
+
+/** GET /tenant/admin/users/{userId}/roles */
+export const getTenantUserRoles = (userId: string) =>
+  api.get<Record<string, unknown>[]>(`/tenant/admin/users/${encodeURIComponent(userId)}/roles`);
+
+/** POST /tenant/admin/users/{userId}/roles */
+export const setTenantUserRoles = (userId: string, payload: { roleIds: string[] }) =>
+  api.post<unknown>(`/tenant/admin/users/${encodeURIComponent(userId)}/roles`, payload);
+
+/** POST /tenant/admin/users/{userId}/migrate-to-customer */
+export const migrateTenantUserToCustomer = (userId: string) =>
+  api.post<unknown>(`/tenant/admin/users/${encodeURIComponent(userId)}/migrate-to-customer`);
 
 /* -------- Tenant Group -------- */
 
@@ -959,6 +974,55 @@ export async function getTenantInvoices(): Promise<TenantInvoice[]> {
     paidAt:    fmtDate(fieldOf(row, ['paidAt', 'paymentDate'])),
   }));
 }
+
+/** GET /tenant/billing/invoices/{invoiceId} */
+export const getTenantInvoice = (invoiceId: string) =>
+  api.get<TenantInvoice>(`/tenant/billing/invoices/${encodeURIComponent(invoiceId)}`);
+
+/** POST /tenant/billing/invoices/{invoiceId}/checkout */
+export const checkoutTenantInvoice = (invoiceId: string, payload?: Record<string, unknown>) =>
+  api.post<{ checkoutUrl?: string; [key: string]: unknown }>(
+    `/tenant/billing/invoices/${encodeURIComponent(invoiceId)}/checkout`,
+    payload
+  );
+
+/** POST /tenant/billing/payments/{paymentId}/receipt */
+export const getTenantBillingPaymentReceipt = (paymentId: string) =>
+  api.post<{ documentId?: string; downloadUrl?: string; [key: string]: unknown }>(
+    `/tenant/billing/payments/${encodeURIComponent(paymentId)}/receipt`
+  );
+
+/* -------- Tenant Documents (/tenant/documents) ----------------------- */
+
+/** GET /tenant/documents/{documentId} */
+export const getTenantDocument = (documentId: string) =>
+  api.get<Record<string, unknown>>(`/tenant/documents/${encodeURIComponent(documentId)}`);
+
+/** GET /tenant/documents/{documentId}/download */
+export const downloadTenantDocument = (documentId: string) =>
+  api.get<unknown>(`/tenant/documents/${encodeURIComponent(documentId)}/download`);
+
+/** GET /tenant/documents/exports/payments */
+export const exportTenantPaymentsDocument = () =>
+  api.get<unknown>('/tenant/documents/exports/payments');
+
+/* -------- Tenant Communications (/tenant/communications) ------------- */
+
+/** POST /tenant/communications — send a communication */
+export const sendTenantCommunication = (payload: Record<string, unknown>) =>
+  api.post<unknown>('/tenant/communications', payload);
+
+/** GET /tenant/communications/sent */
+export const getTenantCommunicationsSent = (page = 0, size = 20) =>
+  api.get<PagedResponse<Record<string, unknown>>>(`/tenant/communications/sent?page=${page}&size=${size}`);
+
+/** GET /tenant/communications/sent/{batchId}/recipients */
+export const getTenantCommunicationRecipients = (batchId: string) =>
+  api.get<unknown>(`/tenant/communications/sent/${encodeURIComponent(batchId)}/recipients`);
+
+/** GET /tenant/communications/targets/users */
+export const getTenantCommunicationTargets = () =>
+  api.get<unknown[]>('/tenant/communications/targets/users');
 
 /* -------- Notification settings -------- */
 

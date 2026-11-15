@@ -404,3 +404,37 @@ export const upgradeGuestToCustomer = (_payload: {
   rawPassword?: string;
   confirmPassword?: string;
 }): Promise<unknown> => Promise.resolve(null);
+
+/* -------- In-App Communications (/in-app/communications) --------------- */
+
+/** GET /in-app/communications/inbox */
+export const getInAppInbox = (page = 0, size = 20) =>
+  api.get<unknown>(`/in-app/communications/inbox?page=${page}&size=${size}`);
+
+/** GET /in-app/communications/summary */
+export const getInAppSummary = () =>
+  api.get<{ unreadCount?: number; [key: string]: unknown }>('/in-app/communications/summary');
+
+/** PATCH /in-app/communications/receipts/{receiptId}/read */
+export const markInAppReceiptRead = (receiptId: string) =>
+  api.patch<unknown>(`/in-app/communications/receipts/${encodeURIComponent(receiptId)}/read`);
+
+/** PATCH /in-app/communications/receipts/{receiptId}/unread */
+export const markInAppReceiptUnread = (receiptId: string) =>
+  api.patch<unknown>(`/in-app/communications/receipts/${encodeURIComponent(receiptId)}/unread`);
+
+/** PATCH /in-app/communications/receipts/{receiptId}/archive */
+export const archiveInAppReceipt = (receiptId: string) =>
+  api.patch<unknown>(`/in-app/communications/receipts/${encodeURIComponent(receiptId)}/archive`);
+
+/** GET /in-app/communications/conversations */
+export const getInAppConversations = () =>
+  api.get<unknown[]>('/in-app/communications/conversations');
+
+/** POST /in-app/communications/conversations/{conversationId}/messages */
+export const sendInAppMessage = (conversationId: string, payload: { body: string }) =>
+  api.post<unknown>(`/in-app/communications/conversations/${encodeURIComponent(conversationId)}/messages`, payload);
+
+/** GET /in-app/communications/events/upcoming */
+export const getInAppUpcomingEvents = () =>
+  api.get<unknown[]>('/in-app/communications/events/upcoming');
