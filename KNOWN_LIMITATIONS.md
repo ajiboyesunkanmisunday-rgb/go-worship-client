@@ -15,6 +15,7 @@ silently succeeding.
 | Provision admin user (ministry) | `POST /tenant/admin/users/provision` | `lib/api/tenant.ts` → `provisionTenantUser` |
 | Upgrade guest to customer | `POST /tenant/admin/users/guests/upgrade-to-customer` | `lib/api/auth.ts` → `upgradeGuestToCustomer` |
 | Support tickets | `GET /system/support/tickets` | `app/system/(portal)/support/page.tsx` |
+| Create / edit sermon tag | `POST/PUT /tenant/admin/sermon/tags` | `components/sermon-admin/tag-form.tsx` |
 
 ## Read endpoints that return empty data
 
@@ -28,3 +29,5 @@ read-only view.
 | Group detail | `GET /tenant/admin/groups/:id` | `lib/api/tenant.ts` → `getTenantGroup` |
 | Member groups | `GET /self/groups` | `lib/api/tenant.ts` → `getSelfGroups` |
 | Member group activities | `GET /self/groups/activities` | `lib/api/tenant.ts` → `getSelfGroupActivities` |
+| Uploaded media list | `GET /tenant/admin/media` | `app/ministry/(portal)/media/uploads/page.tsx` |
+| Sub-admin detail | `GET /tenant/admin/sub-admins/:id` | `components/ministry/view-account.tsx` |

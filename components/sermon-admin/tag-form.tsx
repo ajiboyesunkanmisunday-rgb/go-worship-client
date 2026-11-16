@@ -36,16 +36,18 @@ export function TagForm({
   const back = backTo ?? '/sermon-admin/tags';
   const [tag, setTag] = useState<TagData>(USE_LIVE_API && !isEdit ? { name: '', description: '', status: 'Active' } : DEFAULT_TAG);
   const [formKey, setFormKey] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API || !isEdit || !id) return;
-    // /tenant/admin/sermon/tags not in backend API — disabled.
+    // /tenant/admin/sermon/tags not in backend API — listed in KNOWN_LIMITATIONS.
   }, [isEdit, id]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (USE_LIVE_API) {
-      // /tenant/admin/sermon/tags not in backend API — disabled.
+      setSubmitError('Tag management is not available — this endpoint does not exist in the current backend version.');
+      return;
     }
     router.push(back);
   };
@@ -106,6 +108,12 @@ export function TagForm({
               <NativeSelectOption value="Inactive">Inactive</NativeSelectOption>
             </NativeSelect>
           </div>
+
+          {submitError && (
+            <p role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+              {submitError}
+            </p>
+          )}
 
           <Button size="lg" type="submit" className="mt-2 h-[52px] w-full">
             Save
