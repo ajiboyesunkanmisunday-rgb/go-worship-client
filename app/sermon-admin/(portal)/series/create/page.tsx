@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { createTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { FormAlert } from '@/components/ui/form-alert';
 
 const back = '/sermon-admin/series';
 
@@ -17,6 +18,7 @@ const back = '/sermon-admin/series';
 export default function SermonAdminAddSeriesPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,9 +31,12 @@ export default function SermonAdminAddSeriesPage() {
       };
       try {
         setSubmitting(true);
+        setSubmitError(null);
         await createTenantSeries(payload);
-      } catch {
-        // fall through
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Failed to create series. Please try again.');
+        setSubmitting(false);
+        return;
       } finally {
         setSubmitting(false);
       }
@@ -57,6 +62,8 @@ export default function SermonAdminAddSeriesPage() {
             Create a new sermon series.
           </p>
         </div>
+
+        {submitError && <FormAlert variant="error">{submitError}</FormAlert>}
 
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <div className="flex flex-col gap-1.5">

@@ -65,15 +65,11 @@ export function RegisterForm() {
     defaultValues: { fullName: '', email: '', phone: '', joinMethod: 'online' },
   });
 
-  const onSubmit: SubmitHandler<Schema> = async (data) => {
+  const onSubmit: SubmitHandler<Schema> = async (_data) => {
     if (USE_LIVE_API) {
-      try {
-        // /self/events/:id/register not in backend API — disabled.
-        toast.success('You have been registered for this event');
-      } catch {
-        toast.error('Could not register for this event');
-        return;
-      }
+      // /self/events/:id/register not in backend — listed in KNOWN_LIMITATIONS.
+      toast.error('Event registration is not available — this endpoint does not exist in the current backend version.');
+      return;
     }
     router.push('/dashboard/events');
   };

@@ -9,6 +9,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getTenantSeriesById, updateTenantSeries } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { FormAlert } from '@/components/ui/form-alert';
 
 const back = '/sermon-admin/series';
 
@@ -21,6 +22,7 @@ export default function SermonAdminEditSeriesPage() {
   const [series, setSeries] = useState(USE_LIVE_API ? { title: '', description: '' } : MOCK);
   const [formKey, setFormKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
@@ -46,9 +48,12 @@ export default function SermonAdminEditSeriesPage() {
       };
       try {
         setSubmitting(true);
+        setSubmitError(null);
         await updateTenantSeries(id, payload);
-      } catch {
-        // fall through
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Failed to save changes. Please try again.');
+        setSubmitting(false);
+        return;
       } finally {
         setSubmitting(false);
       }
@@ -74,6 +79,8 @@ export default function SermonAdminEditSeriesPage() {
             Update this sermon series.
           </p>
         </div>
+
+        {submitError && <FormAlert variant="error">{submitError}</FormAlert>}
 
         <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
           <div className="flex flex-col gap-1.5">

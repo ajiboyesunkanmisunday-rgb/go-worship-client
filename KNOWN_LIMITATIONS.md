@@ -16,6 +16,7 @@ silently succeeding.
 | Upgrade guest to customer | `POST /tenant/admin/users/guests/upgrade-to-customer` | `lib/api/auth.ts` → `upgradeGuestToCustomer` |
 | Support tickets | `GET /system/support/tickets` | `app/system/(portal)/support/page.tsx` |
 | Create / edit sermon tag | `POST/PUT /tenant/admin/sermon/tags` | `components/sermon-admin/tag-form.tsx` |
+| Event registration | `POST /self/events/:id/register` | `components/events/register-form.tsx` |
 
 ## Read endpoints that return empty data
 
