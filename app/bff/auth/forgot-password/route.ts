@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'X-Captcha-Token': captchaToken,
-    'X-Captcha-Action': 'forgot-password',
+    'X-Captcha-Action': 'forgot_password',
     'X-Captcha-Ts': String(timestamp),
     'X-Captcha-Nonce': nonce,
     'X-Correlation-Id': hex16(),
