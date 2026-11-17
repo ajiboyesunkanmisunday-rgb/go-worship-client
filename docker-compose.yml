@@ -9,6 +9,8 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
+      # Disable Secure cookie flag so Safari accepts cookies over plain HTTP on localhost.
+      COOKIE_SECURE: "false"
     env_file:
       - .env.local
     restart: unless-stopped

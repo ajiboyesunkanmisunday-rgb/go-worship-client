@@ -76,9 +76,10 @@ export async function readJson(res: Response): Promise<any> {
   }
 }
 
+// COOKIE_SECURE=false lets Docker/localhost HTTP override the production default.
 const baseCookie = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: process.env.COOKIE_SECURE === 'false' ? false : process.env.NODE_ENV === 'production',
   sameSite: 'strict' as const,
   path: '/',
 };
