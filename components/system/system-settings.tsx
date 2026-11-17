@@ -8,10 +8,11 @@ import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api/client';
 import { getSystemBranding, updateSystemBranding, type SystemBrandingUpdatePayload } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
-import { getMfaSettings, changePassword as apiChangePassword, disableMfaEnrollment, updateMfaPreferences, isStepUpChallenge } from '@/lib/api/auth';
+import { changePassword as apiChangePassword, isStepUpChallenge } from '@/lib/api/auth';
 import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
 import { StepUpMfaDialog } from '@/components/shared/step-up-mfa-dialog';
-import { RefreshCw, Check, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, ShieldCheck, MessageSquare, Smartphone, Mail, ChevronDown } from 'lucide-react';
+import { MfaManager } from '@/components/shared/mfa-manager';
+import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -161,39 +162,12 @@ function parseHealth(data: unknown): ServiceHealth[] {
 
 // ── Security ───────────────────────────────────────────────────────────────
 
-type MfaData = {
-  mfaEnabled: boolean;
-  preferredMethod: string;
-  totpEnrolled: boolean;
-  otpEmailAvailable: boolean;
-  otpSmsAvailable: boolean;
-  enrolledMethods: string[];
-};
-
 function SecurityPanel() {
-  const [mfa, setMfa] = useState<MfaData | null>(null);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
   const [pwStepUp, setPwStepUp] = useState<StepUpMfaChallengeResponse | null>(null);
-
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    getMfaSettings()
-      .then((res) => {
-        const d = res.data;
-        setMfa({
-          mfaEnabled:        d.mfaEnabled,
-          preferredMethod:   d.preferredMethod ?? '',
-          totpEnrolled:      d.totpEnrolled,
-          otpEmailAvailable: d.otpEmailAvailable,
-          otpSmsAvailable:   Array.isArray(d.eligibleMethods) ? d.eligibleMethods.includes('OTP_SMS') : false,
-          enrolledMethods:   d.enrolledMethods,
-        });
-      })
-      .catch(() => {});
-  }, []);
 
   const updatePassword = async () => {
     if (!currentPw) { toast.error('Enter your current password'); return; }
@@ -221,37 +195,6 @@ function SecurityPanel() {
     }
   };
 
-  const removeMethod = (method: string) => {
-    if (!USE_LIVE_API) return;
-    disableMfaEnrollment(method)
-      .then(() => setMfa((prev) => prev ? { ...prev, enrolledMethods: prev.enrolledMethods.filter((m) => m !== method), totpEnrolled: method === 'TOTP' ? false : prev.totpEnrolled } : prev))
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to remove authentication method'));
-  };
-
-  const methodLabel: Record<string, string> = {
-    TOTP: 'Authenticator app',
-    OTP_EMAIL: 'Email code',
-    OTP_SMS: 'Text message (SMS)',
-  };
-  const methodDesc: Record<string, string> = {
-    TOTP: 'Use Google Authenticator, Authy, or 1Password. Most secure.',
-    OTP_EMAIL: 'Receive a one-time code by email each time you sign in.',
-    OTP_SMS: 'Receive a one-time code by text message to your phone.',
-  };
-  const MethodIcon = ({ method }: { method: string }) => {
-    if (method === 'TOTP') return <Smartphone className="size-5" />;
-    if (method === 'OTP_EMAIL') return <Mail className="size-5" />;
-    return <MessageSquare className="size-5" />;
-  };
-
-  const setPreferredMethod = (method: string) => {
-    if (!USE_LIVE_API) return;
-    updateMfaPreferences({ enabled: mfa?.mfaEnabled ?? true, preferredMethod: method })
-      .then(() => setMfa((prev) => prev ? { ...prev, preferredMethod: method } : prev))
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to update preferred method'));
-  };
-
-  const allMethods = ['TOTP', 'OTP_EMAIL', 'OTP_SMS'];
 
   return (
     <div className="flex flex-col gap-6">
@@ -288,99 +231,7 @@ function SecurityPanel() {
       </div>
 
       {/* 2FA */}
-      <div className="rounded-[14px] bg-white p-6">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="size-5 text-[#22a45d]" />
-          <h2 className="text-[18px] font-bold">Two-factor authentication</h2>
-          {mfa && (
-            <span className={cn(
-              'rounded-full px-2.5 py-0.5 text-[11px] font-medium',
-              mfa.mfaEnabled ? 'bg-[#e7f7ee] text-[#34a853]' : 'bg-[#fde8e8] text-[#eb0000]'
-            )}>
-              {mfa.mfaEnabled ? 'On' : 'Off'}
-            </span>
-          )}
-        </div>
-        <p className="mt-1 text-[13px] text-brand-gray-500">
-          Add a second step when signing in, so a password alone isn&apos;t enough.
-        </p>
-
-        {mfa && (
-          <>
-            <div className="mt-5 flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[#dfe6ff] bg-[#f7f9ff] p-4">
-                <div className="min-w-[180px]">
-                  <p className="text-[13px] font-medium">Primary method</p>
-                  <p className="text-[12px] text-brand-gray-500">The method you&apos;ll be asked for first when signing in.</p>
-                </div>
-                <div className="relative ml-auto">
-                  <select
-                    value={mfa.preferredMethod}
-                    onChange={(e) => setPreferredMethod(e.target.value)}
-                    className="h-[40px] appearance-none rounded-[8px] border border-[#ddd] bg-white pl-3 pr-8 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand-blue"
-                  >
-                    {mfa.enrolledMethods.map((m) => (
-                      <option key={m} value={m}>{methodLabel[m] ?? m}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-[#888]" />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {allMethods.map((method) => {
-                  const enrolled = mfa.enrolledMethods.includes(method);
-                  const preferred = mfa.preferredMethod === method;
-                  const comingSoon = method === 'OTP_SMS' && !mfa.otpSmsAvailable;
-                  return (
-                    <div key={method} className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4">
-                      <div className="flex items-start gap-3">
-                        <span className={cn('mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full', enrolled ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#f2f2f2] text-brand-gray-500')}>
-                          <MethodIcon method={method} />
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2 text-[15px] font-semibold">
-                            {methodLabel[method]}
-                            {enrolled && (
-                              <span className="flex items-center gap-1 text-[11px] font-normal text-[#22a45d]">
-                                <Check className="size-3" /> Enrolled
-                              </span>
-                            )}
-                            {preferred && enrolled && (
-                              <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[10px] font-medium text-brand-blue">Preferred</span>
-                            )}
-                          </div>
-                          <p className="mt-0.5 text-[12px] text-brand-gray-500">{methodDesc[method]}</p>
-                          {comingSoon && (
-                            <p className="mt-1 text-[11px] text-brand-gray-400">
-                              Coming soon — text-message codes aren&apos;t enabled yet. Set up another method now and switch when SMS is available.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {comingSoon ? (
-                        <span className="shrink-0 rounded-full bg-[#fff4e5] px-3 py-1.5 text-[11px] font-medium text-[#ff8d28]">Coming soon</span>
-                      ) : enrolled ? (
-                        <button
-                          type="button"
-                          className="shrink-0 min-h-[24px] rounded-[5px] border-[0.5px] border-[#3E3E3E] bg-transparent px-3 py-1 text-[14px] font-medium text-destructive hover:bg-brand-gray-100"
-                          onClick={() => removeMethod(method)}
-                        >
-                          Remove
-                        </button>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
-
-        {!mfa && USE_LIVE_API && (
-          <p className="mt-4 text-[13px] text-brand-gray-400">Loading security settings…</p>
-        )}
-      </div>
+      <MfaManager />
 
       {pwStepUp && (
         <StepUpMfaDialog
