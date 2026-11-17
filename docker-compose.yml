@@ -9,8 +9,6 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      API_TENANT_ID: "${API_TENANT_ID}"
-      LOGIN_HMAC_SECRET: "${LOGIN_HMAC_SECRET}"
     env_file:
       - .env.local
     restart: unless-stopped
