@@ -27,6 +27,8 @@ type Enrolling = {
   tokenId?: string;
   secret?: string;
   otpauth?: string;
+  /** Backend may send a pre-rendered base64 PNG QR code image. */
+  qrCodeUrl?: string;
 };
 
 /**
@@ -118,14 +120,21 @@ export function MfaManager() {
     setBusy(`begin:${method}`);
     setCode('');
     try {
-      const res = await beginMfaEnrollment({ method });
+      const raw = await beginMfaEnrollment({ method });
+      // Backend wraps in { ok, data: { ... } } — unwrap before reading fields.
+      const r = ((raw as Record<string, unknown>).data as Record<string, unknown> | undefined) ?? (raw as Record<string, unknown>);
       if (method === 'OTP_EMAIL') {
-        const r = res as { tokenId?: string };
-        setEnrolling({ method, tokenId: r.tokenId });
+        const tokenId = r.tokenId ? String(r.tokenId) : undefined;
+        setEnrolling({ method, tokenId });
         toast.success('Code sent to your email');
       } else {
-        const r = res as { secret?: string; otpauthUri?: string };
-        setEnrolling({ method, secret: r.secret, otpauth: r.otpauthUri });
+        const secret = r.secret ? String(r.secret) : undefined;
+        const otpauth = r.otpauthUri ? String(r.otpauthUri) : undefined;
+        // Backend may send a pre-rendered QR as data:image/png;base64,...
+        const qrCodeUrl = typeof r.qrCodeUrl === 'string' && r.qrCodeUrl.startsWith('data:image/')
+          ? r.qrCodeUrl
+          : undefined;
+        setEnrolling({ method, secret, otpauth, qrCodeUrl });
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not start setup');
@@ -345,7 +354,12 @@ export function MfaManager() {
                 Scan this QR code with Google Authenticator, Authy, or 1Password — then enter the
                 6-digit code it shows.
               </p>
-              {otpauthUri(enrolling.secret, enrolling.otpauth) && (
+              {/* Prefer the backend-rendered PNG; fall back to generating from secret */}
+              {enrolling.qrCodeUrl ? (
+                <div className="mt-1 flex w-fit justify-center rounded-[10px] bg-white p-3 shadow-sm">
+                  <img src={enrolling.qrCodeUrl} width={168} height={168} alt="QR code for authenticator app" />
+                </div>
+              ) : otpauthUri(enrolling.secret, enrolling.otpauth) ? (
                 <div className="mt-1 flex w-fit justify-center rounded-[10px] bg-white p-3 shadow-sm">
                   <QRCodeSVG
                     value={otpauthUri(enrolling.secret, enrolling.otpauth)!}
@@ -353,7 +367,7 @@ export function MfaManager() {
                     level="M"
                   />
                 </div>
-              )}
+              ) : null}
               {enrolling.secret && (
                 <div className="mt-1">
                   <p className="text-[12px] text-brand-gray-500">
