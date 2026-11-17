@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Check, ShieldCheck, Smartphone, Mail, MessageSquare, QrCode } from 'lucide-react';
+import { Check, Loader2, Mail, MessageSquare, ShieldCheck, Smartphone } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { cn } from '@/lib/utils';
 import {
   getMfaSettings,
   beginMfaEnrollment,
@@ -13,204 +16,235 @@ import {
   updateMfaPreferences,
   disableMfaEnrollment,
   type MfaSettings,
-  type OtpEmailEnrollBeginResponse,
-  type TotpEnrollBeginResponse,
 } from '@/lib/api/auth';
+import { ApiError } from '@/lib/api/client';
+import { USE_LIVE_API } from '@/lib/api/config';
 
-type EnrollStep = 'idle' | 'choose_method' | 'email_sent' | 'totp_scan';
+type MfaMethod = 'OTP_EMAIL' | 'TOTP' | 'OTP_SMS';
 
-const METHOD_LABELS: Record<string, string> = {
-  OTP_EMAIL: 'Email code',
-  TOTP: 'Authenticator app',
-  PASSKEY: 'Passkey',
-  PUSH_FCM: 'Push notification',
-  OTP_SMS: 'Text message (SMS)',
+type Enrolling = {
+  method: 'OTP_EMAIL' | 'TOTP';
+  tokenId?: string;
+  secret?: string;
+  otpauth?: string;
 };
 
-const METHOD_DESCRIPTIONS: Record<string, string> = {
-  TOTP: 'Use Google Authenticator, Authy, or 1Password. Most secure.',
-  OTP_EMAIL: 'Receive a one-time code by email each time you sign in.',
-  PASSKEY: 'Use a passkey stored on your device or password manager.',
-  PUSH_FCM: 'Approve sign-ins via push notification on your mobile app.',
-};
-
-function MethodIcon({ method, enrolled }: { method: string; enrolled: boolean }) {
-  const bg = enrolled ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#f2f2f2] text-brand-gray-500';
-  const icon =
-    method === 'TOTP' ? <Smartphone className="size-5" aria-hidden="true" /> :
-    method === 'OTP_EMAIL' ? <Mail className="size-5" aria-hidden="true" /> :
-    method === 'OTP_SMS' ? <MessageSquare className="size-5" aria-hidden="true" /> :
-    <QrCode className="size-5" aria-hidden="true" />;
-  return (
-    <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full ${bg}`}>
-      {icon}
-    </span>
-  );
+/**
+ * Detect the specific backend bug on TOTP enrollment-complete where the server
+ * validates a `tenantId` field that the request doesn't send, returning 400
+ * with fieldErrors containing tenantId. Show a clear message rather than
+ * "wrong code".
+ */
+function isTotpServerBug(e: unknown): boolean {
+  if (!(e instanceof ApiError) || e.status !== 400) return false;
+  const body = e.body as { fieldErrors?: { field?: string }[]; message?: string } | null;
+  const fe = body?.fieldErrors;
+  if (Array.isArray(fe) && fe.some((f) => String(f?.field).toLowerCase() === 'tenantid'))
+    return true;
+  return typeof body?.message === 'string' && /constraint|tenant/i.test(body.message);
 }
+
+function otpauthUri(secret?: string, provided?: string): string | null {
+  if (provided && provided.startsWith('otpauth://')) return provided;
+  if (!secret) return null;
+  const issuer = 'Go-Worship';
+  return `otpauth://totp/${encodeURIComponent(issuer)}?secret=${encodeURIComponent(
+    secret.replace(/\s+/g, '')
+  )}&issuer=${encodeURIComponent(issuer)}`;
+}
+
+const METHODS: { key: MfaMethod; title: string; desc: string; icon: typeof Mail }[] = [
+  {
+    key: 'TOTP',
+    title: 'Authenticator app',
+    desc: 'Use Google Authenticator, Authy, or 1Password. Most secure.',
+    icon: Smartphone,
+  },
+  {
+    key: 'OTP_EMAIL',
+    title: 'Email code',
+    desc: 'Receive a one-time code by email each time you sign in.',
+    icon: Mail,
+  },
+  {
+    key: 'OTP_SMS',
+    title: 'Text message (SMS)',
+    desc: 'Receive a one-time code by text message to your phone.',
+    icon: MessageSquare,
+  },
+];
 
 export function MfaManager() {
   const [settings, setSettings] = useState<MfaSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<EnrollStep>('idle');
-  const [chosenMethod, setChosenMethod] = useState<'OTP_EMAIL' | 'TOTP'>('TOTP');
-  const [emailTokenId, setEmailTokenId] = useState<string | null>(null);
-  const [totpSecret, setTotpSecret] = useState<string | null>(null);
-  const [totpUri, setTotpUri] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState<Enrolling | null>(null);
   const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [totpUnavailable, setTotpUnavailable] = useState(false);
 
-  const reload = async () => {
-    setLoading(true);
+  const refresh = async () => {
+    if (!USE_LIVE_API) {
+      setSettings({
+        mfaEnabled: true,
+        preferredMethod: 'TOTP',
+        enrolledMethods: ['TOTP'],
+        totpEnrolled: true,
+        otpEmailAvailable: true,
+        eligibleMethods: ['TOTP', 'OTP_EMAIL'],
+      });
+      setLoading(false);
+      return;
+    }
     try {
       const res = await getMfaSettings();
       setSettings(res.data ?? null);
     } catch {
-      toast.error('Could not load security settings');
+      // Not available — stay as not configured.
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { refresh(); }, []);
 
-  const handleSetPreferred = async (method: string) => {
-    setBusy(true);
-    try {
-      await updateMfaPreferences({ enabled: true, preferredMethod: method });
-      toast.success(`${METHOD_LABELS[method] ?? method} set as preferred`);
-      await reload();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to update preference');
-    } finally {
-      setBusy(false);
-    }
-  };
+  const enrolled = new Set<string>(settings?.enrolledMethods ?? []);
+  if (settings?.totpEnrolled) enrolled.add('TOTP');
+  const anyEnabled = (settings?.mfaEnabled ?? false) || enrolled.size > 0;
+  const enrolledList = METHODS.filter((m) => enrolled.has(m.key));
+  const preferred = settings?.preferredMethod ?? enrolledList[0]?.key ?? '';
+  const primaryMethod = preferred && enrolled.has(preferred) ? preferred : (enrolledList[0]?.key ?? '');
 
-  const handleDisable = async (method: string) => {
-    setBusy(true);
-    try {
-      await disableMfaEnrollment(method);
-      toast.success(`${METHOD_LABELS[method] ?? method} removed`);
-      await reload();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to remove method');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleBeginEnroll = async (method: 'OTP_EMAIL' | 'TOTP') => {
-    setChosenMethod(method);
-    setBusy(true);
+  async function startEnrol(method: 'OTP_EMAIL' | 'TOTP') {
+    setBusy(`begin:${method}`);
+    setCode('');
     try {
       const res = await beginMfaEnrollment({ method });
       if (method === 'OTP_EMAIL') {
-        const r = res as OtpEmailEnrollBeginResponse;
-        setEmailTokenId(r.tokenId ?? null);
-        setStep('email_sent');
+        const r = res as { tokenId?: string };
+        setEnrolling({ method, tokenId: r.tokenId });
+        toast.success('Code sent to your email');
       } else {
-        const r = res as TotpEnrollBeginResponse;
-        setTotpSecret(r.secret ?? null);
-        const issuer = 'Go-Worship';
-        const uri =
-          r.otpauthUri ??
-          (r.secret
-            ? `otpauth://totp/${issuer}?secret=${r.secret}&issuer=${issuer}`
-            : null);
-        setTotpUri(uri);
-        setStep('totp_scan');
+        const r = res as { secret?: string; otpauthUri?: string };
+        setEnrolling({ method, secret: r.secret, otpauth: r.otpauthUri });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to start enrollment');
+      toast.error(e instanceof Error ? e.message : 'Could not start setup');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
-  };
+  }
 
-  const handleCompleteEmail = async () => {
-    if (!emailTokenId) return;
-    setBusy(true);
+  async function confirmEnrol() {
+    if (!enrolling || code.trim().length < 4) return;
+    setBusy('complete');
     try {
-      await completeEmailMfaEnrollment({ method: 'OTP_EMAIL', tokenId: emailTokenId, code });
-      toast.success('Email OTP enrolled successfully');
+      if (enrolling.method === 'OTP_EMAIL') {
+        await completeEmailMfaEnrollment({
+          method: 'OTP_EMAIL',
+          tokenId: enrolling.tokenId ?? '',
+          code: code.trim(),
+        });
+      } else {
+        await completeTotpMfaEnrollment({
+          method: 'TOTP',
+          secret: enrolling.secret ?? '',
+          code: code.trim(),
+          makePreferred: true,
+        });
+      }
+      toast.success('Two-factor authentication enabled');
+      setEnrolling(null);
       setCode('');
-      setStep('idle');
-      await reload();
+      await refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Invalid code');
+      if (enrolling.method === 'TOTP' && isTotpServerBug(e)) {
+        toast.error(
+          'Authenticator-app setup is temporarily unavailable due to a server issue. Use "Email code" for now.'
+        );
+        setTotpUnavailable(true);
+        setEnrolling(null);
+        setCode('');
+      } else {
+        toast.error(e instanceof Error ? e.message : 'That code did not match');
+      }
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
-  };
+  }
 
-  const handleCompleteTotp = async () => {
-    if (!totpSecret) return;
-    setBusy(true);
+  async function disable(method: 'OTP_EMAIL' | 'TOTP') {
+    setBusy(`disable:${method}`);
     try {
-      await completeTotpMfaEnrollment({ method: 'TOTP', secret: totpSecret, code, makePreferred: true });
-      toast.success('Authenticator app enrolled successfully');
-      setCode('');
-      setStep('idle');
-      await reload();
+      await disableMfaEnrollment(method);
+      toast.success('Method removed');
+      await refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Invalid code');
+      toast.error(e instanceof Error ? e.message : 'Could not remove that method');
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
-  };
+  }
 
-  const unenrolledMethods = (['TOTP', 'OTP_EMAIL'] as const).filter(
-    (m) => settings && !settings.enrolledMethods.includes(m)
-  );
+  async function makePreferred(method: string) {
+    setBusy(`prefer:${method}`);
+    try {
+      await updateMfaPreferences({ enabled: true, preferredMethod: method });
+      toast.success('Preferred method updated');
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not update preference');
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Heading */}
-      <div>
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="size-5 text-[#22a45d]" aria-hidden="true" />
-          <h2 className="text-[18px] font-bold">Two-factor authentication</h2>
-          {!loading && (
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
-                settings?.mfaEnabled
-                  ? 'bg-[#e7f7ee] text-[#34a853]'
-                  : 'bg-[#f3f4f6] text-[#6b7280]'
-              }`}
-            >
-              {settings?.mfaEnabled ? 'On' : 'Off'}
-            </span>
-          )}
-        </div>
-        <p className="mt-1 text-[13px] text-brand-gray-500">
-          Add a second step when signing in, so a password alone isn&apos;t enough.
-        </p>
+    <div className="rounded-[14px] bg-white p-6">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="size-5 text-[#22a45d]" aria-hidden="true" />
+        <h2 className="text-[18px] font-bold">Two-factor authentication</h2>
+        {!loading && anyEnabled && (
+          <span className="rounded-full bg-[#e7f7ee] px-2.5 py-0.5 text-[11px] font-medium text-[#34a853]">
+            On
+          </span>
+        )}
+        {!loading && !anyEnabled && (
+          <span className="rounded-full bg-[#f3f4f6] px-2.5 py-0.5 text-[11px] font-medium text-[#6b7280]">
+            Off
+          </span>
+        )}
       </div>
+      <p className="mt-1 text-[13px] text-brand-gray-500">
+        Add a second step when signing in, so a password alone isn&apos;t enough.
+      </p>
 
       {loading ? (
-        <div className="py-4 text-[14px] text-[#888]">Loading security settings…</div>
+        <div className="mt-6 flex items-center gap-2 text-[13px] text-brand-gray-500">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading your security settings…
+        </div>
       ) : (
-        <>
-          {/* Primary method selector */}
-          {settings?.mfaEnabled && settings.enrolledMethods.length > 0 && step === 'idle' && (
+        <div className="mt-5 flex flex-col gap-4">
+          {enrolled.size > 0 && (
             <div className="flex flex-wrap items-center gap-3 rounded-[10px] border border-[#dfe6ff] bg-[#f7f9ff] p-4">
               <div className="min-w-[180px]">
                 <p className="text-[14px] font-semibold">Primary method</p>
                 <p className="max-w-[300px] text-[12px] text-brand-gray-500">
-                  The method you&apos;ll be asked for first when signing in.
+                  {enrolled.size > 1
+                    ? 'The method you\'ll be asked for first when signing in.'
+                    : 'Enrol a second method below to add a backup you can switch to.'}
                 </p>
               </div>
               <div className="ml-auto">
                 <NativeSelect
-                  value={settings.preferredMethod ?? settings.enrolledMethods[0]}
-                  onChange={(e) => handleSetPreferred(e.target.value)}
-                  disabled={busy}
                   aria-label="Primary two-factor method"
+                  value={primaryMethod}
+                  disabled={!!busy || enrolled.size < 2}
+                  onChange={(e) => makePreferred(e.target.value)}
                   className="h-[42px] min-w-[190px] bg-white"
                 >
-                  {settings.enrolledMethods.map((m) => (
-                    <NativeSelectOption key={m} value={m}>
-                      {METHOD_LABELS[m] ?? m}
+                  {enrolledList.map((m) => (
+                    <NativeSelectOption key={m.key} value={m.key}>
+                      {m.title}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>
@@ -218,220 +252,147 @@ export function MfaManager() {
             </div>
           )}
 
-          {/* Enrolled method cards */}
-          {settings?.enrolledMethods && settings.enrolledMethods.length > 0 && step === 'idle' && (
-            <div className="flex flex-col gap-3">
-              {settings.enrolledMethods.map((m) => {
-                const isPreferred =
-                  m === settings.preferredMethod ||
-                  (!settings.preferredMethod && m === settings.enrolledMethods[0]);
-                return (
-                  <div
-                    key={m}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <MethodIcon method={m} enrolled />
-                      <div>
-                        <p className="flex items-center gap-2 text-[15px] font-semibold">
-                          {METHOD_LABELS[m] ?? m}
+          <div className="flex flex-col gap-3">
+            {METHODS.map((m) => {
+              const on = enrolled.has(m.key);
+              const isPreferred = primaryMethod === m.key;
+              const isSms = m.key === 'OTP_SMS';
+              const Icon = m.icon;
+              return (
+                <div
+                  key={m.key}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full',
+                        on ? 'bg-[#e7f7ee] text-[#22a45d]' : 'bg-[#f2f2f2] text-brand-gray-500'
+                      )}
+                    >
+                      <Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
+                        {m.title}
+                        {on && (
                           <span className="flex items-center gap-1 text-[11px] font-medium text-[#22a45d]">
                             <Check className="size-3" aria-hidden="true" /> Enrolled
                           </span>
-                          {isPreferred && (
-                            <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[10px] font-medium text-brand-blue">
-                              Preferred
-                            </span>
-                          )}
-                        </p>
-                        {METHOD_DESCRIPTIONS[m] && (
-                          <p className="max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
-                            {METHOD_DESCRIPTIONS[m]}
-                          </p>
                         )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => handleDisable(m)}
-                        className="min-h-[24px] rounded-[5px] border-[0.5px] border-[#3E3E3E] bg-transparent px-3 py-1 text-[14px] font-medium leading-[150%] tracking-[0%] text-destructive transition-colors hover:bg-brand-gray-100 disabled:opacity-50"
-                      >
-                        Remove
-                      </button>
+                        {isPreferred && on && (
+                          <span className="rounded-full bg-[#eef1ff] px-2 py-0.5 text-[10px] font-medium text-brand-blue">
+                            Preferred
+                          </span>
+                        )}
+                      </p>
+                      <p className="max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
+                        {m.desc}
+                      </p>
+                      {m.key === 'TOTP' && totpUnavailable && !on && (
+                        <p className="mt-1 max-w-[420px] text-[12px] font-medium leading-snug text-[#b45309]">
+                          Temporarily unavailable due to a server issue — use Email code for now.
+                        </p>
+                      )}
+                      {isSms && (
+                        <p className="mt-1 max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
+                          Coming soon — text-message codes aren&apos;t enabled yet. Set up another
+                          method now and switch when SMS is available.
+                        </p>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-2">
+                    {on ? (
+                      <button
+                        type="button"
+                        disabled={!!busy}
+                        onClick={() => disable(m.key as 'OTP_EMAIL' | 'TOTP')}
+                        className="min-h-[24px] rounded-[5px] border-[0.5px] border-[#3E3E3E] bg-transparent px-3 py-1 text-[14px] font-medium leading-[150%] text-destructive transition-colors hover:bg-brand-gray-100 disabled:opacity-50"
+                      >
+                        {busy === `disable:${m.key}` ? 'Removing…' : 'Remove'}
+                      </button>
+                    ) : isSms ? (
+                      <span className="rounded-full bg-[#fff4e5] px-3 py-1.5 text-[11px] font-medium text-[#ff8d28]">
+                        Coming soon
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={!!busy}
+                        onClick={() => startEnrol(m.key as 'OTP_EMAIL' | 'TOTP')}
+                      >
+                        {busy === `begin:${m.key}` ? 'Starting…' : 'Enable'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {enrolling && (
+        <div className="mt-4 rounded-[10px] border border-[#dfe6ff] bg-[#f7f9ff] p-4">
+          {enrolling.method === 'TOTP' ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-[13px] font-medium">
+                Add this account to your authenticator app
+              </p>
+              <p className="text-[12px] text-brand-gray-500">
+                Scan this QR code with Google Authenticator, Authy, or 1Password — then enter the
+                6-digit code it shows.
+              </p>
+              {otpauthUri(enrolling.secret, enrolling.otpauth) && (
+                <div className="mt-1 flex w-fit justify-center rounded-[10px] bg-white p-3 shadow-sm">
+                  <QRCodeSVG
+                    value={otpauthUri(enrolling.secret, enrolling.otpauth)!}
+                    size={168}
+                    level="M"
+                  />
+                </div>
+              )}
+              {enrolling.secret && (
+                <div className="mt-1">
+                  <p className="text-[12px] text-brand-gray-500">
+                    Can&apos;t scan? Enter this setup key manually:
+                  </p>
+                  <code className="mt-1 block break-all rounded-[8px] bg-white px-3 py-2 font-mono text-[13px] tracking-wide">
+                    {enrolling.secret}
+                  </code>
+                </div>
+              )}
             </div>
+          ) : (
+            <p className="text-[13px] font-medium">Enter the code we emailed you</p>
           )}
-
-          {/* Enable 2FA button when not yet enabled */}
-          {settings && !settings.mfaEnabled && step === 'idle' && (
-            <Button size="sm" className="self-start" onClick={() => setStep('choose_method')}>
-              Enable 2FA
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+              placeholder="123456"
+              inputMode="numeric"
+              className="h-[44px] w-[140px] text-center tracking-[0.3em]"
+              aria-label="Verification code"
+            />
+            <Button
+              disabled={busy === 'complete' || code.trim().length < 4}
+              onClick={confirmEnrol}
+            >
+              {busy === 'complete' ? 'Verifying…' : 'Verify & enable'}
             </Button>
-          )}
-
-          {/* Add another method — only if there are unenrolled TOTP/Email methods */}
-          {settings?.mfaEnabled && unenrolledMethods.length > 0 && step === 'idle' && (
             <Button
               variant="outline"
-              size="sm"
-              className="self-start"
-              onClick={() => setStep('choose_method')}
+              disabled={busy === 'complete'}
+              onClick={() => { setEnrolling(null); setCode(''); }}
             >
-              + Add another method
+              Cancel
             </Button>
-          )}
-
-          {/* SMS Coming soon — always shown at idle */}
-          {step === 'idle' && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#ededed] p-4">
-              <div className="flex items-start gap-3">
-                <MethodIcon method="OTP_SMS" enrolled={false} />
-                <div>
-                  <p className="flex items-center gap-2 text-[15px] font-semibold">
-                    Text message (SMS)
-                  </p>
-                  <p className="max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
-                    Receive a one-time code by text message to your phone.
-                  </p>
-                  <p className="mt-1 max-w-[420px] text-[12px] leading-snug text-brand-gray-500">
-                    Coming soon — text-message codes aren&apos;t enabled yet. Set up another
-                    method now and switch when SMS is available.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-[#fff4e5] px-3 py-1.5 text-[11px] font-medium text-[#ff8d28]">
-                  Coming soon
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Choose method panel */}
-          {step === 'choose_method' && (
-            <div className="flex flex-col gap-4 rounded-[12px] border border-[#e5e7eb] p-5">
-              <h4 className="text-[15px] font-bold">Choose a method</h4>
-              <div className="flex flex-col gap-3">
-                {(['TOTP', 'OTP_EMAIL'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => handleBeginEnroll(m)}
-                    className={`flex items-center gap-3 rounded-[10px] border px-4 py-3 text-left transition-colors hover:bg-[#f5f5f5] disabled:opacity-50 ${
-                      chosenMethod === m ? 'border-brand-blue' : 'border-[#e5e7eb]'
-                    }`}
-                  >
-                    <MethodIcon method={m} enrolled={false} />
-                    <span className="text-[14px] font-medium">{METHOD_LABELS[m]}</span>
-                  </button>
-                ))}
-              </div>
-              <Button variant="outline" size="sm" className="self-start" onClick={() => setStep('idle')}>
-                Cancel
-              </Button>
-            </div>
-          )}
-
-          {/* Email OTP enrollment */}
-          {step === 'email_sent' && (
-            <div className="flex flex-col gap-4 rounded-[12px] border border-[#e5e7eb] p-5">
-              <h4 className="text-[15px] font-bold">Verify your email</h4>
-              <p className="text-[13px] text-[#666]">
-                Enter the 6-digit code we sent to your email address.
-              </p>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="000000"
-                className="h-[48px] rounded-[8px] border border-[#d0d0d0] px-4 text-center text-[20px] font-bold tracking-[0.3em]"
-              />
-              <div className="flex gap-3">
-                <Button onClick={handleCompleteEmail} disabled={busy || code.length < 6} className="flex-1">
-                  {busy ? 'Verifying…' : 'Verify'}
-                </Button>
-                <Button variant="outline" onClick={() => { setStep('idle'); setCode(''); }}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* TOTP enrollment */}
-          {step === 'totp_scan' && (
-            <div className="flex flex-col gap-4 rounded-[12px] border border-[#e5e7eb] p-5">
-              <h4 className="text-[15px] font-bold">Set up authenticator app</h4>
-              <p className="text-[13px] text-[#666]">
-                Scan the QR code with your authenticator app, or enter the setup key manually.
-              </p>
-              {totpUri && <TotpQrCode uri={totpUri} />}
-              {totpSecret && (
-                <details className="text-[13px]">
-                  <summary className="cursor-pointer text-brand-blue">
-                    Can&apos;t scan? Enter setup key manually
-                  </summary>
-                  <code className="mt-2 block break-all rounded-[6px] bg-[#f5f5f5] px-3 py-2 font-mono text-[13px]">
-                    {totpSecret}
-                  </code>
-                </details>
-              )}
-              <p className="text-[13px] text-[#666]">Then enter the 6-digit code from your app:</p>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="000000"
-                className="h-[48px] rounded-[8px] border border-[#d0d0d0] px-4 text-center text-[20px] font-bold tracking-[0.3em]"
-              />
-              <div className="flex gap-3">
-                <Button onClick={handleCompleteTotp} disabled={busy || code.length < 6} className="flex-1">
-                  {busy ? 'Verifying…' : 'Activate'}
-                </Button>
-                <Button variant="outline" onClick={() => { setStep('idle'); setCode(''); }}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
+          </div>
+        </div>
       )}
-    </div>
-  );
-}
-
-function TotpQrCode({ uri }: { uri: string }) {
-  const [QRCode, setQRCode] = useState<React.ComponentType<{ value: string; size?: number }> | null>(null);
-
-  useEffect(() => {
-    import('qrcode.react')
-      .then((mod) => {
-        const Comp = mod.QRCodeSVG ?? mod.default;
-        if (Comp) setQRCode(() => Comp as React.ComponentType<{ value: string; size?: number }>);
-      })
-      .catch(() => {});
-  }, []);
-
-  if (!QRCode) {
-    return (
-      <div className="flex h-[140px] w-[140px] items-center justify-center rounded-[8px] bg-[#f5f5f5] p-3 text-center text-[12px] text-[#888]">
-        QR unavailable — use setup key below
-      </div>
-    );
-  }
-
-  return (
-    <div className="self-start rounded-[8px] bg-white p-3 shadow-sm">
-      <QRCode value={uri} size={140} />
     </div>
   );
 }

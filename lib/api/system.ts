@@ -295,7 +295,8 @@ export const updateSystemTenant = (_id: string, _payload: UpdateTenantPayload): 
 
 /* -------- Platform user provisioning -------- */
 
-export type SystemUserType = 'SYSTEM_ADMIN' | 'SYSTEM_SUPPORT' | 'SYSTEM_AUDITOR';
+// Confirmed valid values from DO backend OpenAPI spec.
+export type SystemUserType = 'SYSTEM_ADMIN' | 'SUPER_SYSTEM_ADMIN' | 'SYSTEM' | 'SYSTEM_AUDITOR';
 
 export type ProvisionSystemUserPayload = {
   email: string;
