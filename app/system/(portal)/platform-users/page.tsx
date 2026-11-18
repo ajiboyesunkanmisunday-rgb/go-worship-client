@@ -74,7 +74,20 @@ export default function SystemPlatformUsersPage() {
       </span>,
       u.lastLogin || '—',
       u.createdAt || '—',
-      <UserRowMenu key="a" />,
+      <UserRowMenu
+        key="a"
+        userId={u.id}
+        userEmail={u.email}
+        userName={u.name}
+        userStatus={u.status}
+        onRefresh={() => {
+          setLoading(true);
+          getSystemUsers()
+            .then((data) => { if (data.length > 0) setUsers(data); })
+            .catch(() => { toast.error('Could not refresh platform users.'); })
+            .finally(() => setLoading(false));
+        }}
+      />,
     ],
   }));
 
