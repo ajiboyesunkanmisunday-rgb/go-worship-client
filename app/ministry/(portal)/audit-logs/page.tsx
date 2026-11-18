@@ -143,7 +143,7 @@ export default function MinistryAuditLogsPage() {
         const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
         if (rows.length > 0) setSecurityLogs(rows);
       })
-      .catch(() => { toast.error('Could not load security events.'); });
+      .catch(() => {});
   }, []);
 
   const logs = activeTab === 'All activity' ? allLogs : securityLogs;
