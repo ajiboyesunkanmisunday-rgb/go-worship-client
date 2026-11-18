@@ -79,7 +79,6 @@ export default function SystemPlatformUsersPage() {
         userId={u.id}
         userEmail={u.email}
         userName={u.name}
-        userStatus={u.status}
         onRefresh={() => {
           setLoading(true);
           getSystemUsers()

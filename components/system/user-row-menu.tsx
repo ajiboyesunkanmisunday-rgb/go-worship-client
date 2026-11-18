@@ -6,7 +6,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { suspendSystemUser, activateSystemUser } from '@/lib/api/system';
+import { deleteSystemUser } from '@/lib/api/system';
 import { forgotPassword } from '@/lib/api/auth';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { USE_LIVE_API } from '@/lib/api/config';
@@ -15,12 +15,11 @@ type Props = {
   userId: string;
   userEmail: string;
   userName: string;
-  userStatus: 'Active' | 'Inactive';
   onRefresh?: () => void;
 };
 
 /** Row "⋯" menu on Platform Users (System board). */
-export function UserRowMenu({ userId, userEmail, userName, userStatus, onRefresh }: Props) {
+export function UserRowMenu({ userId, userEmail, userName, onRefresh }: Props) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -36,13 +35,11 @@ export function UserRowMenu({ userId, userEmail, userName, userStatus, onRefresh
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  const isActive = userStatus === 'Active';
-
   const ITEMS = [
     { key: 'view',       label: 'View details' },
     { key: 'edit',       label: 'Edit User' },
     { key: 'reset',      label: 'Reset Password' },
-    { key: 'deactivate', label: isActive ? 'Deactivate' : 'Activate', danger: isActive },
+    { key: 'deactivate', label: 'Deactivate', danger: true },
   ];
 
   async function handleReset() {
@@ -66,22 +63,17 @@ export function UserRowMenu({ userId, userEmail, userName, userStatus, onRefresh
     }
   }
 
-  async function handleToggleStatus() {
+  async function handleDeactivate() {
     if (!USE_LIVE_API) {
-      toast.success(isActive ? 'User deactivated (mock mode).' : 'User activated (mock mode).');
+      toast.success('User deactivated (mock mode).');
       setConfirm(false);
       onRefresh?.();
       return;
     }
     setBusy(true);
     try {
-      if (isActive) {
-        await suspendSystemUser(userId);
-        toast.success(`${userName} has been deactivated.`);
-      } else {
-        await activateSystemUser(userId);
-        toast.success(`${userName} has been activated.`);
-      }
+      await deleteSystemUser(userId);
+      toast.success(`${userName} has been deactivated.`);
       setConfirm(false);
       onRefresh?.();
     } catch (e) {
@@ -146,7 +138,7 @@ export function UserRowMenu({ userId, userEmail, userName, userStatus, onRefresh
       <ConfirmModal
         open={confirm}
         onOpenChange={setConfirm}
-        onConfirm={() => void handleToggleStatus()}
+        onConfirm={() => void handleDeactivate()}
       />
     </div>
   );
