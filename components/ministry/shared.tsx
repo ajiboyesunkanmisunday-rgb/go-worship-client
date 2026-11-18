@@ -9,7 +9,7 @@ export function StatCard({
   title,
   value,
   variant,
-  subtitle = '40% Increased from Last month',
+  subtitle,
 }: {
   title: string;
   value: string;
@@ -48,14 +48,16 @@ export function StatCard({
       >
         {value}
       </p>
-      <p
-        className={cn(
-          'text-[11px] font-light',
-          blue ? 'text-white/80' : 'text-brand-gray-500'
-        )}
-      >
-        {subtitle}
-      </p>
+      {subtitle && (
+        <p
+          className={cn(
+            'text-[11px] font-light',
+            blue ? 'text-white/80' : 'text-brand-gray-500'
+          )}
+        >
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }

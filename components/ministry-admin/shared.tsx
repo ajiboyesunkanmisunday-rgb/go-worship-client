@@ -56,14 +56,6 @@ export function StatCard({
       >
         {value}
       </p>
-      <p
-        className={cn(
-          'font-poppins text-[12px] font-light',
-          purple ? 'text-white' : 'text-[#3e3e3e]'
-        )}
-      >
-        40% Increased from Last month
-      </p>
     </div>
   );
 }
