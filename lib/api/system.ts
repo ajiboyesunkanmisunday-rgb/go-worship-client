@@ -327,14 +327,6 @@ export const updateSystemUser = (userId: string, payload: Partial<ProvisionSyste
 export const deleteSystemUser = (userId: string) =>
   api.del<unknown>(`/system/users/${encodeURIComponent(userId)}`);
 
-/** PATCH /system/users/{userId}/activate */
-export const activateSystemUser = (userId: string) =>
-  api.patch<unknown>(`/system/users/${encodeURIComponent(userId)}/activate`);
-
-/** PATCH /system/users/{userId}/suspend */
-export const suspendSystemUser = (userId: string) =>
-  api.patch<unknown>(`/system/users/${encodeURIComponent(userId)}/suspend`);
-
 /** GET /system/users/{userId}/roles */
 export const getSystemUserRoles = (userId: string) =>
   api.get<unknown[]>(`/system/users/${encodeURIComponent(userId)}/roles`);
