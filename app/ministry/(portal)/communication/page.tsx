@@ -87,7 +87,7 @@ export default function MinistryCommunicationPage() {
                   <td className="py-4">{m.title}</td>
                   <td className="py-4">
                     <p>{m.recipients}</p>
-                    <p className="text-brand-gray-500">{m.recipientCount != null ? `${m.recipientCount} recipients` : '245 recipients'}</p>
+                    <p className="text-brand-gray-500">{m.recipientCount != null ? `${m.recipientCount} recipients` : (USE_LIVE_API ? '' : '245 recipients')}</p>
                   </td>
                   <td className="py-4">
                     <span className="flex items-center gap-2 text-brand-blue">

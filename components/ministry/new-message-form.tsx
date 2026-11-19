@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { sendCampaign, createTenantCampaign, type CreateCampaignPayload } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { toast } from 'sonner';
 
 function Field({
   label,
@@ -71,7 +72,12 @@ export function NewMessageForm() {
         if (campaignId && !schedule) {
           await sendCampaign(campaignId);
         }
-      } catch {}
+        router.push(back);
+        return;
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
+        return;
+      }
     }
     router.push(back);
   };

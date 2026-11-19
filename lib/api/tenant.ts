@@ -832,13 +832,13 @@ export const deleteSiteTemplate = (templateId: string) =>
 
 /* -------- Notification Campaigns (/tenant/admin/notifications/campaigns) ---- */
 
-/** POST /tenant/admin/notifications/campaigns/{campaignId}/send */
+/** POST /tenant/admin/notifications/campaigns/{campaignId}/execute */
 export const sendCampaign = (campaignId: string) =>
-  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/send`);
+  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/execute`);
 
-/** PATCH /tenant/admin/notifications/campaigns/{campaignId}/cancel */
+/** POST /tenant/admin/notifications/campaigns/{campaignId}/cancel */
 export const cancelCampaign = (campaignId: string) =>
-  api.patch<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
+  api.post<unknown>(`/tenant/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/cancel`);
 
 /** PUT /tenant/admin/notifications/campaigns/{campaignId} */
 export const updateTenantCampaign = (campaignId: string, payload: Partial<CreateCampaignPayload>) =>

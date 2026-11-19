@@ -155,7 +155,7 @@ export function EventForm({ backPath }: { backPath?: string } = {}) {
           </Button>
           <Button asChild size="lg" variant="outline" className="h-[52px] w-full">
             <button type="button" onClick={() => router.push(back)}>
-              Delete Event
+              Cancel
             </button>
           </Button>
         </form>

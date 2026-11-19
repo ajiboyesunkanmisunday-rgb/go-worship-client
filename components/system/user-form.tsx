@@ -18,12 +18,12 @@ import { provisionSystemUser, type SystemUserType } from '@/lib/api/system';
 import { ApiError } from '@/lib/api/client';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-// userType values are constrained by the backend enum (confirmed from DO source):
-// SYSTEM_ADMIN, SYSTEM (for support role), SUPER_SYSTEM_ADMIN.
+// userType is constrained by the backend to "SYSTEM" | "SYSTEM_ADMIN" per services.ts inviteStaff.
+// Super Admin uses userType SYSTEM_ADMIN with the SUPER_SYSTEM_ADMIN roleCode.
 const ROLE_MAP: Record<string, { userType: SystemUserType; roleCodes: string[] }> = {
-  admin:   { userType: 'SYSTEM_ADMIN',       roleCodes: ['SYSTEM_ADMIN'] },
-  support: { userType: 'SYSTEM',             roleCodes: ['SYSTEM_SUPPORT'] },
-  super:   { userType: 'SUPER_SYSTEM_ADMIN', roleCodes: ['SUPER_SYSTEM_ADMIN'] },
+  admin:   { userType: 'SYSTEM_ADMIN', roleCodes: ['SYSTEM_ADMIN'] },
+  support: { userType: 'SYSTEM',       roleCodes: ['SYSTEM_SUPPORT'] },
+  super:   { userType: 'SYSTEM_ADMIN', roleCodes: ['SUPER_SYSTEM_ADMIN'] },
 };
 
 function Field({

@@ -71,6 +71,7 @@ export function AddMember() {
     try {
       const data = await provisionTenantMember({
         email,
+        username: email,
         displayName: fullName,
         sendInviteEmail: true,
         profile: { fullName, email, phone: phone || undefined },

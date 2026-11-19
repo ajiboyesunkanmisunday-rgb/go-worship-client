@@ -10,7 +10,7 @@ import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 type Plan = {
-  id: number;
+  id: string;
   name: string;
   price: string;
   cycle: string;
@@ -21,7 +21,7 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Starter',
     price: '$0',
     cycle: '/monthly',
@@ -34,7 +34,7 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: 2,
+    id: '2',
     name: 'Professional',
     price: '$70,000',
     cycle: '/quarterly',
@@ -49,7 +49,7 @@ const PLANS: Plan[] = [
     highlight: true,
   },
   {
-    id: 3,
+    id: '3',
     name: 'Enterprise',
     price: '$250,000',
     cycle: '/yearly',
@@ -145,12 +145,14 @@ export default function SystemPlansPage() {
           const priceNum = Number(p.price ?? 0);
           const price = priceNum
             ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(priceNum)
-            : String(p.price ?? '$0');
+            : '$0';
+          const cycleRaw = String(p.billingCycle ?? 'monthly').toLowerCase();
+          const cycle = cycleRaw.startsWith('/') ? cycleRaw : `/${cycleRaw}`;
           return {
-            id: Number(p.id ?? p.planId ?? i + 1),
+            id: String(p.id ?? p.planId ?? p.code ?? i + 1),
             name: String(p.name ?? ''),
             price,
-            cycle: String(p.billingCycle ?? '/monthly'),
+            cycle,
             blurb: String(p.description ?? ''),
             features,
             highlight: i === 1,

@@ -154,7 +154,7 @@ export function CreateTenantWizard() {
         if (arr.length === 0) return;
         const mapped: Plan[] = arr.map((p) => {
           const rawPrice = Number(p.price ?? 0);
-          const price = rawPrice ? `$${rawPrice.toLocaleString()}` : String(p.price ?? '$0');
+          const price = rawPrice ? `$${rawPrice.toLocaleString()}` : '$0';
           return {
             key: String(p.code ?? p.id ?? p.planId ?? ''),
             tier: String(p.name ?? ''),
@@ -198,12 +198,14 @@ export function CreateTenantWizard() {
           shortName: basic.churchName.substring(0, 20),
           slug,
           billingEmail: basic.churchEmail,
-          subDomain: basic.domainType === 'subdomain' ? basic.subdomainLabel || null : null,
-          customDomain: basic.domainType === 'custom' ? basic.customDomain || null : null,
+          subDomain: basic.domainType === 'subdomain' ? basic.subdomainLabel || undefined : undefined,
+          customDomain: basic.domainType === 'custom' ? basic.customDomain || undefined : undefined,
           countryCode: 'US',
           currency: 'USD',
         },
         adminEmail: basic.adminEmail,
+        adminDisplayName: basic.adminName,
+        phone: basic.phone || undefined,
       });
 
       if (isStepUpChallenge(data)) {

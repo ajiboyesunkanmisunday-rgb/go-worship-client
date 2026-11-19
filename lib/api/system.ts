@@ -262,17 +262,19 @@ export type ProvisionTenantPayload = {
   tenant: {
     name: string;
     shortName?: string;
-    slug: string;
+    slug?: string;
     legalName?: string;
-    billingEmail: string;
-    /** Bare label for a hosted subdomain, e.g. "rccgros" → rccgros.go-worship.com. Null when customDomain is set. */
-    subDomain?: string | null;
-    /** Full custom domain, e.g. "worship.rccg.org". Null when subDomain is set. */
-    customDomain?: string | null;
-    countryCode?: string;
-    currency?: string;
+    billingEmail?: string;
+    /** Bare label for a hosted subdomain, e.g. "rccgros" → rccgros.go-worship.com. */
+    subDomain?: string;
+    /** Full custom domain, e.g. "worship.rccg.org". */
+    customDomain?: string;
+    countryCode: string;
+    currency: string;
   };
   adminEmail: string;
+  adminDisplayName: string;
+  phone?: string;
 };
 
 export const provisionTenant = (payload: ProvisionTenantPayload) =>
@@ -295,8 +297,8 @@ export const updateSystemTenant = (_id: string, _payload: UpdateTenantPayload): 
 
 /* -------- Platform user provisioning -------- */
 
-// Confirmed valid values from DO backend OpenAPI spec.
-export type SystemUserType = 'SYSTEM_ADMIN' | 'SUPER_SYSTEM_ADMIN' | 'SYSTEM' | 'SYSTEM_AUDITOR';
+// Valid values per backend services.ts inviteStaff signature.
+export type SystemUserType = 'SYSTEM' | 'SYSTEM_ADMIN';
 
 export type ProvisionSystemUserPayload = {
   email: string;
