@@ -654,13 +654,8 @@ function PaymentBillingTab() {
 
 type Campus = { id: string; code: string; name: string; address: string; active: boolean };
 
-const CAMPUS_MOCK: Campus[] = [
-  { id: '1', code: 'HQ', name: 'Main Campus', address: '100 Church Street, Lagos', active: true },
-  { id: '2', code: 'ABJ', name: 'Abuja Branch', address: '45 Wuse Zone 5, Abuja', active: true },
-];
-
 function CampusesTab() {
-  const [campuses, setCampuses] = useState<Campus[]>(USE_LIVE_API ? [] : CAMPUS_MOCK);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [loading, setLoading] = useState(USE_LIVE_API);
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
