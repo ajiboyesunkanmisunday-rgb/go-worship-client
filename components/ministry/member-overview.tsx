@@ -21,22 +21,12 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-const MOCK_MEMBER: TenantMember = {
-  id: 'M-001',
-  name: 'John Adeyemi',
-  email: 'john@example.com',
-  phone: '+1 555-0101',
-  status: 'Active',
-  joinedAt: 'Jan 12, 2025',
-  groups: ['Faith Builders'],
-};
-
 /** Church Admin "Member Overview" slide-over. */
 export function MemberOverview({ id }: { id?: string }) {
   const router = useRouter();
   const back = '/ministry/members';
   const [member, setMember] = useState<TenantMember>(
-    USE_LIVE_API ? { id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] } : MOCK_MEMBER
+    { id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] }
   );
 
   useEffect(() => {

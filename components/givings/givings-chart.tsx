@@ -11,21 +11,6 @@ import { useEffect, useState } from 'react';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const MOCK_CHART_DATA = [
-  { month: 'January', amount: 1200 },
-  { month: 'February', amount: 900 },
-  { month: 'March', amount: 1600 },
-  { month: 'April', amount: 750 },
-  { month: 'May', amount: 1400 },
-  { month: 'June', amount: 1850 },
-  { month: 'July', amount: 1100 },
-  { month: 'August', amount: 1350 },
-  { month: 'September', amount: 600 },
-  { month: 'October', amount: 1700 },
-  { month: 'November', amount: 950 },
-  { month: 'December', amount: 2000 },
-];
-
 const chartConfig = {
   givings: {
     label: 'Amount Given',
@@ -34,7 +19,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function GivingsChart() {
-  const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
+  const [chartData, setChartData] = useState<{ month: string; amount: number }[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

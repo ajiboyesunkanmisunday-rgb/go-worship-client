@@ -47,25 +47,6 @@ import {
 } from '@/lib/api/giving';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-/* ---- Mock data for demo mode ---- */
-
-const MOCK_CARD: PaymentMethod = {
-  id: 'pm_demo',
-  last4: '4242',
-  brand: 'Visa',
-  isDefault: true,
-};
-
-const MOCK_SCHEDULE: RecurringGiving = {
-  id: 'rg_demo',
-  amount: 50,
-  currency: 'USD',
-  frequency: 'MONTHLY',
-  fundId: 'fund_tithe',
-  status: 'ACTIVE',
-  nextPaymentDate: '2026-11-01',
-};
-
 const FREQUENCIES: RecurringGivingFrequency[] = [
   'WEEKLY',
   'BIWEEKLY',
@@ -106,8 +87,6 @@ export function RecurringContent() {
   const load = async () => {
     setLoading(true);
     if (!USE_LIVE_API) {
-      setMethods([MOCK_CARD]);
-      setSchedules([MOCK_SCHEDULE]);
       setLoading(false);
       return;
     }

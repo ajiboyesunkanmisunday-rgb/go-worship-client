@@ -23,20 +23,11 @@ type Sermon = {
   date: string; duration: string; videoUrl: string; description: string; fileName: string;
 };
 
-const MOCK_SERMON: Sermon = {
-  title: 'Walk by Faith and Love', status: 'Published',
-  speaker: 'Pastor Christian John', series: 'Faith & Love Series',
-  date: 'Feb 10, 2025', duration: '48 mins',
-  videoUrl: 'https://www.youtube.com/watch?v=1hkEg5ugqD0',
-  description: 'We walk by faith and not by sight, according to The scriptures that says, we are blessed when we walk by faith Heb 11:1 - end',
-  fileName: 'Walk by Faith. MP3',
-};
-
 /** Sermon Overview slide-over (Figma 139:11237). */
 export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } = {}) {
   const router = useRouter();
   const back = backTo ?? '/sermon-admin/sermons';
-  const [sermon, setSermon] = useState<Sermon>(USE_LIVE_API ? { title: '', status: '', speaker: '', series: '', date: '', duration: '', videoUrl: '', description: '', fileName: '' } : MOCK_SERMON);
+  const [sermon, setSermon] = useState<Sermon>({ title: '', status: '', speaker: '', series: '', date: '', duration: '', videoUrl: '', description: '', fileName: '' });
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
@@ -47,15 +38,15 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
         const rawStatus = String(d.status ?? 'Published');
         const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
         setSermon({
-          title: String(d.title ?? MOCK_SERMON.title),
+          title: String(d.title ?? ''),
           status,
-          speaker: String(d.speakerName ?? MOCK_SERMON.speaker),
-          series: MOCK_SERMON.series,
-          date: date || MOCK_SERMON.date,
-          duration: MOCK_SERMON.duration,
-          videoUrl: MOCK_SERMON.videoUrl,
-          description: String(d.description ?? MOCK_SERMON.description),
-          fileName: MOCK_SERMON.fileName,
+          speaker: String(d.speakerName ?? ''),
+          series: String(d.seriesId ?? ''),
+          date,
+          duration: '',
+          videoUrl: String(d.mediaUrl ?? ''),
+          description: String(d.description ?? ''),
+          fileName: String(d.mediaObjectKey ?? ''),
         });
       })
       .catch(() => {});

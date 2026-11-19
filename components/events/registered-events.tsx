@@ -3,7 +3,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import { cn } from '@/lib/utils';
-import { events as MOCK_EVENTS } from '@/data/events';
 import { EventCard } from './event-card';
 import { getSelfEvents, TenantEvent } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
@@ -33,7 +32,7 @@ export function RegisteredEvents({ isIntercepted = false }: Props) {
     () => (isIntercepted ? undefined : '/dashboard/events'),
     [isIntercepted]
   );
-  const [events, setEvents] = useState<Event[]>(USE_LIVE_API ? [] : MOCK_EVENTS.filter((ev) => ev.registered));
+  const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

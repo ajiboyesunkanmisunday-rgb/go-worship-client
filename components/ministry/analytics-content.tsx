@@ -17,19 +17,6 @@ import { USE_LIVE_API } from '@/lib/api/config';
 const TABS = ['Finance', 'Groups', 'Events', 'Media', 'Members'] as const;
 const AUDIENCE = ['Non Member', 'Member'] as const;
 
-const MOCK_CHART_DATA = [
-  { month: 'May', value: 220 },
-  { month: 'Jun', value: 300 },
-  { month: 'Jul', value: 240 },
-  { month: 'Aug', value: 340 },
-  { month: 'Sep', value: 280 },
-  { month: 'Oct', value: 380 },
-  { month: 'Nov', value: 300 },
-  { month: 'Dec', value: 460 },
-  { month: 'Jan', value: 420 },
-  { month: 'Feb', value: 470 },
-];
-
 const chartConfig = {
   value: { label: 'Overview', color: '#5a4fe0' },
 } satisfies ChartConfig;
@@ -60,8 +47,8 @@ export function AnalyticsContent() {
 
   const chartData =
     tab === 'Finance'
-      ? (financeTrend.length > 0 ? financeTrend : (USE_LIVE_API ? [] : MOCK_CHART_DATA))
-      : (tabTrend.length > 0 ? tabTrend : (USE_LIVE_API ? [] : MOCK_CHART_DATA));
+      ? (financeTrend.length > 0 ? financeTrend : [])
+      : (tabTrend.length > 0 ? tabTrend : []);
 
   return (
     <div className="flex flex-col gap-5">

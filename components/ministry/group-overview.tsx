@@ -55,23 +55,12 @@ function QrCode() {
 }
 
 /** Church Admin "Group Overview" slide-over (Figma 418:23947). */
-const MOCK_GROUP: TenantGroup = {
-  id: '1',
-  name: 'Faith Builders Fellowship',
-  description: 'A complete breakdown of what happens when a user clicks View on the Group List.',
-  memberCount: 22,
-  leaderId: '',
-  leaderName: 'Isaiah Christian',
-  status: 'Active',
-  createdAt: 'Jun 10, 2025',
-};
-
 export function GroupOverview({ id }: { id?: string }) {
   const router = useRouter();
   const back = '/ministry/groups';
   const [qr, setQr] = useState(true);
   const [group, setGroup] = useState<TenantGroup>(
-    USE_LIVE_API ? { id: '', name: '', description: '', memberCount: 0, leaderId: '', leaderName: '', status: 'Active', createdAt: '' } : MOCK_GROUP
+    { id: '', name: '', description: '', memberCount: 0, leaderId: '', leaderName: '', status: 'Active', createdAt: '' }
   );
 
   useEffect(() => {

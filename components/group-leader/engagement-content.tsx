@@ -10,29 +10,14 @@ import { getTenantGroups, getTenantStats, type TenantGroup, type TenantStats } f
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const MOCK_CHART_DATA = [
-  { month: 'Jan', v: 3000 },
-  { month: 'Feb', v: 6500 },
-  { month: 'Mar', v: 3500 },
-  { month: 'Apr', v: 4200 },
-  { month: 'May', v: 2000 },
-  { month: 'Jun', v: 9500 },
-  { month: 'Jul', v: 3000 },
-  { month: 'Aug', v: 5000 },
-  { month: 'Sep', v: 4200 },
-  { month: 'Oct', v: 1500 },
-  { month: 'Nov', v: 9000 },
-  { month: 'Dec', v: 4000 },
-];
-
 const config = {
   v: { label: 'Engagement', color: '#243f84' },
 } satisfies ChartConfig;
 
 function EngagementChart() {
   const [stats, setStats] = useState<TenantStats | null>(null);
-  const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
-  const [engagementScore, setEngagementScore] = useState(USE_LIVE_API ? '—' : '78%');
+  const [chartData, setChartData] = useState<{ month: string; v: number }[]>([]);
+  const [engagementScore, setEngagementScore] = useState('—');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

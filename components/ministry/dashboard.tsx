@@ -104,41 +104,10 @@ function SectionBlock({ section }: { section: DashboardSection }) {
   );
 }
 
-/* Fallback mock sections for when USE_LIVE_API is false */
-const MOCK_SECTIONS: DashboardSection[] = [
-  {
-    type: 'OVERVIEW',
-    title: 'Overview',
-    metrics: [
-      { code: 'ACTIVE_CAMPUSES',      label: 'Active campuses',      value: 3,   formattedValue: '3' },
-      { code: 'ACTIVE_USERS',         label: 'Active users',         value: 120, formattedValue: '120' },
-      { code: 'NEW_USERS',            label: 'New users',            value: 18,  formattedValue: '18' },
-      { code: 'RECEIVED_DONATIONS',   label: 'Received donations',   value: 0,   formattedValue: '0' },
-      { code: 'SUCCESSFUL_PAYMENTS',  label: 'Successful payments',  value: 0,   formattedValue: '0' },
-      { code: 'UPCOMING_EVENTS',      label: 'Upcoming events',      value: 2,   formattedValue: '2' },
-      { code: 'ATTENDANCE_RECORDS',   label: 'Attendance records',   value: 45,  formattedValue: '45' },
-      { code: 'PUBLISHED_SERMONS',    label: 'Published sermons',    value: 12,  formattedValue: '12' },
-    ],
-    series: [],
-  },
-  {
-    type: 'MEMBERS',
-    title: 'Members',
-    metrics: [
-      { code: 'ACTIVE_CAMPUSES',      label: 'Active campuses',      value: 3,   formattedValue: '3' },
-      { code: 'ACTIVE_USERS',         label: 'Active users',         value: 120, formattedValue: '120' },
-      { code: 'NEW_USERS',            label: 'New users',            value: 18,  formattedValue: '18' },
-    ],
-    series: [],
-  },
-];
-
 export function MinistryDashboard() {
-  const [rawSections, setRawSections] = useState<DashboardSection[]>(
-    USE_LIVE_API ? [] : MOCK_SECTIONS
-  );
-  const [userName, setUserName] = useState(USE_LIVE_API ? '' : 'Super System Administrator');
-  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Go Worship');
+  const [rawSections, setRawSections] = useState<DashboardSection[]>([]);
+  const [userName, setUserName] = useState('');
+  const [orgName, setOrgName] = useState('');
   const [dashFamily, setDashFamily] = useState('TENANT_OPERATIONS');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
 

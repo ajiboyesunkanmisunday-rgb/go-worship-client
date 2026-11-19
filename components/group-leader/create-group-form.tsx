@@ -70,12 +70,7 @@ export function CreateGroupForm({
   const router = useRouter();
   const isEdit = mode === 'edit';
   const [group, setGroup] = useState<TenantGroup | null>(null);
-  const MOCK_LEADERS = [
-    { id: '1', name: 'Pastor Val Ejima' },
-    { id: '2', name: 'Isreal Marcelo' },
-    { id: '3', name: 'Mary Napoleon' },
-  ];
-  const [leaders, setLeaders] = useState<{ id: string; name: string }[]>(USE_LIVE_API ? [] : MOCK_LEADERS);
+  const [leaders, setLeaders] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     if (!isEdit || !USE_LIVE_API || !id) return;

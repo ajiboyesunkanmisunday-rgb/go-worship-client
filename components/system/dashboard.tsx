@@ -9,27 +9,6 @@ import { type SystemStats, getSystemAuditEventsRecent, getSystemBillingPlans } f
 import { getUnifiedDashboard, type DashboardSection } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const MOCK_TREND = [
-  { month: 'May', value: 220 }, { month: 'Jun', value: 180 },
-  { month: 'Jul', value: 260 }, { month: 'Aug', value: 220 },
-  { month: 'Sep', value: 320 }, { month: 'Oct', value: 280 },
-  { month: 'Nov', value: 360 }, { month: 'Dec', value: 300 },
-  { month: 'Jan', value: 420 }, { month: 'Feb', value: 470 },
-];
-
-const MOCK_ACTIVITY = [
-  { title: 'New tenant onboarded',    meta: 'Grace Community Church · 2h ago' },
-  { title: 'Payment gateway updated', meta: 'Cornerstone Church · 5h ago' },
-  { title: 'Subscription renewed',    meta: 'Impact Church · 1d ago' },
-  { title: 'Tenant suspended',        meta: 'Hope Assembly · 2d ago' },
-  { title: 'New admin provisioned',   meta: 'Celebration Church · 3d ago' },
-];
-
-const MOCK_STATS: SystemStats = {
-  totalTenants: 130, activeTenants: 830, totalUsers: 1850,
-  givingVolume: '$2.5M', trialTenants: 30, overduePayments: 130,
-};
-
 /* Family codes from the API map to human-readable tab labels. */
 const FAMILY_LABELS: Record<string, string> = {
   ENGAGEMENT:           'Engagement',
@@ -74,7 +53,6 @@ const barConfig = {
   value: { label: 'Count', color: '#243f84' },
 } satisfies ChartConfig;
 
-const MOCK_PLANS = [['Starter', '58'], ['Pro', '54'], ['Enterprise', '18']];
 
 function fmt(n: number | string): string {
   if (typeof n === 'string' && n) return n;
@@ -131,61 +109,15 @@ function SectionBlock({ section }: { section: DashboardSection }) {
   );
 }
 
-/* Fallback mock sections when USE_LIVE_API is false */
-const MOCK_SECTIONS: DashboardSection[] = [
-  {
-    type: 'PLATFORM_OVERVIEW',
-    title: 'Platform overview',
-    metrics: [
-      { code: 'TOTAL_TENANTS',   label: 'Total tenants',   value: 130, formattedValue: '130' },
-      { code: 'ACTIVE_TENANTS',  label: 'Active tenants',  value: 830, formattedValue: '830' },
-      { code: 'NEW_TENANTS',     label: 'New tenants',     value: 30,  formattedValue: '30'  },
-      { code: 'TOTAL_CAMPUSES',  label: 'Total campuses',  value: 12,  formattedValue: '12'  },
-      { code: 'ACTIVE_USERS',    label: 'Active users',    value: 1850,formattedValue: '1,850' },
-      { code: 'NEW_USERS',       label: 'New users',       value: 240, formattedValue: '240' },
-      { code: 'ACTIVE_SESSIONS', label: 'Active sessions', value: 42,  formattedValue: '42'  },
-      { code: 'RISKY_SESSIONS',  label: 'Risky sessions',  value: 3,   formattedValue: '3'   },
-    ],
-    series: [],
-  },
-  {
-    type: 'SECURITY',
-    title: 'Security',
-    metrics: [
-      { code: 'SUCCESSFUL_AUTHENTICATIONS', label: 'Successful authentications', value: 4210, formattedValue: '4,210' },
-      { code: 'FAILED_AUTHENTICATIONS',     label: 'Failed authentications',     value: 64,   formattedValue: '64'   },
-      { code: 'ACTIVE_SESSIONS',            label: 'Active sessions',            value: 42,   formattedValue: '42'   },
-      { code: 'RISKY_SESSIONS',             label: 'Risky sessions',             value: 3,    formattedValue: '3'    },
-      { code: 'LOCKED_ACCOUNTS',            label: 'Locked accounts',            value: 1,    formattedValue: '1'    },
-      { code: 'MFA_ENABLED_USERS',          label: 'MFA-enabled users',          value: 120,  formattedValue: '120'  },
-      { code: 'AUDIT_FAILURES',             label: 'Audit failures',             value: 12,   formattedValue: '12'   },
-    ],
-    series: [],
-  },
-  {
-    type: 'SUBSCRIPTIONS',
-    title: 'Subscriptions',
-    metrics: [
-      { code: 'TOTAL_SUBSCRIPTIONS',    label: 'Total subscriptions', value: 130, formattedValue: '130' },
-      { code: 'ACTIVE_SUBSCRIPTIONS',   label: 'Active',              value: 105, formattedValue: '105' },
-      { code: 'TRIALING_SUBSCRIPTIONS', label: 'Trialing',            value: 18,  formattedValue: '18'  },
-      { code: 'PAST_DUE_SUBSCRIPTIONS', label: 'Past due',            value: 7,   formattedValue: '7'   },
-      { code: 'SUSPENDED_SUBSCRIPTIONS',label: 'Suspended',           value: 0,   formattedValue: '0'   },
-      { code: 'PAST_DUE_INVOICES',      label: 'Past-due invoices',   value: 7,   formattedValue: '7'   },
-    ],
-    series: [],
-  },
-];
-
 export function SystemDashboard() {
-  const [rawSections, setRawSections] = useState<DashboardSection[]>(USE_LIVE_API ? [] : MOCK_SECTIONS);
-  const [trendData, setTrendData] = useState(USE_LIVE_API ? [] as typeof MOCK_TREND : MOCK_TREND);
-  const [activity, setActivity] = useState(USE_LIVE_API ? [] as typeof MOCK_ACTIVITY : MOCK_ACTIVITY);
-  const [plans, setPlans] = useState<[string, string][]>(USE_LIVE_API ? [] : (MOCK_PLANS as [string, string][]));
+  const [rawSections, setRawSections] = useState<DashboardSection[]>([]);
+  const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
+  const [activity, setActivity] = useState<{ title: string; meta: string }[]>([]);
+  const [plans, setPlans] = useState<[string, string][]>([]);
   const [adminName, setAdminName] = useState('Admin');
   const [dashFamily, setDashFamily] = useState('PLATFORM');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
-  const [stats, setStats] = useState<SystemStats>(USE_LIVE_API ? { ...MOCK_STATS, overduePayments: 0, trialTenants: 0 } : MOCK_STATS);
+  const [stats, setStats] = useState<SystemStats>({ totalTenants: 0, activeTenants: 0, totalUsers: 0, givingVolume: '', trialTenants: 0, overduePayments: 0 });
 
   const loadFamily = useCallback(async (family: string) => {
     if (!USE_LIVE_API) return;

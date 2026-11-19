@@ -52,21 +52,11 @@ export function QuickAccess() {
   );
 }
 
-const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, () => ({
-  id: '',
-  name: 'John Doe',
-  phone: '08035678923',
-  email: 'john@mail.com',
-  status: 'Active' as const,
-  joinedAt: 'Jan 2025',
-  groups: [],
-}));
-
 export function GroupLeaderDashboard() {
-  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>([]);
   const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
   const [userName, setUserName] = useState('');
-  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Go Worship');
+  const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -103,10 +93,10 @@ export function GroupLeaderDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : (USE_LIVE_API ? '0' : '24')} variant="blue" />
-        <StatCard title="Total Member" value={stats ? String(stats.totalMembers || stats.totalUsers) : (USE_LIVE_API ? String(members.length) : '15')} variant="white" />
-        <StatCard title="New Members" value={stats ? String(stats.newMembers ?? stats.newUsers ?? 0) : (USE_LIVE_API ? '0' : '15')} variant="white" />
-        <StatCard title="Recent Attendance" value={stats ? String(stats.attendanceRecords ?? 0) : (USE_LIVE_API ? '0' : '10')} variant="white" />
+        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : '0'} variant="blue" />
+        <StatCard title="Total Member" value={stats ? String(stats.totalMembers || stats.totalUsers) : String(members.length)} variant="white" />
+        <StatCard title="New Members" value={stats ? String(stats.newMembers ?? stats.newUsers ?? 0) : '0'} variant="white" />
+        <StatCard title="Recent Attendance" value={stats ? String(stats.attendanceRecords ?? 0) : '0'} variant="white" />
       </div>
 
       <DataPanel

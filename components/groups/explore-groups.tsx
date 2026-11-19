@@ -8,20 +8,9 @@ import { useState, useEffect } from 'react';
 import { getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const MOCK_GROUPS: TenantGroup[] = Array.from({ length: 6 }, (_, i) => ({
-  id: String(i + 1),
-  name: 'Celebration Church, Canada',
-  description: 'Communication — Campus Ministry',
-  leaderName: 'Joe Doe',
-  leaderId: '',
-  status: 'Active',
-  memberCount: 0,
-  createdAt: '',
-}));
-
 export function ExploreGroups() {
   const router = useRouter();
-  const [groups, setGroups] = useState<TenantGroup[]>(USE_LIVE_API ? [] : MOCK_GROUPS);
+  const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [search, setSearch] = useState('');
 
   useEffect(() => {

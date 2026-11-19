@@ -83,16 +83,6 @@ interface ServiceHealth {
   detail?: string;
 }
 
-const MOCK_HEALTH: ServiceHealth[] = [
-  { name: 'API Gateway',        status: 'ok',       responseMs: 42 },
-  { name: 'Database',           status: 'ok',       responseMs: 8  },
-  { name: 'Payment Gateway',    status: 'ok',       responseMs: 210 },
-  { name: 'Email Service',      status: 'ok',       responseMs: 95 },
-  { name: 'SMS Service',        status: 'ok',       responseMs: 130 },
-  { name: 'Cache (Redis)',       status: 'ok',       responseMs: 2  },
-  { name: 'File Storage',       status: 'ok',       responseMs: 55 },
-  { name: 'Job Queue',          status: 'ok',       responseMs: 18 },
-];
 
 function statusColor(s: HealthStatus) {
   if (s === 'ok')       return 'text-emerald-600';
@@ -249,7 +239,7 @@ function SecurityPanel() {
 }
 
 function SystemHealthPanel() {
-  const [services, setServices] = useState<ServiceHealth[]>(USE_LIVE_API ? [] : MOCK_HEALTH);
+  const [services, setServices] = useState<ServiceHealth[]>([]);
   const [loading, setLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
 

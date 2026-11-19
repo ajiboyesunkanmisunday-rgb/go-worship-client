@@ -8,41 +8,16 @@ import { getTenantEvents, getTenantStats } from '@/lib/api/tenant';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const MOCK_CHART_DATA = [
-  { month: 'Jan', value: 2000 },
-  { month: 'Feb', value: 4500 },
-  { month: 'Mar', value: 2600 },
-  { month: 'Apr', value: 3400 },
-  { month: 'May', value: 1500 },
-  { month: 'Jun', value: 7800 },
-  { month: 'Jul', value: 2200 },
-  { month: 'Aug', value: 3900 },
-  { month: 'Sep', value: 1200 },
-  { month: 'Oct', value: 3000 },
-  { month: 'Nov', value: 6800 },
-  { month: 'Dec', value: 3600 },
-];
-
 const chartConfig = {
   value: { label: 'Attendance', color: '#243F84' },
 } satisfies ChartConfig;
 
-const MOCK_EVENTS: EventRow[] = [
-  { name: 'Midweek Recharge', date: 'Feb 21, 2025 • 6PM', location: 'Main Hall', registrations: '125', status: 'Completed' },
-  { name: 'Weekend Workshop', date: 'Feb 25, 2025 • 10AM', location: 'Conference Room A', registrations: '75', status: 'Completed' },
-  { name: 'Team Building Retreat', date: 'Mar 10, 2025 • 8AM', location: 'Offsite Location', registrations: '50', status: 'Ongoing' },
-  { name: 'Monthly Check-in', date: 'Mar 15, 2025 • 3PM', location: 'Zoom', registrations: 'Unlimited', status: 'Cancelled' },
-  { name: 'Spring Networking Event', date: 'Apr 5, 2025 • 5PM', location: 'Rooftop Garden', registrations: '150', status: 'Upcoming' },
-];
-
-const MOCK_TOTAL = MOCK_CHART_DATA.reduce((sum, d) => sum + d.value, 0);
-
 export function AttendanceContent() {
-  const [events, setEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
-  const [totalRegistration, setTotalRegistration] = useState(USE_LIVE_API ? 0 : 15);
-  const [chartData, setChartData] = useState(USE_LIVE_API ? [] as typeof MOCK_CHART_DATA : MOCK_CHART_DATA);
-  const [totalAttendance, setTotalAttendance] = useState(USE_LIVE_API ? 0 : MOCK_TOTAL);
-  const [checkInsToday, setCheckInsToday] = useState(USE_LIVE_API ? 0 : 45);
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [totalRegistration, setTotalRegistration] = useState(0);
+  const [chartData, setChartData] = useState<{ month: string; value: number }[]>([]);
+  const [totalAttendance, setTotalAttendance] = useState(0);
+  const [checkInsToday, setCheckInsToday] = useState(0);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

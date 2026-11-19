@@ -15,22 +15,12 @@ import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 
-const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 11 }, (_, i) => ({
-  id: String(i + 1),
-  name: 'Grace Anita',
-  email: '',
-  phone: '',
-  status: 'Active' as const,
-  joinedAt: '',
-  groups: [],
-}));
-
 const FILTERS = ['All member', 'Youth Fellowship', 'Music Group', 'Prayer Group'];
 
 export function GroupMembers() {
   const router = useRouter();
   const [filter, setFilter] = useState(FILTERS[0]);
-  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
