@@ -75,7 +75,7 @@ type Props = {
    *   'system'   – SYSTEM_* roles only
    *   'ministry' – TENANT_* / ministry roles only (no system, no pure member)
    *   'member'   – everyone except SYSTEM_*
-   * Omit to skip role gating (e.g. development / mock mode pages).
+   * Omit to skip role gating (e.g. unauthenticated pages).
    */
   portalKind?: PortalKind;
 };
@@ -186,7 +186,6 @@ function SignInFormInner({
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
     setFormError(null);
 
-    // Mock mode: no backend, keep the click-through demo behaviour.
     setSubmitting(true);
     try {
       // reCAPTCHA v3: mint a fresh token per submit (no checkbox).

@@ -66,7 +66,6 @@ export function PasswordForm({ onSuccess }: Props) {
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
     setFormError(null);
 
-    // Mock mode: no backend, keep the click-through demo behaviour.
     if (!details.email) {
       setFormError('Your account details are missing. Please start again.');
       return;

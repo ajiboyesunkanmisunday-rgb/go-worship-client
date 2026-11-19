@@ -15,8 +15,6 @@ const STATUS: Record<string, string> = {
   Suspended: 'bg-[#fde8e8] text-[#eb0000]',
 };
 
-/* Mock fallback — shown in demo mode or when the API call fails */
-
 const TABS = ['All Tenants', 'Active', 'Pending', 'Suspended'];
 
 function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void }) {

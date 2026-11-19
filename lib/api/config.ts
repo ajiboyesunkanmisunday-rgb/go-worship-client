@@ -15,7 +15,7 @@
  */
 export const API_BASE = '/bff/gw';
 
-/** Set false to run the UI on its built-in mock data (current default). */
+/** Always true in production (env var may remain set for compatibility). */
 export const USE_LIVE_API = process.env.NEXT_PUBLIC_USE_LIVE_API === 'true';
 
 export function apiUrl(path: string) {

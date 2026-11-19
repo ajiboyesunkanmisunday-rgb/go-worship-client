@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react';
 import type { SiteContext } from './api/bootstrap';
 
 export type SiteContextValue = {
-  /** false = bootstrap not fetched (demo mode or server error) */
+  /** false = bootstrap not yet fetched or failed */
   loaded: boolean;
   context: SiteContext | null;
 };
