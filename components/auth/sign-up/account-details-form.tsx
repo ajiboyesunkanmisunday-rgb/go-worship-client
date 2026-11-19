@@ -78,7 +78,7 @@ export function AccountDetailsForm({ onSuccess }: Props) {
   );
   const { context } = useSiteContext();
   const currentChurch =
-    context?.branding?.organizationName ?? context?.displayName ?? 'Celebration Church Canada';
+    context?.branding?.organizationName ?? context?.displayName ?? 'Your Church';
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),

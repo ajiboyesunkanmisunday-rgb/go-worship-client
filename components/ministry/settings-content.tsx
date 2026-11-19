@@ -831,15 +831,7 @@ function TabContent({ tab }: { tab: string }) {
   if (tab === 'Payment & Billing') {
     return <PaymentBillingTab />;
   }
-  if (tab === 'Campuses') {
-    return <CampusesTab />;
-  }
-  return (
-    <div className="rounded-[14px] bg-white p-6">
-      <Field label={`${tab} details`} value="Manage your settings here" />
-      <Field label="Preference" value="Default" />
-    </div>
-  );
+  return <CampusesTab />;
 }
 
 export function SettingsContent() {

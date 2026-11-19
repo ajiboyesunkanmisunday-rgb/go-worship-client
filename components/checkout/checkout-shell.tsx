@@ -11,16 +11,14 @@ type CheckoutShellProps = {
 };
 
 /**
- * Shared visual frame for the giving / payment-checkout flow
- * (matches Figma board 101:4021):
+ * Shared visual frame for the giving / payment-checkout flow:
  * - Left: hero photo with a dark overlay, rounded, with the white
- *   "Celebration Church Canada" logo top-left and the
- *   "Grace Flows Through Generosity" headline + quote at the bottom.
+ *   logo top-left and the "Grace Flows Through Generosity" headline at the bottom.
  * - Right: centered content column (the screen's card).
  */
 export function CheckoutShell({ children, contentClassName }: CheckoutShellProps) {
   const { context } = useSiteContext();
-  const orgName = context?.branding?.organizationName ?? context?.displayName ?? 'Celebration Church Canada';
+  const orgName = context?.branding?.organizationName ?? context?.displayName ?? 'Your Church';
   const logoUrl = context?.branding?.logoUrl ?? '';
   return (
     <main className="relative flex min-h-screen w-full flex-col items-stretch gap-6 bg-[#f7f7ff] px-4 py-4 lg:flex-row lg:items-center lg:gap-8 lg:px-6 lg:py-6">

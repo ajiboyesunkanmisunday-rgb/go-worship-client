@@ -16,10 +16,9 @@ type WizardShellProps = {
 };
 
 /**
- * Left panel for the sign-up wizard (Figma board 107:6846): a full-height
- * blue panel with the church photo, Celebration Church Canada logo, and the
- * "Grace Flows Through Generosity" verse. The right side hosts a back button,
- * an optional step progress bar, and the step content.
+ * Left panel for the sign-up wizard: a full-height blue panel with the church
+ * photo, org logo, and the "Grace Flows Through Generosity" verse. The right
+ * side hosts a back button, an optional step progress bar, and the step content.
  */
 export function WizardShell({
   children,
@@ -44,7 +43,7 @@ export function WizardShell({
         />
         <Image
           src="/auth/cci-logo-white.svg"
-          alt="Celebration Church Canada"
+          alt="Church logo"
           width={181}
           height={32}
           className="absolute top-32 left-20 z-10 w-[181px]"

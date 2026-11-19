@@ -255,7 +255,7 @@ function SignInFormInner({
   };
 
   return (
-    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Celebration Church'} logoSrc={logoSrc} imgClassName={imgClassName} flat={flat}>
+    <AuthLayout imgSrc={imgSrc} imgAlt={imgAlt ?? 'Church'} logoSrc={logoSrc} imgClassName={imgClassName} flat={flat}>
       {sessionBanner && (
         <FormAlert variant="warning" className="mb-4">{sessionBanner}</FormAlert>
       )}

@@ -23,9 +23,9 @@ type AuthShellProps = {
 };
 
 /**
- * Shared visual frame for every auth screen (matches Figma Auth board):
- * - Left: church photo with a blue duotone overlay, rounded, with the
- *   "Celebration Church Canada" logo in the top-left (hidden below lg).
+ * Shared visual frame for every auth screen:
+ * - Left: church photo with a blue duotone overlay, rounded, with the org logo
+ *   in the top-left (hidden below lg).
  * - Right: centered content column (the screen's form/content).
  * - A floating "Need Help?" pill bottom-right.
  */
@@ -34,7 +34,7 @@ export function AuthShell({
   contentClassName,
   mainClassName,
   imgSrc = '/auth/church.jpg',
-  imgAlt = 'Celebration Church',
+  imgAlt = 'Church',
   logoSrc,
   imgClassName = 'object-cover mix-blend-hard-light',
   flat = false,
@@ -60,7 +60,7 @@ export function AuthShell({
             ) : (
               <Image
                 src="/auth/cci-logo-white.svg"
-                alt={orgName ?? 'Celebration Church Canada'}
+                alt={orgName ?? 'Church logo'}
                 width={160}
                 height={30}
                 className="h-[30px] w-auto"
@@ -123,7 +123,7 @@ export function AuthShell({
         ) : (
           <Image
             src="/auth/cci-logo-white.svg"
-            alt={orgName ?? 'Celebration Church Canada'}
+            alt={orgName ?? 'Church logo'}
             width={200}
             height={36}
             className="absolute top-8 left-8 z-10 w-[38%] max-w-[200px]"
