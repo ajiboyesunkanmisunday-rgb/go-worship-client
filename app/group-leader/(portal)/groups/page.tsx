@@ -29,8 +29,8 @@ export default function GroupLeaderGroupsPage() {
     getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
   }, []);
 
-  const totalGroups = stats?.totalGroups ?? 24;
-  const totalMembers = stats?.totalMembers ?? 430;
+  const totalGroups = stats?.totalGroups ?? 0;
+  const totalMembers = stats?.totalMembers ?? 0;
 
   return (
     <div className="flex flex-col gap-5">

@@ -180,13 +180,11 @@ export default function SystemPlansPage() {
           title="Pending Payments"
           value={pendingPayments}
           variant="green"
-          subtitle="5% of total"
         />
         <StatCard
           title="Overdue Amount"
           value={overdue}
           variant="white"
-          subtitle="-5% from last month"
         />
       </div>
 

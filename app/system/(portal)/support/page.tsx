@@ -93,7 +93,7 @@ export default function SystemSupportPage() {
           </div>
 
           <p className="mt-4 text-[12px] font-medium text-brand-gray-500">
-            My open tickets (8)
+            My open tickets ({tickets.length})
           </p>
           <div className="mt-2 flex flex-col gap-2">
             {tickets.map((t) => (

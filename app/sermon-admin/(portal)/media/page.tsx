@@ -74,7 +74,7 @@ export default function SermonAdminMediaPage() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="grid grid-cols-2 gap-4">
-          <StatCard title="Total Media" value={String(media.length || 45)} variant="blue" />
+          <StatCard title="Total Media" value={String(media.length)} variant="blue" />
           <UploadMediaCard />
         </div>
         <QuickAccess />

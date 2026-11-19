@@ -38,7 +38,7 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     getCustomerPaymentById(id).then(setPayment).catch(() => {});
   }, [id]);
 
-  const amount = payment?.amount ?? 25;
+  const amount = payment?.amount ?? (USE_LIVE_API ? 0 : 25);
   const dateStr = payment
     ? new Date(String(payment['paidAt'] ?? payment['requestedAt'] ?? '')).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : (USE_LIVE_API ? '—' : 'January 12, 2025');
