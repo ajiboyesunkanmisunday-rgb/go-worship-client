@@ -67,7 +67,7 @@ function AudioChip({ name, onRemove }: { name: string; onRemove(): void }) {
 
 function CoverChip({ onRemove }: { onRemove(): void }) {
   return (
-    <div className="relative w-[128px] overflow-hidden rounded-[8px] bg-[#dbe7f5]">
+    <div className="relative flex w-[128px] flex-col items-center justify-center gap-1 rounded-[8px] bg-[#dbe7f5] py-5">
       <button
         type="button"
         onClick={onRemove}
@@ -76,14 +76,8 @@ function CoverChip({ onRemove }: { onRemove(): void }) {
       >
         <X className="size-2.5" />
       </button>
-      <div className="flex h-[74px] flex-col justify-center px-2">
-        <p className="text-[9px] font-bold leading-tight text-[#123a6b]">
-          EFFECTIVE STEWARDSHIP:
-        </p>
-        <p className="text-[6px] leading-tight text-[#123a6b]">
-          MAXIMIZING RESPONSIBILITY AND INFLUENCE
-        </p>
-      </div>
+      <UploadCloud className="size-6 text-[#3f44c0]" />
+      <p className="text-[10px] text-brand-gray-500">Cover image</p>
     </div>
   );
 }
