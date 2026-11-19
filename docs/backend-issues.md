@@ -77,9 +77,9 @@ than the body.
 
 It is **42 characters long. Google reCAPTCHA keys are exactly 40.** There are
 two extra characters (`ff`) on the end, so Google rejects it and the widget
-shows "ERROR for site owner: Invalid site key". I tested the first 40
-characters on their own and Google accepts them, so I think it's just a typo
-in the config value.
+shows "ERROR for site owner: Invalid site key". The first 40 characters on
+their own are accepted by Google, so the two extra `ff` characters are likely
+a typo in the config value.
 
 **Please check the configured key and remove the extra `ff`.**
 

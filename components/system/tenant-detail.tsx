@@ -501,7 +501,6 @@ function GroupMemberSheet({
               Group Member
             </Dialog.Title>
             <p className="mt-1 flex items-center gap-2 text-[12px] text-brand-gray-500">
-              Joined on June 10, 2025
               <span className="inline-flex items-center gap-1">
                 <span className="size-2 rounded-full bg-[#22a45d]" /> Active
               </span>
@@ -1338,8 +1337,8 @@ function BillingReceiptSheet({
           <div>
             <p className="text-[13px] font-semibold">Plan Details:</p>
             <div className="mt-2 flex flex-col gap-3">
-              <ReceiptRow label="Plan" value={invoice?.plan ?? 'Growth Plan'} />
-              <ReceiptRow label="Billing Cycle" value="Monthly" />
+              <ReceiptRow label="Plan" value={invoice?.plan ?? '—'} />
+              <ReceiptRow label="Billing Cycle" value="—" />
               <ReceiptRow label="Start Date" value={invoice?.start ?? '—'} />
               <ReceiptRow label="Expiry Date" value={invoice?.end ?? '—'} />
             </div>
@@ -1348,7 +1347,7 @@ function BillingReceiptSheet({
           <div>
             <p className="text-[13px] font-semibold">Payment Summary:</p>
             <div className="mt-2 flex flex-col gap-3">
-              <ReceiptRow label={invoice?.plan ?? 'Growth Plan'} value={invoice?.amount ?? '—'} />
+              <ReceiptRow label={invoice?.plan ?? '—'} value={invoice?.amount ?? '—'} />
               <ReceiptRow label="Subtotal" value={invoice?.amount ?? '—'} />
             </div>
           </div>

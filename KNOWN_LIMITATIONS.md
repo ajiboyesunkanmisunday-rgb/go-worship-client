@@ -16,3 +16,8 @@ The following features are not yet available because the corresponding backend e
 |------|--------|
 | Sermon audio upload (`components/sermon-admin/sermon-form.tsx`) | Drop zone renders but file is not sent — no audio upload endpoint in current API |
 | Sermon cover image upload (`components/sermon-admin/sermon-form.tsx`) | Drop zone renders but file is not sent — no image upload endpoint in current API |
+| System tenant detail — Members tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/members` endpoint |
+| System tenant detail — Giving tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/transactions` endpoint |
+| System tenant detail — Groups tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/groups` endpoint |
+| System tenant detail — Events tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/events` endpoint |
+| System tenant detail — Billing tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/billing/invoices` endpoint |

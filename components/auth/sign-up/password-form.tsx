@@ -127,7 +127,7 @@ export function PasswordForm({ onSuccess }: Props) {
             'lg:leading-[150%] lg:tracking-[0%]'
           )}
         >
-          Sign up to access personalized features and seamless experiences.
+          Sign up to manage giving, groups, events and sermons for your church.
         </p>
       </div>
 
