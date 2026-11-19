@@ -12,6 +12,14 @@ const config = {
   v: { label: 'Engagement', color: '#243f84' },
 } satisfies ChartConfig;
 
+const FMT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function last12MonthsLabel() {
+  const end = new Date();
+  const start = new Date(end);
+  start.setFullYear(start.getFullYear() - 1);
+  return `${FMT.format(start)} – ${FMT.format(end)}`;
+}
+
 function EngagementChart() {
   const [stats, setStats] = useState<TenantStats | null>(null);
   const [chartData, setChartData] = useState<{ month: string; v: number }[]>([]);
@@ -46,7 +54,7 @@ function EngagementChart() {
               <p className="text-[34px] font-bold text-brand-blue">{engagementScore}</p>
             </div>
             <span className="rounded-[6px] bg-[#f2f2f2] px-3 py-1.5 text-[11px] text-brand-gray-500">
-              Dec 31, 2024 – Dec 31, 2025
+              {last12MonthsLabel()}
             </span>
           </div>
 

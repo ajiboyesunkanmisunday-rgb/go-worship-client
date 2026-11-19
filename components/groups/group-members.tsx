@@ -1,24 +1,15 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
 import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
 import { cn } from '@/lib/utils';
 
-const FILTERS = ['All member', 'Youth Fellowship', 'Music Group', 'Prayer Group'];
-
 export function GroupMembers() {
   const router = useRouter();
-  const [filter, setFilter] = useState(FILTERS[0]);
   const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
@@ -53,24 +44,6 @@ export function GroupMembers() {
           <h1 className="font-poppins text-[24px] font-medium -tracking-[0.01em] lg:text-[27px]">
             My Group Member
           </h1>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex h-9 items-center gap-2 rounded-[6px] border-[0.5px] border-brand-blue px-3 text-[13px] font-medium text-brand-blue transition-colors hover:bg-brand-blue/5"
-              >
-                {filter}
-                <ChevronDown className="size-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {FILTERS.map((f) => (
-                <DropdownMenuItem key={f} onClick={() => setFilter(f)}>
-                  {f}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         <ul className="mt-4 flex flex-col divide-y divide-[#ededed]">

@@ -40,16 +40,16 @@ export type TableRow = {
   group?: string;
 };
 
-const GROUP_FILTERS = ['Choir', 'Youth Fellowship', "Men's Group", 'Women Group'];
-
 export function DataPanel({
   title,
   columns,
   rows,
+  filterOptions,
 }: {
   title: string;
   columns: string[];
   rows: TableRow[];
+  filterOptions?: string[];
 }) {
   const smartRows: SmartRow[] = rows.map((row, i) => ({
     group: row.group,
@@ -99,7 +99,7 @@ export function DataPanel({
       title={title}
       headers={[...columns, 'Status', 'Action']}
       rows={smartRows}
-      filterOptions={GROUP_FILTERS}
+      filterOptions={filterOptions}
       filterAll="All groups"
     />
   );

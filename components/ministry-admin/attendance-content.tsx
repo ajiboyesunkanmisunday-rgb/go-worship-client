@@ -11,6 +11,14 @@ const chartConfig = {
   value: { label: 'Attendance', color: '#243F84' },
 } satisfies ChartConfig;
 
+const FMT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function last12MonthsLabel() {
+  const end = new Date();
+  const start = new Date(end);
+  start.setFullYear(start.getFullYear() - 1);
+  return `${FMT.format(start)} - ${FMT.format(end)}`;
+}
+
 export function AttendanceContent() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [totalRegistration, setTotalRegistration] = useState(0);
@@ -55,7 +63,7 @@ export function AttendanceContent() {
               <p className="text-[32px] font-bold text-brand-blue">{totalAttendance.toLocaleString()}</p>
             </div>
             <span className="rounded-[6px] bg-[#f4f7ff] px-3 py-1.5 text-[12px] text-brand-gray-500">
-              Dec 31, 2024 - Dec 31, 2025
+              {last12MonthsLabel()}
             </span>
           </div>
           <ChartContainer config={chartConfig} className="h-[280px] w-full">

@@ -46,7 +46,7 @@ export default function CheckoutGivingPage() {
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const orgName = config.tenantDisplayName ?? 'Celebration Church';
+  const orgName = config.tenantDisplayName ?? 'Your Church';
   const currencies = config.currencies?.length ? config.currencies : DEFAULT_CURRENCIES;
   const funds = config.funds?.length ? config.funds : null;
   const campuses = config.campuses?.length ? config.campuses : null;

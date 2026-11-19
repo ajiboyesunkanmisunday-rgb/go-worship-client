@@ -175,7 +175,7 @@ function LoginMfaPage({
   return (
     <AuthLayout
       imgSrc={shellProps?.imgSrc ?? '/auth/church.jpg'}
-      imgAlt={shellProps?.imgAlt ?? 'Celebration Church'}
+      imgAlt={shellProps?.imgAlt ?? 'Church'}
       imgClassName={shellProps?.imgClassName}
       logoSrc={shellProps?.logoSrc}
       flat={shellProps?.flat}
@@ -222,7 +222,7 @@ function ForgotPasswordOtpPage({ email }: { email?: string | null }) {
     : undefined;
 
   return (
-    <AuthLayout imgSrc="/auth/church.jpg" imgAlt="Celebration Church">
+    <AuthLayout imgSrc="/auth/church.jpg" imgAlt="Church">
       <OtpForm
         email={email ?? undefined}
         onVerify={(otp) => router.push(`/auth/set-password?token=${encodeURIComponent(otp)}`)}

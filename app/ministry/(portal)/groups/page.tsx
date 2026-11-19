@@ -102,7 +102,6 @@ export default function MinistryGroupsPage() {
         title="All Groups"
         headers={['Group Name', 'Category', 'Leader', 'Meeting Day & Time', 'Members', 'Status', 'Action']}
         rows={rows}
-        filterOptions={['Choir', 'Youth Fellowship', "Men's Group", 'Women Group']}
         filterAll="All groups"
       />
     </div>

@@ -88,7 +88,7 @@ function SetPasswordInner() {
   };
 
   return (
-    <AuthLayout imgAlt="Celebration Church">
+    <AuthLayout imgAlt="Church">
       <div className="mx-auto flex w-full max-w-[460px] flex-col items-start gap-6">
         <Image
           src="/auth/infinity-blue.svg"
