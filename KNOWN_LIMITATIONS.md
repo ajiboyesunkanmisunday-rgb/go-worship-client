@@ -9,3 +9,10 @@ The following features are not yet available because the corresponding backend e
 | — | `updateTenantGroup` (`lib/api/tenant.ts`) | `PUT /tenant/admin/groups/:id` | Group editing not yet exposed |
 | TN-006 | `provisionTenantUser` (`lib/api/tenant.ts`) | `POST /tenant/admin/users/provision` | Admin user provisioning pending |
 | — | `upgradeGuestToCustomer` (`lib/api/auth.ts`) | `POST /tenant/admin/users/guests/upgrade-to-customer` | Guest upgrade flow pending |
+
+## UI placeholders pending backend support
+
+| Area | Status |
+|------|--------|
+| Sermon audio upload (`components/sermon-admin/sermon-form.tsx`) | Drop zone renders but file is not sent — no audio upload endpoint in current API |
+| Sermon cover image upload (`components/sermon-admin/sermon-form.tsx`) | Drop zone renders but file is not sent — no image upload endpoint in current API |

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { SheetPage } from '@/components/ui/sheet-page';
-import { ArrowLeft, Music, Pencil, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, Pencil, UploadCloud } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getTenantSeries, getTenantSermonById, createTenantSermon, updateTenantSermon } from '@/lib/api/tenant';
@@ -48,39 +48,6 @@ function DropZone({ hint }: { hint: string }) {
   );
 }
 
-function AudioChip({ name, onRemove }: { name: string; onRemove(): void }) {
-  return (
-    <div className="relative flex w-[128px] flex-col items-center justify-center gap-2 rounded-[8px] bg-[#ece9ff] px-3 py-5">
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Remove audio"
-        className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-[#eb0000] text-white"
-      >
-        <X className="size-2.5" />
-      </button>
-      <Music className="size-7 text-[#3f44c0]" />
-      <p className="text-[10px] font-medium text-[#333]">{name}</p>
-    </div>
-  );
-}
-
-function CoverChip({ onRemove }: { onRemove(): void }) {
-  return (
-    <div className="relative flex w-[128px] flex-col items-center justify-center gap-1 rounded-[8px] bg-[#dbe7f5] py-5">
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Remove cover image"
-        className="absolute right-1.5 top-1.5 z-10 flex size-4 items-center justify-center rounded-full bg-[#eb0000] text-white"
-      >
-        <X className="size-2.5" />
-      </button>
-      <UploadCloud className="size-6 text-[#3f44c0]" />
-      <p className="text-[10px] text-brand-gray-500">Cover image</p>
-    </div>
-  );
-}
 
 const EMPTY_SERMON = { title: '', speaker: '', date: '', description: '', link: '' };
 
@@ -107,8 +74,6 @@ export function SermonForm({
   const isEdit = mode === 'edit';
   const copy = COPY[mode];
   const back = backTo ?? '/sermon-admin/sermons';
-  const [hasAudio, setHasAudio] = useState(false);
-  const [hasCover, setHasCover] = useState(false);
   const [sermon, setSermon] = useState(EMPTY_SERMON);
   const [formKey, setFormKey] = useState(0);
   const [seriesOpts, setSeriesOpts] = useState<{ value: string; label: string }[]>([]);
@@ -242,19 +207,11 @@ export function SermonForm({
           </Field>
 
           <Field label="Upload Audio">
-            <div className="flex items-stretch gap-3">
-              {hasAudio && (
-                <AudioChip name="Walk by Faith. MP3" onRemove={() => setHasAudio(false)} />
-              )}
-              <DropZone hint="Drag or drop Audio Recommended size: 50mb" />
-            </div>
+            <DropZone hint="Drag or drop Audio Recommended size: 50mb" />
           </Field>
 
           <Field label="Upload cover image">
-            <div className="flex items-stretch gap-3">
-              {hasCover && <CoverChip onRemove={() => setHasCover(false)} />}
-              <DropZone hint="Drag or drop image commended size: 20mb" />
-            </div>
+            <DropZone hint="Drag or drop image Recommended size: 20mb" />
             <p className="mt-1 text-right text-[10px] text-[#22a45d]">
               ⊙ Recommended size: 20mb
             </p>
