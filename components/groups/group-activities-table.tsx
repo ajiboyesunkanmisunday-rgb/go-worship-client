@@ -9,14 +9,6 @@ import { usePaginationParams } from '@/hooks/use-pagination-params';
 import { useEffect, useRef, useState } from 'react';
 import { getSelfGroupActivities } from '@/lib/api/tenant';
 
-const TOPICS = [
-  'Prayer & Study',
-  'Worship Night',
-  'Service',
-  'Bible Study',
-  'Fellowship',
-];
-
 const columns: ColumnDef<GroupActivity>[] = [
   {
     header: 'Date',
@@ -34,8 +26,7 @@ const columns: ColumnDef<GroupActivity>[] = [
   },
   {
     header: 'Topic',
-    accessorFn: (row) =>
-      row.topic ?? TOPICS[(Number(row.id) - 1) % TOPICS.length],
+    accessorFn: (row) => row.topic ?? '—',
   },
   {
     header: 'Status',

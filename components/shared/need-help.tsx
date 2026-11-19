@@ -2,7 +2,7 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils';
-import { HelpCircle, Mail, MessageCircle, Phone, X } from 'lucide-react';
+import { HelpCircle, Mail, MessageCircle, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -12,12 +12,6 @@ const CONTACTS = [
     label: 'Email support',
     value: 'support@go-worship.com',
     href: 'mailto:support@go-worship.com',
-  },
-  {
-    icon: Phone,
-    label: 'Call us',
-    value: '+1 (416) 555-0132',
-    href: 'tel:+14165550132',
   },
   {
     icon: MessageCircle,

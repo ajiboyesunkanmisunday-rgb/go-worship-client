@@ -107,8 +107,8 @@ export function SermonForm({
   const isEdit = mode === 'edit';
   const copy = COPY[mode];
   const back = backTo ?? '/sermon-admin/sermons';
-  const [hasAudio, setHasAudio] = useState(isEdit);
-  const [hasCover, setHasCover] = useState(isEdit);
+  const [hasAudio, setHasAudio] = useState(false);
+  const [hasCover, setHasCover] = useState(false);
   const [sermon, setSermon] = useState(EMPTY_SERMON);
   const [formKey, setFormKey] = useState(0);
   const [seriesOpts, setSeriesOpts] = useState<{ value: string; label: string }[]>([]);
@@ -232,20 +232,12 @@ export function SermonForm({
 
           <Field label="Assign Series">
             <NativeSelect name="series" className="h-[48px]" defaultValue="">
-              {seriesOpts.length > 0
-                ? seriesOpts.map((o) => (
-                    <NativeSelectOption key={o.value} value={o.value}>
-                      {o.label}
-                    </NativeSelectOption>
-                  ))
-                : (
-                  <>
-                    <NativeSelectOption value="">Faith at work</NativeSelectOption>
-                    <NativeSelectOption value="reform">Frequently reform</NativeSelectOption>
-                    <NativeSelectOption value="christ">Sermons in Christ</NativeSelectOption>
-                    <NativeSelectOption value="power">Power to break yeal</NativeSelectOption>
-                  </>
-                )}
+              <NativeSelectOption value="">No series</NativeSelectOption>
+              {seriesOpts.map((o) => (
+                <NativeSelectOption key={o.value} value={o.value}>
+                  {o.label}
+                </NativeSelectOption>
+              ))}
             </NativeSelect>
           </Field>
 
