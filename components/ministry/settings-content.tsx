@@ -152,8 +152,8 @@ function SecurityTab() {
     }
   };
 
-  const loginAlerts = USE_LIVE_API ? (settings?.notifyAdminOnHighRiskLogin ?? false) : false;
-  const mfaRequired = USE_LIVE_API ? (settings?.mfaRequired ?? false) : false;
+  const loginAlerts = settings?.notifyAdminOnHighRiskLogin ?? false;
+  const mfaRequired = settings?.mfaRequired ?? false;
 
   return (
     <div className="rounded-[14px] bg-white p-6">
@@ -548,8 +548,8 @@ function NotificationsTab() {
     );
   }
 
-  const expiryOn = USE_LIVE_API ? (settings?.subscriptionExpiryRemindersEnabled ?? false) : true;
-  const inactiveOn = USE_LIVE_API ? (settings?.inactiveTenantRemindersEnabled ?? false) : false;
+  const expiryOn = settings?.subscriptionExpiryRemindersEnabled ?? false;
+  const inactiveOn = settings?.inactiveTenantRemindersEnabled ?? false;
 
   return (
     <div className="rounded-[14px] bg-white p-6">

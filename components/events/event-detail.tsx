@@ -4,12 +4,10 @@ import { useMemo, useState, useEffect } from 'react';
 import { SheetPage } from '../ui/sheet-page';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { fetchEvent } from '@/data/events';
 import type { Event } from '@/types/event';
 import { NoDataPlaceholder } from '../ui/no-data-placeholder';
 import { Button } from '../ui/button';
 import { getSelfEvent } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Props = {
   isIntercepted?: boolean;
@@ -22,11 +20,9 @@ export function EventDetail({ isIntercepted = false, id }: Props) {
     [isIntercepted]
   );
 
-  const mockEvent = useMemo(() => (USE_LIVE_API ? null : fetchEvent(id)), [id]);
-  const [event, setEvent] = useState<Event | null>(mockEvent ?? null);
+  const [event, setEvent] = useState<Event | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSelfEvent(id).then((e) => {
       if (!e) return;
       setEvent({

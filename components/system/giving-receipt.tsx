@@ -7,7 +7,6 @@ import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { getTenantBranding } from '@/lib/api/tenant';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -28,40 +27,20 @@ type ReceiptData = {
   paymentMethod: string; txnId: string; subtotal: string;
 };
 
-const DEFAULT_RECEIPT: ReceiptData = {
-  org: 'Celebration Church Int.',
-  orgAddress: 'Ontario Canada, Canada City',
-  orgPhone: '+321 762 - 4763',
-  orgEmail: 'info@churchonline.org',
-  orgWeb: 'www.churchonline.org',
-  donorName: 'Adewale Bola',
-  donorEmail: 'adminadje@gmail.com',
-  donorPhone: '+234 812 345 6789',
-  date: 'January 12, 2025',
-  amount: '$55.00',
-  fund: 'General Offering',
-  donationType: 'One-time',
-  paymentMethod: 'Debit Card (Express 2405)',
-  txnId: 'TXN-2295465',
-  subtotal: '$206.00',
-};
-
 /** System → Transactions → Giving Receipt (success / failed variants). */
 export function GivingReceipt({ failed = false, id }: { failed?: boolean; id?: string }) {
   const router = useRouter();
   const back = '/system/transactions';
-  const [receipt, setReceipt] = useState<ReceiptData>(USE_LIVE_API ? { org: '', orgAddress: '', orgPhone: '', orgEmail: '', orgWeb: '', donorName: '', donorEmail: '', donorPhone: '', date: '', amount: '', fund: '', donationType: '', paymentMethod: '', txnId: id ?? '', subtotal: '' } : DEFAULT_RECEIPT);
+  const [receipt, setReceipt] = useState<ReceiptData>({ org: '', orgAddress: '', orgPhone: '', orgEmail: '', orgWeb: '', donorName: '', donorEmail: '', donorPhone: '', date: '', amount: '', fund: '', donationType: '', paymentMethod: '', txnId: id ?? '', subtotal: '' });
   const [isFailed, setIsFailed] = useState(failed);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {
-      if (b.organizationName) setReceipt((prev) => ({ ...prev, org: prev.org === DEFAULT_RECEIPT.org ? b.organizationName! : prev.org }));
+      if (b.organizationName) setReceipt((prev) => ({ ...prev, org: b.organizationName! }));
     }).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     if (!id || id === 'failed') return;
     // /system/transactions/:id not in backend API — disabled.
   }, [id]);

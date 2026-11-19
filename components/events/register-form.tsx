@@ -19,9 +19,7 @@ import {
 import { Input } from '../ui/input';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 import { Button } from '../ui/button';
-import { fetchEvent } from '@/data/events';
 import { getSelfEvent } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 import type { Event } from '@/types/event';
 
@@ -39,10 +37,9 @@ type Schema = z.infer<typeof schema>;
 export function RegisterForm() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [event, setEvent] = useState<Event | null>(fetchEvent(params.id) ?? null);
+  const [event, setEvent] = useState<Event | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSelfEvent(params.id).then((e) => {
       if (!e) return;
       setEvent({
@@ -66,12 +63,8 @@ export function RegisterForm() {
   });
 
   const onSubmit: SubmitHandler<Schema> = async (_data) => {
-    if (USE_LIVE_API) {
-      // /self/events/:id/register not in backend — listed in KNOWN_LIMITATIONS.
-      toast.error('Event registration is not available — this endpoint does not exist in the current backend version.');
-      return;
-    }
-    router.push('/dashboard/events');
+    // /self/events/:id/register not in backend — listed in KNOWN_LIMITATIONS.
+    toast.error('Event registration is not available — this endpoint does not exist in the current backend version.');
   };
 
   return (

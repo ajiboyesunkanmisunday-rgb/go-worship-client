@@ -7,9 +7,7 @@ import { format } from 'date-fns';
 import { DataTable } from '../ui/data-table';
 import { usePaginationParams } from '@/hooks/use-pagination-params';
 import { useEffect, useRef, useState } from 'react';
-import { fetchPaginatedGroupActivities } from '@/data/groups';
 import { getSelfGroupActivities } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const TOPICS = [
   'Prayer & Study',
@@ -116,18 +114,11 @@ export function AllGroupActivities() {
         const pageIndex = pagination?.pageIndex ?? 0;
         const pageSize = pagination?.pageSize ?? 10;
 
-        if (USE_LIVE_API) {
-          const all = await getSelfGroupActivities();
-          const start = pageIndex * pageSize;
-          setData(all.slice(start, start + pageSize));
-          setTotalItems(all.length);
-          setPageCount(Math.ceil(all.length / pageSize));
-        } else {
-          const response = await fetchPaginatedGroupActivities(pageIndex, pageSize);
-          setData(response.data);
-          setTotalItems(response.totalItems);
-          setPageCount(response.pageCount);
-        }
+        const all = await getSelfGroupActivities();
+        const start = pageIndex * pageSize;
+        setData(all.slice(start, start + pageSize));
+        setTotalItems(all.length);
+        setPageCount(Math.ceil(all.length / pageSize));
       } catch (error) {
         console.error('Error fetching givings:', error);
       } finally {

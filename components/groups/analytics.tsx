@@ -10,7 +10,7 @@ import { HandshakeIcon } from '@/icons/socials';
 import { PlusIcon } from 'lucide-react';
 
 function DiscoverGroupsCard() {
-  const [count, setCount] = useState<number>(USE_LIVE_API ? 0 : 9);
+  const [count, setCount] = useState<number>(0);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -121,8 +121,8 @@ export function Analytics() {
     getSelfGroups().then(setGroups).catch(() => {});
   }, []);
 
-  const totalGroups = USE_LIVE_API ? groups.length : 4;
-  const totalMembers = USE_LIVE_API ? groups.reduce((s, g) => s + g.memberCount, 0) : 45;
+  const totalGroups = groups.length;
+  const totalMembers = groups.reduce((s, g) => s + g.memberCount, 0);
 
   return (
     <div className="w-full flex flex-col justify-start items-start gap-10">

@@ -8,35 +8,13 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, UserRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { USE_LIVE_API } from '@/lib/api/config';
-
 const PERMS = ['View', 'Create', 'Edit', 'Delete', 'Export'];
-
-const DEFAULT_MATRIX: [string, boolean[]][] = [
-  ['Members', [true, false, false, false, false]],
-  ['Finance', [true, true, true, true, true]],
-  ['Events', [false, true, false, true, false]],
-  ['Groups', [true, false, true, false, false]],
-  ['Check in', [true, true, false, false, false]],
-  ['Transactions', [true, false, true, false, false]],
-  ['Analytics', [true, true, false, false, false]],
-  ['Settings', [false, true, false, true, false]],
-  ['Billing', [true, false, false, false, false]],
-  ['Support', [true, false, false, false, false]],
-];
 
 type AccountData = {
   name: string; email: string; status: string;
   lastUpdated: string; createdBy: string; createdOn: string;
   lastEdited: string; assignedUsers: string;
   matrix: [string, boolean[]][];
-};
-
-const DEFAULT_ACCOUNT: AccountData = {
-  name: 'Mayowa Ola', email: 'mayowa@sellyt.ai', status: 'Active',
-  lastUpdated: '2025-09-01', createdBy: 'Super Admin',
-  createdOn: '10.08.25 | 10:30pm', lastEdited: '10.08.25 | 10:30pm',
-  assignedUsers: '45', matrix: DEFAULT_MATRIX,
 };
 
 function SectionBar({ label }: { label: string }) {
@@ -61,10 +39,10 @@ export function ViewAccount({ id }: { id?: string } = {}) {
   const router = useRouter();
   const back = '/ministry/admin-management';
   const [del, setDel] = useState(false);
-  const [account, setAccount] = useState<AccountData>(USE_LIVE_API ? { name: '', email: '', status: '', lastUpdated: '', createdBy: '', createdOn: '', lastEdited: '', assignedUsers: '0', matrix: [] } : DEFAULT_ACCOUNT);
+  const [account, setAccount] = useState<AccountData>({ name: '', email: '', status: '', lastUpdated: '', createdBy: '', createdOn: '', lastEdited: '', assignedUsers: '0', matrix: [] });
 
   useEffect(() => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     // /tenant/admin/sub-admins/:id not in backend API — no per-user GET endpoint for tenant admin users.
   }, [id]);
 

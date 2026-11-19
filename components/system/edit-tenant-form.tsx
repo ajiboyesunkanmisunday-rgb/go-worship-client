@@ -9,7 +9,6 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ResultModal } from '@/components/system/result-modal';
 import { updateSystemTenant, getSystemTenant } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * System → "Edit Tenant" slide-over (778:38441, reached from the tenant detail
@@ -43,41 +42,28 @@ type TenantFormData = {
   created: string; plan: string; memberCount: string;
 };
 
-const DEFAULT_TENANT: TenantFormData = {
-  name: 'Grace Community Church',
-  tenantUrl: 'grace-community.churchapp.com',
-  email: 'Infor@grace-community.churchapp.com',
-  phone: '+1234567890',
-  created: 'January 1st, 2024',
-  plan: 'Enterprise',
-  memberCount: '450',
-};
-
 export function EditTenantForm({ id }: { id: string }) {
   const router = useRouter();
   const back = `/system/tenants/${id}`;
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [tenantForm, setTenantForm] = useState<TenantFormData>(USE_LIVE_API ? { name: '', tenantUrl: '', email: '', phone: '', created: '', plan: '', memberCount: '' } : DEFAULT_TENANT);
+  const [tenantForm, setTenantForm] = useState<TenantFormData>({ name: '', tenantUrl: '', email: '', phone: '', created: '', plan: '', memberCount: '' });
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSystemTenant(id)
       .then((t) => {
         if (!t) return;
-        const base: TenantFormData = {
-          ...DEFAULT_TENANT,
-          name: t.name || DEFAULT_TENANT.name,
-          tenantUrl: t.domain || DEFAULT_TENANT.tenantUrl,
+        setTenantForm({
+          name: t.name || '',
+          tenantUrl: t.domain || '',
           email: t.email || '',
           phone: t.phone || '',
-          created: t.createdAt || DEFAULT_TENANT.created,
-          plan: t.plan || DEFAULT_TENANT.plan,
+          created: t.createdAt || '',
+          plan: t.plan || '',
           memberCount: t.members != null ? String(t.members) : '',
-        };
-        setTenantForm(base);
+        });
         setFormKey((k) => k + 1);
       })
       .catch(() => {});
@@ -95,20 +81,16 @@ export function EditTenantForm({ id }: { id: string }) {
       plan: String(fd.get('plan') ?? ''),
       memberCount: isNaN(membersRaw) ? undefined : membersRaw,
     };
-    if (USE_LIVE_API) {
-      try {
-        setSubmitting(true);
-        setSubmitError(null);
-        await updateSystemTenant(id, payload);
-        setDone(true);
-      } catch (err) {
-        setSubmitError(err instanceof Error ? err.message : 'Save failed.');
-      } finally {
-        setSubmitting(false);
-      }
-      return;
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+      await updateSystemTenant(id, payload);
+      setDone(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Save failed.');
+    } finally {
+      setSubmitting(false);
     }
-    setDone(true);
   };
 
   return (

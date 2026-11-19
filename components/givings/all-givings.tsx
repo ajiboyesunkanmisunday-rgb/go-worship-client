@@ -3,9 +3,7 @@
 import { Giving } from '@/types/giving';
 import { usePaginationParams } from '@/hooks/use-pagination-params';
 import { useEffect, useRef, useState } from 'react';
-import { fetchPaginatedGivings } from '@/data/givings';
 import { getCustomerPayments, type PaymentResponse } from '@/lib/api/customer';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { GivingsTable } from './givings-table';
 
 function mapPaymentToGiving(p: PaymentResponse): Giving {
@@ -47,18 +45,11 @@ export function AllGivings() {
         const pageIndex = pagination?.pageIndex ?? 0;
         const pageSize = pagination?.pageSize ?? 10;
 
-        if (USE_LIVE_API) {
-          const page = await getCustomerPayments(pageIndex, pageSize);
-          const content = page.content ?? [];
-          setData(content.map(mapPaymentToGiving));
-          setTotalItems(page.totalElements ?? content.length);
-          setPageCount(page.totalPages ?? Math.ceil((page.totalElements ?? content.length) / pageSize));
-        } else {
-          const response = await fetchPaginatedGivings(pageIndex, pageSize);
-          setData(response.data);
-          setTotalItems(response.totalItems);
-          setPageCount(response.pageCount);
-        }
+        const page = await getCustomerPayments(pageIndex, pageSize);
+        const content = page.content ?? [];
+        setData(content.map(mapPaymentToGiving));
+        setTotalItems(page.totalElements ?? content.length);
+        setPageCount(page.totalPages ?? Math.ceil((page.totalElements ?? content.length) / pageSize));
       } catch (error) {
         console.error('Error fetching givings:', error);
       } finally {
