@@ -97,7 +97,7 @@ export type SystemTenant = {
 
 function mapTenant(row: R): SystemTenant {
   const id = fieldOf(row, ['id', 'tenantId', 'slug']);
-  const name = fieldOf(row, ['name', 'tenantName', 'displayName', 'organizationName']);
+  const name = fieldOf(row, ['legalName', 'name', 'tenantName', 'displayName', 'organizationName']);
   const slug = fieldOf(row, ['slug', 'tenantSlug', 'shortName']);
   const subDomain = fieldOf(row, ['subDomain', 'subdomain']);
   const customDomain = fieldOf(row, ['customDomain', 'domain', 'hostname']);

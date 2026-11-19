@@ -54,22 +54,12 @@ type Tab = (typeof TABS)[number];
 
 function buildStats(t: SystemTenant) {
   return [
-    { label: 'Admin Users', value: t.adminUsers != null ? String(t.adminUsers) : (USE_LIVE_API ? '—' : '10'), bg: 'bg-[#f6f8fb]' },
-    { label: 'Church Members', value: t.members ? String(t.members) : (USE_LIVE_API ? '—' : '830'), bg: 'bg-[#eafaf0]' },
-    { label: 'Total Giving', value: t.totalGiving || (USE_LIVE_API ? '—' : '$125,000'), bg: 'bg-[#e9f7f5]' },
-    { label: 'Current Plan', value: t.plan || (USE_LIVE_API ? '—' : 'Enterprise'), bg: 'bg-[#eef2fb]' },
+    { label: 'Admin Users', value: t.adminUsers != null ? String(t.adminUsers) : '—', bg: 'bg-[#f6f8fb]' },
+    { label: 'Church Members', value: t.members ? String(t.members) : '—', bg: 'bg-[#eafaf0]' },
+    { label: 'Total Giving', value: t.totalGiving || '—', bg: 'bg-[#e9f7f5]' },
+    { label: 'Current Plan', value: t.plan || '—', bg: 'bg-[#eef2fb]' },
   ];
 }
-
-const MOCK_TENANT: SystemTenant = {
-  id: 'mock',
-  name: 'Grace Community Church',
-  domain: 'grace-community.churchapp.com',
-  status: 'Active',
-  plan: 'Enterprise',
-  members: 830,
-  createdAt: 'Jan 10, 2025',
-};
 
 type PaymentGateway = TenantPaymentGatewayAssignment & {
   id: string;
@@ -88,7 +78,7 @@ export function TenantDetail({ id }: { id: string }) {
   const [menu, setMenu] = useState(false);
   const [del, setDel] = useState(false);
   const [tenant, setTenant] = useState<SystemTenant>(
-    USE_LIVE_API ? { id: '', name: '', domain: '', status: 'Active', plan: '', members: 0, createdAt: '' } : MOCK_TENANT
+    { id: '', name: '', domain: '', status: 'Active', plan: '', members: 0, createdAt: '' }
   );
   const [gateways, setGateways] = useState<PaymentGateway[]>([]);
   const [suspending, setSuspending] = useState(false);
@@ -268,34 +258,22 @@ export function TenantDetail({ id }: { id: string }) {
           <div className="rounded-[14px] border border-[#eee] p-6">
             <h2 className="text-[18px] font-bold">Contact Information</h2>
             <div className="mt-5 flex flex-col gap-5">
-              <DetailRow icon={Mail} label="Email" value={tenant.email ?? (USE_LIVE_API ? '—' : 'admin@gracecommunity.org')} />
-              <DetailRow icon={Phone} label="Phone" value={tenant.phone ?? (USE_LIVE_API ? '—' : '+1 555-0101')} />
-              <DetailRow
-                icon={Globe}
-                label="Custom Domain"
-                value={tenant.domain || (USE_LIVE_API ? '—' : 'gracecommunity.churchapp.com')}
-              />
+              <DetailRow icon={Mail} label="Email" value={tenant.email ?? '—'} />
+              <DetailRow icon={Phone} label="Phone" value={tenant.phone ?? '—'} />
+              <DetailRow icon={Globe} label="Custom Domain" value={tenant.domain || '—'} />
             </div>
           </div>
 
           <div className="rounded-[14px] border border-[#eee] p-6">
             <h2 className="text-[18px] font-bold">Account Details</h2>
             <div className="mt-5 flex flex-col gap-5">
-              <DetailRow icon={Tag} label="Slug" value={tenant.slug ?? tenant.id ?? (USE_LIVE_API ? '—' : 'grace-community')} />
-              <DetailRow
-                icon={CalendarDays}
-                label="Created"
-                value={tenant.createdAt || (USE_LIVE_API ? '—' : 'January 14, 2023')}
-              />
-              <DetailRow
-                icon={CalendarDays}
-                label="Last Active"
-                value={tenant.lastActive ?? (USE_LIVE_API ? '—' : 'January 13, 2024')}
-              />
+              <DetailRow icon={Tag} label="Slug" value={tenant.slug || tenant.id || '—'} />
+              <DetailRow icon={CalendarDays} label="Created" value={tenant.createdAt || '—'} />
+              <DetailRow icon={CalendarDays} label="Last Active" value={tenant.lastActive ?? '—'} />
             </div>
           </div>
 
-          {(USE_LIVE_API ? gateways.length > 0 : true) && (
+          {gateways.length > 0 && (
             <div className="rounded-[14px] border border-[#eee] p-6 lg:col-span-2">
               <h2 className="text-[18px] font-bold">Payment Gateways</h2>
               <div className="mt-4 overflow-x-auto">
@@ -308,7 +286,7 @@ export function TenantDetail({ id }: { id: string }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {(USE_LIVE_API ? gateways : [{ id: '1', gatewayType: 'STRIPE', displayName: 'Stripe', active: true, primaryGateway: true, allowCustomerCheckout: true, allowSubscriptionBilling: true }]).map((g) => (
+                    {gateways.map((g) => (
                       <tr key={g.id} className="border-b border-[#f2f2f2]">
                         <td className="py-3 font-medium">{g.displayName}</td>
                         <td className={cn('py-3 font-medium', g.active ? 'text-[#34a853]' : 'text-brand-gray-400')}>
@@ -363,15 +341,6 @@ export function TenantDetail({ id }: { id: string }) {
  */
 type MemberRow = { name: string; phone: string; email: string; joined: string; status: string };
 
-const MEMBERS: MemberRow[] = [
-  { name: 'John Doe', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
-  { name: 'Mercy O.Don', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
-  { name: 'Child Moses', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
-  { name: 'Daniel Choke', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
-  { name: 'Kingsi Andsam', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
-  { name: 'John Doe', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Active' },
-  { name: 'Micheal paul', phone: '08051961803', email: 'john@mail.com', joined: 'Jan 2025', status: 'Inactive' },
-];
 
 async function tryGetTenantResource(_id: string, _sub: string): Promise<unknown> {
   // No GET /system/tenants/:id endpoint in backend API spec.
@@ -380,7 +349,7 @@ async function tryGetTenantResource(_id: string, _sub: string): Promise<unknown>
 }
 
 function MembersTab({ id }: { id: string }) {
-  const [members, setMembers] = useState<MemberRow[]>(USE_LIVE_API ? [] : MEMBERS);
+  const [members, setMembers] = useState<MemberRow[]>([]);
   const [sub, setSub] = useState<'All Member' | 'Active' | 'Inactive'>('All Member');
   const [openMember, setOpenMember] = useState<string | null>(null);
 
@@ -470,9 +439,9 @@ function MembersTab({ id }: { id: string }) {
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
               >
-                <td className="py-4 font-medium">{m.name}</td>
-                <td className="py-4">{m.phone}</td>
-                <td className="py-4">{m.email}</td>
+                <td className="py-4 font-medium">{m.name || '—'}</td>
+                <td className="py-4">{m.phone || '—'}</td>
+                <td className="py-4">{m.email || '—'}</td>
                 <td className="py-4">{m.joined}</td>
                 <td
                   className={cn(
@@ -551,26 +520,16 @@ function GroupMemberSheet({
             <div>
               <p className="text-[11px] text-brand-gray-500">Member Details</p>
               <p className="text-[16px] font-bold text-brand-blue">
-                {name ?? (USE_LIVE_API ? '—' : 'John Samuel Doe')}
+                {name ?? '—'}
               </p>
-              <p className="text-[12px] text-brand-gray-500">
-                {USE_LIVE_API ? '—' : 'johnsamuel@email.com · +234 812 345 6789'}
-              </p>
+              <p className="text-[12px] text-brand-gray-500">—</p>
             </div>
           </div>
 
           <div className="flex flex-col gap-5">
             <h3 className="text-[15px] font-bold">Member Details</h3>
-            <DetailRow
-              icon={Users}
-              label="Active Groups"
-              value={USE_LIVE_API ? '—' : "Men's Fellowship · Choir"}
-            />
-            <DetailRow
-              icon={CalendarClock}
-              label="Last Attendance Date"
-              value={USE_LIVE_API ? '—' : 'July 30th 2024'}
-            />
+            <DetailRow icon={Users} label="Active Groups" value="—" />
+            <DetailRow icon={CalendarClock} label="Last Attendance Date" value="—" />
             <div className="flex items-start gap-3">
               <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f6f8fb]">
                 <TrendingUp className="size-4 text-brand-gray-500" />
@@ -578,7 +537,7 @@ function GroupMemberSheet({
               <div className="w-full">
                 <p className="text-[12px] text-brand-gray-500">Attendance Rate</p>
                 <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#eef0f4]">
-                  <div className={`h-full rounded-full bg-[#22a45d] ${USE_LIVE_API ? 'w-0' : 'w-[78%]'}`} />
+                  <div className="h-full rounded-full bg-[#22a45d] w-0" />
                 </div>
               </div>
             </div>
@@ -586,10 +545,7 @@ function GroupMemberSheet({
 
           <div className="rounded-[12px] border border-[#eee] p-4">
             <p className="text-[13px] font-semibold">Notes for follow-up</p>
-            <p className="mt-1 text-[13px] text-[#333]">
-              {USE_LIVE_API ? '—' : 'Absent for 2 weeks, follow up'}
-            </p>
-            <p className="mt-2 text-[11px] text-brand-gray-500">{USE_LIVE_API ? '' : 'Added by Leader'}</p>
+            <p className="mt-1 text-[13px] text-[#333]">—</p>
           </div>
 
           <div className="mt-auto flex flex-col gap-3 pt-2">
@@ -614,14 +570,6 @@ function GroupMemberSheet({
  */
 type TxnRow = { status: string; amount: string; type: string; name?: string; date?: string; method?: string; id?: string };
 
-const TRANSACTIONS: TxnRow[] = [
-  { status: 'Pending', amount: '$1000', type: 'General Offering' },
-  { status: 'Success', amount: '$3000', type: 'Tithe Offering' },
-  { status: 'Failed', amount: '$2000', type: 'Offering' },
-  { status: 'Success', amount: '$3000', type: 'Thanksgiving' },
-  { status: 'Failed', amount: '$2000', type: 'General Offering' },
-  { status: 'Pending', amount: '$3000', type: 'Building Project' },
-];
 
 const TXN_STATUS: Record<string, string> = {
   Pending: 'text-[#ff8d28]',
@@ -630,7 +578,7 @@ const TXN_STATUS: Record<string, string> = {
 };
 
 function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
-  const [transactions, setTransactions] = useState<TxnRow[]>(USE_LIVE_API ? [] : TRANSACTIONS);
+  const [transactions, setTransactions] = useState<TxnRow[]>([]);
   const [sub, setSub] = useState<'Non Member' | 'Member'>('Non Member');
   const [receipt, setReceipt] = useState<{ failed: boolean; row?: TxnRow } | null>(null);
 
@@ -722,13 +670,13 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
               >
-                <td className="py-4 font-medium">{t.name ?? (USE_LIVE_API ? '—' : 'John Christain')}</td>
+                <td className="py-4 font-medium">{t.name ?? '—'}</td>
                 <td className={cn('py-4 font-medium', TXN_STATUS[t.status] ?? 'text-[#ff8d28]')}>
                   {t.status}
                 </td>
-                <td className="py-4">{t.date ?? (USE_LIVE_API ? '—' : 'June 12, 2025')}</td>
+                <td className="py-4">{t.date ?? '—'}</td>
                 <td className="py-4">{t.amount}</td>
-                <td className="py-4">{t.method ?? (USE_LIVE_API ? '—' : 'Bank transfer')}</td>
+                <td className="py-4">{t.method ?? '—'}</td>
                 <td className="py-4">{t.type}</td>
                 <td className="py-4">
                   <button
@@ -790,7 +738,7 @@ function GivingReceiptSheet({
           </div>
 
           <div className="text-center">
-            <p className="text-[13px] font-semibold">{tenantName ?? (USE_LIVE_API ? '—' : 'Celebration Church Int.')}</p>
+            <p className="text-[13px] font-semibold">{tenantName ?? '—'}</p>
           </div>
 
           {row?.name && (
@@ -804,12 +752,12 @@ function GivingReceiptSheet({
             Giving Receipt
           </Dialog.Title>
           <div className="flex flex-col gap-3">
-            <ReceiptRow label="Donation Date" value={row?.date ?? (USE_LIVE_API ? '—' : 'January 12, 2025')} />
-            <ReceiptRow label="Amount Given" value={row?.amount ?? (USE_LIVE_API ? '—' : '$25.00')} />
-            <ReceiptRow label="Fund / Campaign" value={row?.type ?? (USE_LIVE_API ? '—' : 'General Offering')} />
-            <ReceiptRow label="Donation Type" value={USE_LIVE_API ? '—' : 'One-time'} />
-            <ReceiptRow label="Payment Method" value={row?.method ?? (USE_LIVE_API ? '—' : 'Debit Card')} />
-            <ReceiptRow label="Transaction ID" value={row?.id || (USE_LIVE_API ? '—' : 'TXN-02939493')} />
+            <ReceiptRow label="Donation Date" value={row?.date ?? '—'} />
+            <ReceiptRow label="Amount Given" value={row?.amount ?? '—'} />
+            <ReceiptRow label="Fund / Campaign" value={row?.type ?? '—'} />
+            <ReceiptRow label="Donation Type" value="—" />
+            <ReceiptRow label="Payment Method" value={row?.method ?? '—'} />
+            <ReceiptRow label="Transaction ID" value={row?.id || '—'} />
             <ReceiptRow
               label="Status"
               value={
@@ -871,16 +819,9 @@ function ReceiptRow({
  */
 type GroupRow = { name: string; cat: string; leader: string; status: string; meetingTime?: string; memberCount?: string; description?: string; venueName?: string; onlineMeetingLink?: string; meetingFrequency?: string; meetingDays?: string };
 
-const GROUPS: GroupRow[] = [
-  { name: 'Faith Builders Fellowship', cat: 'Small Group', leader: 'John Samuel', status: 'Active' },
-  { name: 'Faith Builders Fellowship', cat: 'Small Group', leader: 'John Samuel', status: 'Active' },
-  { name: 'Faith Builders Community', cat: 'Discussion Group', leader: 'Michael Thompson', status: 'Inactive' },
-  { name: 'Faith Builders Community', cat: 'Discussion Group', leader: 'Michael Thompson', status: 'Active' },
-  { name: 'Faith Builders Community', cat: 'Discussion Group', leader: 'Michael Thompson', status: 'Active' },
-];
 
 function GroupsTab({ id }: { id: string }) {
-  const [groups, setGroups] = useState<GroupRow[]>(USE_LIVE_API ? [] : GROUPS);
+  const [groups, setGroups] = useState<GroupRow[]>([]);
   const [openGroup, setOpenGroup] = useState<GroupRow | null>(null);
 
   useEffect(() => {
@@ -1082,13 +1023,6 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
  */
 type EventRow = { name: string; date: string; loc: string; reg: string; status: string };
 
-const EVENTS: EventRow[] = [
-  { name: 'Midweek Recharge', date: 'Feb 21, 2025 • 6PM', loc: 'Main Hall', reg: '125', status: 'Upcoming' },
-  { name: 'Weekend Workshop', date: 'Feb 25, 2025 • 10AM', loc: 'Conference Room A', reg: '75', status: 'Completed' },
-  { name: 'Team Building Retreat', date: 'Mar 10, 2025 • 8AM', loc: 'Offsite Location', reg: '50', status: 'Ongoing' },
-  { name: 'Monthly Check-in', date: 'Mar 15, 2025 • 3PM', loc: 'Zoom', reg: 'Unlimited', status: 'Cancelled' },
-  { name: 'Spring Networking Event', date: 'Apr 5, 2025 • 5PM', loc: 'Rooftop Garden', reg: '150', status: 'Upcoming' },
-];
 
 const EVENT_STATUS: Record<string, string> = {
   Upcoming: 'text-brand-blue',
@@ -1098,7 +1032,7 @@ const EVENT_STATUS: Record<string, string> = {
 };
 
 function EventsTab({ id }: { id: string }) {
-  const [events, setEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : EVENTS);
+  const [events, setEvents] = useState<EventRow[]>([]);
   const [openEvent, setOpenEvent] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1224,40 +1158,24 @@ function EventDetailSheet({
           <div>
             <p className="text-[12px] text-brand-gray-500">Overview of Event</p>
             <Dialog.Title className="text-[22px] font-bold text-brand-blue">
-              {name ?? (USE_LIVE_API ? '—' : 'Midweek Recharge')}
+              {name ?? '—'}
             </Dialog.Title>
             <p className="mt-1 flex items-center gap-2 text-[12px] text-brand-gray-500">
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-brand-blue" /> Upcoming
-                Event
+                <span className="size-2 rounded-full bg-brand-blue" /> Upcoming Event
               </span>
-              {USE_LIVE_API ? '' : ' · Host: Pst John'}
             </p>
           </div>
 
           <div className="flex flex-col gap-5">
-            <DetailRow
-              icon={CalendarClock}
-              label="Date & Time"
-              value={USE_LIVE_API ? '—' : 'Wednesday, February 21, 2025 · 6:00 PM – 7:30 PM'}
-            />
-            <DetailRow
-              icon={Users}
-              label="Event Type"
-              value={USE_LIVE_API ? '—' : 'Online & Onsite (Hybrid) · Registration Required'}
-            />
-            <DetailRow
-              icon={Globe}
-              label="Location"
-              value={USE_LIVE_API ? '—' : 'Celebration Church International Main Auditorium, Lekki Lagos'}
-            />
+            <DetailRow icon={CalendarClock} label="Date & Time" value="—" />
+            <DetailRow icon={Users} label="Event Type" value="—" />
+            <DetailRow icon={Globe} label="Location" value="—" />
           </div>
 
           <div>
             <p className="text-[13px] font-semibold">Event summary</p>
-            <p className="mt-1 text-[13px] text-brand-gray-500">
-              {USE_LIVE_API ? '—' : 'Midweek Recharge is a refreshing midweek gathering designed to strengthen your faith, renew your spirit, and equip you for the rest of the week.'}
-            </p>
+            <p className="mt-1 text-[13px] text-brand-gray-500">—</p>
           </div>
 
           <div className="mt-auto pt-2">
@@ -1278,15 +1196,9 @@ function EventDetailSheet({
  */
 type InvoiceRow = { status: string; renew: string; id?: string; plan?: string; amount?: string; method?: string; start?: string; end?: string };
 
-const INVOICES: InvoiceRow[] = [
-  { status: 'Paid', renew: 'On' },
-  { status: 'Failed', renew: 'Off' },
-  { status: 'Paid', renew: 'On' },
-  { status: 'Paid', renew: 'On' },
-];
 
 function BillingTab({ id }: { id: string }) {
-  const [invoices, setInvoices] = useState<InvoiceRow[]>(USE_LIVE_API ? [] : INVOICES);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
 
   useEffect(() => {
@@ -1314,10 +1226,10 @@ function BillingTab({ id }: { id: string }) {
           return {
             status,
             renew,
-            id: String(inv['invoiceId'] ?? inv['id'] ?? 'RN-13234'),
-            plan: String(inv['planName'] ?? inv['plan'] ?? 'Growth (Monthly)'),
-            amount: rawAmt ? `$${rawAmt.toLocaleString()}` : '$600',
-            method: String(inv['paymentMethod'] ?? inv['method'] ?? 'Card (Visa •••• 4832)'),
+            id: String(inv['invoiceId'] ?? inv['id'] ?? ''),
+            plan: String(inv['planName'] ?? inv['plan'] ?? ''),
+            amount: rawAmt ? `$${rawAmt.toLocaleString()}` : '',
+            method: String(inv['paymentMethod'] ?? inv['method'] ?? ''),
             start: fmtDate(String(inv['startDate'] ?? inv['billingStart'] ?? '')),
             end: fmtDate(String(inv['endDate'] ?? inv['billingEnd'] ?? '')),
           };
@@ -1366,10 +1278,10 @@ function BillingTab({ id }: { id: string }) {
                 key={i}
                 className="border-t border-[#eef0f4] text-[13px] text-[#333]"
               >
-                <td className="py-4 font-medium">{inv.id ?? 'RN-13234'}</td>
-                <td className="py-4">{inv.plan ?? 'Growth (Monthly)'}</td>
-                <td className="py-4">{inv.amount ?? '$600'}</td>
-                <td className="py-4">{inv.method ?? 'Card (Visa •••• 4832)'}</td>
+                <td className="py-4 font-medium">{inv.id ?? '—'}</td>
+                <td className="py-4">{inv.plan ?? '—'}</td>
+                <td className="py-4">{inv.amount ?? '—'}</td>
+                <td className="py-4">{inv.method ?? '—'}</td>
                 <td
                   className={cn(
                     'py-4 font-medium',
@@ -1378,8 +1290,8 @@ function BillingTab({ id }: { id: string }) {
                 >
                   {inv.status}
                 </td>
-                <td className="py-4">{inv.start ?? 'Aug 31, 2025'}</td>
-                <td className="py-4">{inv.end ?? 'Aug 31, 2025'}</td>
+                <td className="py-4">{inv.start ?? '—'}</td>
+                <td className="py-4">{inv.end ?? '—'}</td>
                 <td className="py-4">{inv.renew}</td>
                 <td className="py-4">
                   <button
