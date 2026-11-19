@@ -18,14 +18,17 @@ import { toast } from 'sonner';
 function Field({
   label,
   children,
+  error,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[14px] font-medium text-[#333]">{label}</label>
       {children}
+      {error && <p className="text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }
@@ -84,10 +87,19 @@ export function CreateGroupForm({
   }, []);
 
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const errors: Record<string, string> = {};
+    if (!fd.get('name')) errors.name = 'Group name is required';
+    if (!fd.get('type')) errors.type = 'Group category is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     const payload = {
       name: String(fd.get('name') ?? ''),
       type: String(fd.get('type') ?? ''),
@@ -131,16 +143,16 @@ export function CreateGroupForm({
         </h1>
 
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
-          <Field label={<>Group Name&#42;</>}>
+          <Field label={<>Group Name&#42;</>} error={fieldErrors.name}>
             <Input
               name="name"
               className={H}
               placeholder="Enter group name"
-              defaultValue={group?.name ?? (isEdit ? 'Faith Builders Fellowship' : undefined)}
+              defaultValue={group?.name ?? undefined}
             />
           </Field>
 
-          <Field label={<>Group Category / Type&#42;</>}>
+          <Field label={<>Group Category / Type&#42;</>} error={fieldErrors.type}>
             <NativeSelect name="type" className={H} defaultValue="">
               <NativeSelectOption value="">Select group category</NativeSelectOption>
               <NativeSelectOption value="small">Small Group</NativeSelectOption>
@@ -216,7 +228,7 @@ export function CreateGroupForm({
               name="venueName"
               className={H}
               placeholder="Add venue name"
-              defaultValue={isEdit ? 'Canada Ontario' : undefined}
+              defaultValue={group?.venueName ?? undefined}
             />
           </Field>
 
@@ -225,7 +237,7 @@ export function CreateGroupForm({
               name="onlineMeetingLink"
               className={H}
               placeholder="Add Zoom, Google Meet, or custom link"
-              defaultValue={isEdit ? 'http://zoom/canadachurch.com' : undefined}
+              defaultValue={group?.onlineMeetingLink ?? undefined}
             />
           </Field>
 

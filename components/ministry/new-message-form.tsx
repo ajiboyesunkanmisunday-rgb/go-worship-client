@@ -18,14 +18,17 @@ import { toast } from 'sonner';
 function Field({
   label,
   children,
+  error,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[13px] font-medium text-[#333]">{label}</label>
       {children}
+      {error && <p className="text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }
@@ -51,6 +54,7 @@ export function NewMessageForm() {
   const back = '/ministry/communication';
   const [channels, setChannels] = useState<string[]>(['push', 'email']);
   const [schedule, setSchedule] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const toggle = (k: string) =>
     setChannels((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]));
@@ -58,6 +62,15 @@ export function NewMessageForm() {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const errors: Record<string, string> = {};
+    if (!fd.get('title')) errors.title = 'Title is required';
+    if (!fd.get('recipients')) errors.recipients = 'Please select recipients';
+    if (!fd.get('body')) errors.body = 'Message is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     const payload: CreateCampaignPayload = {
       name: String(fd.get('title') ?? ''),
       body: String(fd.get('body') ?? ''),
@@ -100,11 +113,11 @@ export function NewMessageForm() {
         </div>
 
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
-          <Field label={<>Title&#42;</>}>
+          <Field label={<>Title&#42;</>} error={fieldErrors.title}>
             <Input name="title" className="h-[48px]" placeholder="Enter message title" />
           </Field>
 
-          <Field label={<>Recipients&#42;</>}>
+          <Field label={<>Recipients&#42;</>} error={fieldErrors.recipients}>
             <NativeSelect name="recipients" className="h-[48px]" defaultValue="">
               <NativeSelectOption value="">Select recipients</NativeSelectOption>
               <NativeSelectOption value="all">All Sub Accounts</NativeSelectOption>
@@ -138,7 +151,7 @@ export function NewMessageForm() {
             </div>
           </Field>
 
-          <Field label={<>Message&#42;</>}>
+          <Field label={<>Message&#42;</>} error={fieldErrors.body}>
             <Textarea
               name="body"
               className="min-h-[140px]"

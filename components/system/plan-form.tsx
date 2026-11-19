@@ -14,14 +14,17 @@ import { toast } from 'sonner';
 function Field({
   label,
   children,
+  error,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[13px] font-medium text-[#333]">{label}</label>
       {children}
+      {error && <p className="text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }
@@ -34,6 +37,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
   const [result, setResult] = useState<'success' | 'error' | null>(null);
   const [plan, setPlan] = useState({ name: '', price: '', users: '', features: '' });
   const [formKey, setFormKey] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isEdit || !id) return;
@@ -57,6 +61,15 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const errors: Record<string, string> = {};
+    if (!fd.get('name')) errors.name = 'Plan name is required';
+    if (!fd.get('price')) errors.price = 'Monthly price is required';
+    if (!fd.get('users')) errors.users = 'Max users is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     const featuresRaw = String(fd.get('features') ?? '');
     const payload = {
       name: String(fd.get('name') ?? ''),
@@ -105,7 +118,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
         </div>
 
         <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
-          <Field label={<>Plan Name&#42;</>}>
+          <Field label={<>Plan Name&#42;</>} error={fieldErrors.name}>
             <Input
               name="name"
               className="h-[48px]"
@@ -115,7 +128,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
           </Field>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label={<>Monthly Price&#42;</>}>
+            <Field label={<>Monthly Price&#42;</>} error={fieldErrors.price}>
               <Input
                 name="price"
                 type="number"
@@ -124,7 +137,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
                 defaultValue={isEdit ? plan.price : undefined}
               />
             </Field>
-            <Field label={<>Max Users&#42;</>}>
+            <Field label={<>Max Users&#42;</>} error={fieldErrors.users}>
               <Input
                 name="users"
                 type="number"

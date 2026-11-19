@@ -17,14 +17,17 @@ import { toast } from 'sonner';
 function Field({
   label,
   children,
+  error,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[13px] font-medium text-[#333]">{label}</label>
       {children}
+      {error && <p className="text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }
@@ -44,10 +47,22 @@ export function EventForm({ backPath }: { backPath?: string } = {}) {
   const back = backPath ?? '/ministry-admin/events';
 
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const errors: Record<string, string> = {};
+    if (!fd.get('name')) errors.name = 'Event name is required';
+    if (!fd.get('hostName')) errors.hostName = 'Host name is required';
+    if (!fd.get('datetime')) errors.datetime = 'Date and time are required';
+    if (!fd.get('location')) errors.location = 'Location is required';
+    if (!fd.get('requiresRegistration')) errors.requiresRegistration = 'Please select an option';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     const dtRaw = String(fd.get('datetime') ?? '');
     const [eventDate, eventTime] = dtRaw.includes('T') ? dtRaw.split('T') : [dtRaw, ''];
     const payload = {
@@ -99,15 +114,15 @@ export function EventForm({ backPath }: { backPath?: string } = {}) {
             </p>
           </div>
 
-          <Field label={<>Event Name&#42;</>}>
+          <Field label={<>Event Name&#42;</>} error={fieldErrors.name}>
             <PencilInput name="name" placeholder="Enter event name" />
           </Field>
 
-          <Field label={<>Host Name&#42;</>}>
+          <Field label={<>Host Name&#42;</>} error={fieldErrors.hostName}>
             <PencilInput name="hostName" placeholder="Enter host name" />
           </Field>
 
-          <Field label={<>Date &amp; Time&#42;</>}>
+          <Field label={<>Date &amp; Time&#42;</>} error={fieldErrors.datetime}>
             <Input
               name="datetime"
               type="datetime-local"
@@ -125,11 +140,11 @@ export function EventForm({ backPath }: { backPath?: string } = {}) {
             </NativeSelect>
           </Field>
 
-          <Field label={<>Location&#42;</>}>
+          <Field label={<>Location&#42;</>} error={fieldErrors.location}>
             <PencilInput name="location" placeholder="Add Location" />
           </Field>
 
-          <Field label={<>Does Event Require Registration?&#42;</>}>
+          <Field label={<>Does Event Require Registration?&#42;</>} error={fieldErrors.requiresRegistration}>
             <NativeSelect name="requiresRegistration" className="h-[48px]" defaultValue="">
               <NativeSelectOption value="">Select</NativeSelectOption>
               <NativeSelectOption value="yes">Yes</NativeSelectOption>
