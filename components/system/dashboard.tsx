@@ -178,14 +178,14 @@ const MOCK_SECTIONS: DashboardSection[] = [
 ];
 
 export function SystemDashboard() {
-  const [rawSections, setRawSections] = useState<DashboardSection[]>(MOCK_SECTIONS);
-  const [trendData, setTrendData] = useState(MOCK_TREND);
-  const [activity, setActivity] = useState(MOCK_ACTIVITY);
-  const [plans, setPlans] = useState(MOCK_PLANS as [string, string][]);
+  const [rawSections, setRawSections] = useState<DashboardSection[]>(USE_LIVE_API ? [] : MOCK_SECTIONS);
+  const [trendData, setTrendData] = useState(USE_LIVE_API ? [] as typeof MOCK_TREND : MOCK_TREND);
+  const [activity, setActivity] = useState(USE_LIVE_API ? [] as typeof MOCK_ACTIVITY : MOCK_ACTIVITY);
+  const [plans, setPlans] = useState<[string, string][]>(USE_LIVE_API ? [] : (MOCK_PLANS as [string, string][]));
   const [adminName, setAdminName] = useState('Admin');
   const [dashFamily, setDashFamily] = useState('PLATFORM');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
-  const [stats, setStats] = useState<SystemStats>(MOCK_STATS);
+  const [stats, setStats] = useState<SystemStats>(USE_LIVE_API ? { ...MOCK_STATS, overduePayments: 0, trialTenants: 0 } : MOCK_STATS);
 
   const loadFamily = useCallback(async (family: string) => {
     if (!USE_LIVE_API) return;

@@ -188,7 +188,9 @@ export function SystemAnalyticsContent() {
     // which requires a tenantId. Subscription list is disabled until a list endpoint is added.
   }, []);
 
-  const chartData = tab === 'Finances' && financeTrend.length > 0 ? financeTrend : trend;
+  const chartData = tab === 'Finances' && financeTrend.length > 0
+    ? financeTrend
+    : (USE_LIVE_API ? [] : trend);
 
   const table = (() => {
     if (tab === 'Tenants' && liveTenants) {

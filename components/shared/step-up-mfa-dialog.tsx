@@ -25,6 +25,7 @@ import {
   stepUpVerifyMfa,
   type StepUpMfaChallengeResponse,
 } from '@/lib/api/auth';
+import { ApiError } from '@/lib/api/client';
 
 type Props = {
   challenge: StepUpMfaChallengeResponse;
@@ -88,7 +89,11 @@ export function StepUpMfaDialog({ challenge, onSuccess, onClose }: Props) {
       toast.success('Action confirmed');
       onSuccess();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Invalid code');
+      if (e instanceof ApiError && e.status === 409) {
+        setError('The action could not be completed. Close this dialog and try again.');
+      } else {
+        setError(e instanceof Error ? e.message : 'Invalid code');
+      }
     } finally {
       setBusy(false);
     }

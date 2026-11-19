@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Check, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getSystemStats, getSystemBillingPlans } from '@/lib/api/system';
+import { getSystemBillingPlans } from '@/lib/api/system';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 

@@ -177,9 +177,14 @@ export async function getTenantMembers(): Promise<TenantMember[]> {
   return findTableRows(data, 'user').map(mapMember).filter((m) => m.email);
 }
 
-/** No individual user GET endpoint in backend API — returns null. */
-export async function getTenantMember(_id: string): Promise<TenantMember | null> {
-  return null;
+/** GET /tenant/admin/users — no individual endpoint; fetches the full list and finds by ID. */
+export async function getTenantMember(id: string): Promise<TenantMember | null> {
+  try {
+    const all = await getTenantMembers();
+    return all.find((m) => m.id === id) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** PUT /tenant/admin/users/{userId} */

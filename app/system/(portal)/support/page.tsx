@@ -139,15 +139,21 @@ export default function SystemSupportPage() {
 
         {/* ---- Column 2: Conversation ---- */}
         <div className="flex flex-col rounded-[14px] border border-[#eee] p-5">
+          {!current ? (
+            <p className="flex flex-1 items-center justify-center text-[13px] text-brand-gray-500 py-16 text-center">
+              Select a ticket to view the conversation.
+            </p>
+          ) : (
+          <>
           <p className="text-[16px] font-bold">{ticketTitle}</p>
           <p className="text-[12px] text-brand-gray-500">
             {current?.name} · {ticketDate}
           </p>
 
           <div className="mt-4 flex-1 rounded-[10px] bg-[#f7f9fc] p-4 text-[13px] text-[#333]">
-            <p>Hi,</p>
+            {ticketBody && <p>Hi,</p>}
             <p className="mt-2">{ticketBody}</p>
-            <p className="mt-2">Thanks</p>
+            {ticketBody && <p className="mt-2">Thanks</p>}
             {ticketFiles.slice(0, 1).map((f, i) => (
               <div key={i} className="mt-3 flex items-center gap-2 rounded-[8px] border border-[#e5e5e5] bg-white p-2 text-[12px]">
                 <FileText className="size-4 text-[#eb0000]" />
@@ -195,6 +201,8 @@ export default function SystemSupportPage() {
               </Button>
             </div>
           </div>
+          </>
+          )}
         </div>
 
         {/* ---- Column 3: Visitor Information ---- */}

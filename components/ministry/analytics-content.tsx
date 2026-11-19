@@ -60,8 +60,8 @@ export function AnalyticsContent() {
 
   const chartData =
     tab === 'Finance'
-      ? (financeTrend.length > 0 ? financeTrend : MOCK_CHART_DATA)
-      : (tabTrend.length > 0 ? tabTrend : MOCK_CHART_DATA);
+      ? (financeTrend.length > 0 ? financeTrend : (USE_LIVE_API ? [] : MOCK_CHART_DATA))
+      : (tabTrend.length > 0 ? tabTrend : (USE_LIVE_API ? [] : MOCK_CHART_DATA));
 
   return (
     <div className="flex flex-col gap-5">
