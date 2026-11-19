@@ -17,14 +17,17 @@ import { toast } from 'sonner';
 function Field({
   label,
   children,
+  error,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[13px] font-medium text-[#333]">{label}</label>
       {children}
+      {error && <p className="text-[12px] text-destructive">{error}</p>}
     </div>
   );
 }
@@ -77,6 +80,7 @@ export function SermonForm({
   const [sermon, setSermon] = useState(EMPTY_SERMON);
   const [formKey, setFormKey] = useState(0);
   const [seriesOpts, setSeriesOpts] = useState<{ value: string; label: string }[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; speaker?: string }>({});
 
   useEffect(() => {
     getTenantSeries()
@@ -112,6 +116,14 @@ export function SermonForm({
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const errors: { title?: string; speaker?: string } = {};
+    if (!fd.get('title')) errors.title = 'Sermon title is required';
+    if (!fd.get('speaker')) errors.speaker = 'Speaker name is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     const payload = {
       title: fd.get('title') as string,
       speakerName: fd.get('speaker') as string,
@@ -158,7 +170,7 @@ export function SermonForm({
         </div>
 
         <form key={formKey} className="flex flex-col gap-5" onSubmit={onSubmit}>
-          <Field label={<>Sermon Title&#42;</>}>
+          <Field label={<>Sermon Title&#42;</>} error={fieldErrors.title}>
             <PencilInput
               name="title"
               placeholder="Enter title"
@@ -166,7 +178,7 @@ export function SermonForm({
             />
           </Field>
 
-          <Field label={<>Speaker name&#42;</>}>
+          <Field label={<>Speaker name&#42;</>} error={fieldErrors.speaker}>
             <PencilInput
               name="speaker"
               placeholder="Enter speaker name"
