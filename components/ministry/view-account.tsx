@@ -104,7 +104,7 @@ export function ViewAccount({ id }: { id?: string } = {}) {
         <SectionBar label="Account Info:" />
         <div className="flex flex-col gap-4">
           <Field label="Sub Admin name" value={account.name} />
-          <Field label="Password" value={USE_LIVE_API ? '••••••••' : 'Admin@sellyt001'} />
+          <Field label="Password" value="••••••••" />
           <Field label="Email" value={account.email} />
         </div>
 

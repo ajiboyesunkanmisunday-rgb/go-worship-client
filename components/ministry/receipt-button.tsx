@@ -69,11 +69,11 @@ export function ReceiptButton({
 
             <div className="flex flex-col gap-3 rounded-[10px] bg-[#f7f9fc] p-4">
               {[
-                ['Donor', name ?? (USE_LIVE_API ? '—' : 'John Christain')],
-                ['Reference', reference ?? (USE_LIVE_API ? '—' : 'GW-2025-004821')],
-                ['Date', date ?? (USE_LIVE_API ? '—' : 'June 12, 2025')],
-                ['Method', method ?? (USE_LIVE_API ? '—' : 'Bank transfer')],
-                ['Fund / Campaign', fund ?? (USE_LIVE_API ? '—' : 'General Offering')],
+                ['Donor', name ?? '—'],
+                ['Reference', reference ?? '—'],
+                ['Date', date ?? '—'],
+                ['Method', method ?? '—'],
+                ['Fund / Campaign', fund ?? '—'],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-4">
                   <span className="text-[12px] text-brand-gray-500">{k}</span>
@@ -85,7 +85,7 @@ export function ReceiptButton({
               <div className="mt-1 flex items-center justify-between gap-4 border-t border-[#e5e9f0] pt-3">
                 <span className="text-[13px] font-semibold">Total</span>
                 <span className="text-[16px] font-bold text-brand-blue">
-                  {amount ?? (USE_LIVE_API ? '—' : '$2000')}
+                  {amount ?? '—'}
                 </span>
               </div>
             </div>

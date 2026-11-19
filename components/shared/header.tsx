@@ -13,8 +13,8 @@ import { getTenantBranding } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
 function CompanyInfo() {
-  const [name, setName] = useState(USE_LIVE_API ? '' : 'Celebration Church Int.');
-  const [location, setLocation] = useState(USE_LIVE_API ? '' : 'Ontario Canada, Canada City');
+  const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

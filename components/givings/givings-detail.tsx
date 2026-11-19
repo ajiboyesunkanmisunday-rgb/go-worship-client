@@ -20,11 +20,11 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     [isIntercepted]
   );
   const [payment, setPayment] = useState<PaymentStatusResponse | null>(null);
-  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church Int.');
-  const [orgLocation, setOrgLocation] = useState(USE_LIVE_API ? '' : 'Ontario Canada, Canada City');
-  const [orgPhone, setOrgPhone] = useState(USE_LIVE_API ? '' : '+127-987-67543');
-  const [orgEmail, setOrgEmail] = useState(USE_LIVE_API ? '' : 'info@churchname.org');
-  const [orgWeb, setOrgWeb] = useState(USE_LIVE_API ? '' : 'www.churchname.org');
+  const [orgName, setOrgName] = useState('');
+  const [orgLocation, setOrgLocation] = useState('');
+  const [orgPhone, setOrgPhone] = useState('');
+  const [orgEmail, setOrgEmail] = useState('');
+  const [orgWeb, setOrgWeb] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -38,25 +38,25 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
     getCustomerPaymentById(id).then(setPayment).catch(() => {});
   }, [id]);
 
-  const amount = payment?.amount ?? (USE_LIVE_API ? 0 : 25);
+  const amount = payment?.amount ?? 0;
   const dateStr = payment
     ? new Date(String(payment['paidAt'] ?? payment['requestedAt'] ?? '')).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : (USE_LIVE_API ? '—' : 'January 12, 2025');
+    : '—';
   const status = payment?.status
     ? payment.status.charAt(0).toUpperCase() + payment.status.slice(1).toLowerCase()
-    : (USE_LIVE_API ? '—' : 'Successful');
-  const reference = payment?.paymentReference ?? payment?.id ?? (USE_LIVE_API ? '—' : 'TXN-02939493');
+    : '—';
+  const reference = payment?.paymentReference ?? payment?.id ?? '—';
   const statusColor = status.toUpperCase() === 'SUCCEEDED' || status.toLowerCase() === 'successful' ? '#22A45D' : '#ff8d28';
 
   const donorName = payment
-    ? String(payment['donorName'] ?? payment['payerName'] ?? payment['customerName'] ?? payment['fullName'] ?? (USE_LIVE_API ? '—' : 'Aderemi Doe'))
-    : (USE_LIVE_API ? '—' : 'Aderemi Doe');
+    ? String(payment['donorName'] ?? payment['payerName'] ?? payment['customerName'] ?? payment['fullName'] ?? '—')
+    : '—';
   const donorEmail = payment
-    ? String(payment['donorEmail'] ?? payment['payerEmail'] ?? payment['customerEmail'] ?? payment['email'] ?? (USE_LIVE_API ? '—' : 'aderemidoe@email.com'))
-    : (USE_LIVE_API ? '—' : 'aderemidoe@email.com');
+    ? String(payment['donorEmail'] ?? payment['payerEmail'] ?? payment['customerEmail'] ?? payment['email'] ?? '—')
+    : '—';
   const donorPhone = payment
-    ? String(payment['donorPhone'] ?? payment['payerPhone'] ?? payment['customerPhone'] ?? payment['phone'] ?? payment['mobilePhone'] ?? (USE_LIVE_API ? '—' : '+234 812 345 6789'))
-    : (USE_LIVE_API ? '—' : '+234 812 345 6789');
+    ? String(payment['donorPhone'] ?? payment['payerPhone'] ?? payment['customerPhone'] ?? payment['phone'] ?? payment['mobilePhone'] ?? '—')
+    : '—';
 
   return (
     <SheetPage className="w-full max-w-[665px]! gap-0" backLink={returnUrl}>
@@ -142,17 +142,17 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Fund/Campaign</span>
-              <span className="text-right">{String(payment?.['purpose'] ?? (USE_LIVE_API ? '—' : 'General Offering'))}</span>
+              <span className="text-right">{String(payment?.['purpose'] ?? '—')}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Donation Type</span>
-              <span className="text-right">{USE_LIVE_API ? (String(payment?.['donationType'] ?? '—')) : 'One-time'}</span>
+              <span className="text-right">{String(payment?.['donationType'] ?? '—')}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">
               <span>Payment Method</span>
-              <span className="text-right">{String(payment?.['gatewayType'] ?? (USE_LIVE_API ? '—' : 'Debit Card (Visa •••• 2920)'))}</span>
+              <span className="text-right">{String(payment?.['gatewayType'] ?? '—')}</span>
             </div>
 
             <div className="w-full flex justify-between items-center gap-4">

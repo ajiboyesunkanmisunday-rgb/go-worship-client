@@ -149,7 +149,7 @@ export function DonateForm() {
             className="h-[22px] w-[64px]"
           />
           <h1 className="text-[26px] leading-[110%] font-bold -tracking-[0.02em] lg:text-[32px]">
-            {config?.tenantDisplayName ?? (USE_LIVE_API ? '' : 'Celebration Church')} Giving Platform
+            {config?.tenantDisplayName ?? ''} Giving Platform
           </h1>
           <p className="max-w-[400px] font-poppins text-[15px] font-light">
             A generous person will prosper; whoever refreshes others will be

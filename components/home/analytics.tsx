@@ -81,9 +81,9 @@ function StatCard({
 }
 
 export function Analytics() {
-  const [totalGiven, setTotalGiven] = useState(USE_LIVE_API ? '$0' : '$1000');
-  const [totalGroups, setTotalGroups] = useState(USE_LIVE_API ? 0 : 9);
-  const [upcomingEvents, setUpcomingEvents] = useState(USE_LIVE_API ? 0 : 4);
+  const [totalGiven, setTotalGiven] = useState('$0');
+  const [totalGroups, setTotalGroups] = useState(0);
+  const [upcomingEvents, setUpcomingEvents] = useState(0);
   const [userName, setUserName] = useState('');
 
   useEffect(() => {

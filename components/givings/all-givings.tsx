@@ -17,9 +17,9 @@ function mapPaymentToGiving(p: PaymentResponse): Giving {
   return {
     id: p.id,
     amount: p.amount ?? 0,
-    campaign: p.purpose || (USE_LIVE_API ? '—' : 'Donation'),
-    paymentMethod: (p.gatewayType as string) || (USE_LIVE_API ? '—' : 'Bank transfer'),
-    type: ((p as Record<string, unknown>)['donationType'] as string) || (USE_LIVE_API ? '—' : 'One-time'),
+    campaign: p.purpose || '—',
+    paymentMethod: (p.gatewayType as string) || '—',
+    type: ((p as Record<string, unknown>)['donationType'] as string) || '—',
     status,
     dateCreated: p.paidAt || p.requestedAt || new Date().toISOString(),
   };

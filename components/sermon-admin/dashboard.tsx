@@ -96,7 +96,7 @@ export function SermonAdminDashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Total Series" value={stats ? String(stats.totalGroups) : (USE_LIVE_API ? String(series.length) : '24')} variant="blue" />
-        <StatCard title="Total Sermons" value={stats ? String(stats.totalEvents) : (USE_LIVE_API ? '0' : '43')} variant="white" />
+        <StatCard title="Total Sermons" value={stats ? String(stats.totalEvents) : '0'} variant="white" />
         <StatCard title="Published Sermons" value={String(publishedCount || (USE_LIVE_API ? 0 : 15))} variant="white" />
         <StatCard title="Draft Sermons" value={String(draftCount || (USE_LIVE_API ? 0 : 10))} variant="white" />
       </div>

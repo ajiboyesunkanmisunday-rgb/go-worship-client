@@ -492,7 +492,7 @@ function SubscriptionTab() {
 function ProfileTab() {
   const [branding, setBranding] = useState<TenantBranding>({});
   const [profile, setProfile] = useState<Profile>({});
-  const [location, setLocation] = useState(USE_LIVE_API ? '' : 'Ontario, Canada');
+  const [location, setLocation] = useState('');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -502,9 +502,9 @@ function ProfileTab() {
 
   return (
     <div className="rounded-[14px] bg-white p-6">
-      <Field label="Church Name" value={branding.organizationName || (USE_LIVE_API ? '' : 'Celebration Church Int.')} />
-      <Field label="Email" value={profile.email || (USE_LIVE_API ? '' : 'admin@celebration.org')} />
-      <Field label="Phone number" value={profile.mobilePhone || (USE_LIVE_API ? '' : '(+62) 821 554 - 5432')} />
+      <Field label="Church Name" value={branding.organizationName || ''} />
+      <Field label="Email" value={profile.email || ''} />
+      <Field label="Phone number" value={profile.mobilePhone || ''} />
       <Field label="Location" value={location} />
     </div>
   );
