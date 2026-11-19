@@ -14,16 +14,8 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 type Sermon = { id: string; title: string; speaker: string; series: string; date: string; status: string };
 
-const SERMONS: Sermon[] = [
-  { id: '1', title: 'Walking in Faith', speaker: 'Pastor John', series: 'Faith in Action', date: 'Feb 10', status: 'Published' },
-  { id: '2', title: 'Hope in Motion', speaker: 'Pastor John', series: 'Faith in Action', date: 'Draft', status: 'Draft' },
-  { id: '3', title: 'Unity in Diversity', speaker: 'Pastor Mary', series: 'Love in Action', date: 'Draft', status: 'Published' },
-  { id: '4', title: 'Love as a Verb', speaker: 'Pastor John', series: 'Love in Action', date: 'June 12', status: 'Scheduled' },
-  { id: '5', title: 'Service Above Self', speaker: 'Pastor John', series: 'Love in Action', date: 'June 12', status: 'Draft' },
-];
-
 export default function SermonAdminSermonsPage() {
-  const [sermons, setSermons] = useState<Sermon[]>(USE_LIVE_API ? [] : SERMONS);
+  const [sermons, setSermons] = useState<Sermon[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

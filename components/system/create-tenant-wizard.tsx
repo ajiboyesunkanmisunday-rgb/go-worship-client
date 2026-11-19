@@ -195,6 +195,7 @@ export function CreateTenantWizard() {
       const data = await provisionTenant({
         tenant: {
           name: basic.churchName,
+          legalName: basic.churchName,
           shortName: basic.churchName.substring(0, 20),
           slug,
           billingEmail: basic.churchEmail,

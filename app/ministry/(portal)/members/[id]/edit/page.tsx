@@ -13,16 +13,6 @@ import { use } from 'react';
 
 const back = '/ministry/members';
 
-const MOCK: TenantMember = {
-  id: 'M-001',
-  name: 'John Adeyemi',
-  email: 'john@example.com',
-  phone: '+1 555-0101',
-  status: 'Active',
-  joinedAt: 'Jan 12, 2025',
-  groups: [],
-};
-
 export default function MinistryEditMemberPage({
   params,
 }: {
@@ -30,9 +20,7 @@ export default function MinistryEditMemberPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [member, setMember] = useState<TenantMember>(
-    USE_LIVE_API ? { id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] } : MOCK
-  );
+  const [member, setMember] = useState<TenantMember>({ id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {

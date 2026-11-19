@@ -17,8 +17,7 @@ export async function POST(req: NextRequest) {
     })
   )) ?? {};
 
-  const { challengeToken, newPassword, confirmPassword, rememberMe, tenantId } =
-    body;
+  const { challengeToken, newPassword, confirmPassword, tenantId } = body;
 
   if (!challengeToken || !newPassword || !confirmPassword) {
     return NextResponse.json(
@@ -45,13 +44,9 @@ export async function POST(req: NextRequest) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      // SO-004B uses 'challengeToken'; TN-003 uses 'token' — send both so
-      // either backend variant accepts the request.
-      token: challengeToken,
       challengeToken,
       newPassword,
       confirmPassword,
-      rememberMe: Boolean(rememberMe),
     }),
   }, upstreamBase);
 

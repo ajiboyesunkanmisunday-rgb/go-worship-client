@@ -12,16 +12,11 @@ import { toast } from 'sonner';
 
 type GroupRow = { id: string; name: string; category: string; leader: string; members: number; status: string; schedule: string };
 
-const MOCK_GROUPS: GroupRow[] = [
-  { id: '', name: 'Faith Builders Fellowship', category: 'Small Group', leader: 'John Samuel', members: 22, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
-  { id: '', name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Inactive', schedule: 'Tuesdays at 6:00 PM' },
-  { id: '', name: 'Faith Builders Community', category: 'Discussion Group', leader: 'Michael Thompson', members: 23, status: 'Active', schedule: 'Tuesdays at 6:00 PM' },
-];
 
 function toGroupRow(g: TenantGroup): GroupRow {
   const days = g.meetingDays?.length ? g.meetingDays.join('/') : '';
   const time = g.meetingTime ?? '';
-  const schedule = [days, time].filter(Boolean).join(' at ') || g.meetingFrequency || (USE_LIVE_API ? '—' : 'Tuesdays at 6:00 PM');
+  const schedule = [days, time].filter(Boolean).join(' at ') || g.meetingFrequency || '—';
   return {
     id: g.id,
     name: g.name,
@@ -34,7 +29,7 @@ function toGroupRow(g: TenantGroup): GroupRow {
 }
 
 export default function MinistryGroupsPage() {
-  const [groups, setGroups] = useState<GroupRow[]>(USE_LIVE_API ? [] : MOCK_GROUPS);
+  const [groups, setGroups] = useState<GroupRow[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

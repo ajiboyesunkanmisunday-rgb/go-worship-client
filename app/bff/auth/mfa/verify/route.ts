@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     })
   );
 
-  const { mfaSessionId, method, code, tokenId } = body ?? {};
+  const { mfaSessionId, method, code, tokenId, rememberMe } = body ?? {};
   if (!mfaSessionId || !method || !code) {
     return NextResponse.json(
       { message: 'mfaSessionId, method, and code are required' },
@@ -74,6 +74,6 @@ export async function POST(req: NextRequest) {
     roles: data?.claims?.roles ?? [],
     authLevel: data?.authLevel ?? null,
   });
-  setSessionCookies(res, accessToken, data?.refreshToken);
+  setSessionCookies(res, accessToken, data?.refreshToken, !!rememberMe);
   return res;
 }

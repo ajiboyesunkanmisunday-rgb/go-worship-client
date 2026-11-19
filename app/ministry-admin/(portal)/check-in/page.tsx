@@ -10,16 +10,8 @@ import { getTenantEvents } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 
-const MOCK_EVENTS: EventRow[] = [
-  { name: 'Midweek Recharge', date: 'Feb 21, 2025 • 6PM', location: 'Main Hall', registrations: '125', status: 'Upcoming' },
-  { name: 'Weekend Workshop', date: 'Feb 25, 2025 • 10AM', location: 'Conference Room A', registrations: '75', status: 'Completed' },
-  { name: 'Team Building Retreat', date: 'Mar 10, 2025 • 8AM', location: 'Offsite Location', registrations: '50', status: 'Ongoing' },
-  { name: 'Monthly Check-in', date: 'Mar 15, 2025 • 3PM', location: 'Zoom', registrations: 'Unlimited', status: 'Cancelled' },
-  { name: 'Spring Networking Event', date: 'Apr 5, 2025 • 5PM', location: 'Rooftop Garden', registrations: '150', status: 'Upcoming' },
-];
-
 export default function MinistryAdminCheckInPage() {
-  const [rows, setRows] = useState<EventRow[]>(USE_LIVE_API ? [] : MOCK_EVENTS);
+  const [rows, setRows] = useState<EventRow[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

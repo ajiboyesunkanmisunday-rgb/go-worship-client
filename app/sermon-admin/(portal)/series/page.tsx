@@ -10,16 +10,8 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 type Series = { id: string; name: string; desc: string; count: string; status: string; date: string };
 
-const SERIES_MOCK: Series[] = [
-  { id: '1', name: 'Faith in Action', desc: 'Weekly faith teaching', count: '12', status: 'Published', date: 'Jan 10, 2025' },
-  { id: '2', name: 'Hope in Motion', desc: 'Monthly outreach program', count: '30', status: 'Uploading', date: 'Feb 15, 2025' },
-  { id: '3', name: 'Unity in Diversity', desc: 'Quarterly community gathering', count: '50', status: 'Published', date: 'Mar 20, 2025' },
-  { id: '4', name: 'Love as a Verb', desc: 'Annual charity event', count: '100', status: 'Scheduled', date: 'Apr 25, 2025' },
-  { id: '5', name: 'Service Above Self', desc: 'Weekly volunteer opportunity', count: '20', status: 'Draft', date: 'May 30, 2025' },
-];
-
 export default function SermonAdminSeriesPage() {
-  const [series, setSeries] = useState<Series[]>(USE_LIVE_API ? [] : SERIES_MOCK);
+  const [series, setSeries] = useState<Series[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

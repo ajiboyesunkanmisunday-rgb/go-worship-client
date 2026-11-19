@@ -11,13 +11,6 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 type MediaFile = { id: string; name: string; type: string; size: string; used: string; date: string };
 
-const MEDIA: MediaFile[] = [
-  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { id: '', name: 'Hope in Motion', type: 'MP3 File', size: '18mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { id: '', name: 'Unity in Diversity', type: 'MP4 File', size: '52mb', used: 'Love in Action series', date: 'Jan 3, 2025' },
-  { id: '', name: 'Love as a Verb', type: 'MP3 File', size: '20mb', used: 'Love in Action series', date: 'Jan 4, 2025' },
-];
-
 function UploadMediaCard() {
   return (
     <Link
@@ -39,7 +32,7 @@ function UploadMediaCard() {
 }
 
 export default function SermonAdminMediaPage() {
-  const [media, setMedia] = useState<MediaFile[]>(USE_LIVE_API ? [] : MEDIA);
+  const [media, setMedia] = useState<MediaFile[]>([]);
 
   const deleteMedia = (id: string) => {
     if (!USE_LIVE_API || !id) return;

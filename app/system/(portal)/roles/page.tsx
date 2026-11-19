@@ -25,40 +25,6 @@ type Permission = {
   status: string;
 };
 
-const MOCK_ROLES: Role[] = [];
-
-const MOCK_PERMISSIONS: Permission[] = [
-  { id: '1',  name: 'VIEW_TENANTS',         category: 'Tenants',      scope: 'System',   description: 'View all tenants',               status: 'Active' },
-  { id: '2',  name: 'MANAGE_TENANTS',       category: 'Tenants',      scope: 'System',   description: 'Create & edit tenants',          status: 'Active' },
-  { id: '3',  name: 'SUSPEND_TENANT',       category: 'Tenants',      scope: 'System',   description: 'Suspend a tenant account',       status: 'Active' },
-  { id: '4',  name: 'VIEW_TRANSACTIONS',    category: 'Finance',      scope: 'System',   description: 'View all platform transactions', status: 'Active' },
-  { id: '5',  name: 'EXPORT_TRANSACTIONS',  category: 'Finance',      scope: 'System',   description: 'Export transaction data',        status: 'Active' },
-  { id: '6',  name: 'MANAGE_PLANS',         category: 'Finance',      scope: 'System',   description: 'Create & edit billing plans',    status: 'Active' },
-  { id: '7',  name: 'VIEW_USERS',           category: 'Users',        scope: 'System',   description: 'View platform users',            status: 'Active' },
-  { id: '8',  name: 'MANAGE_USERS',         category: 'Users',        scope: 'System',   description: 'Provision & manage users',       status: 'Active' },
-  { id: '9',  name: 'ASSIGN_ROLES',         category: 'Roles',        scope: 'System',   description: 'Assign roles to users',          status: 'Active' },
-  { id: '10', name: 'MANAGE_ROLES',         category: 'Roles',        scope: 'System',   description: 'Create & edit roles',            status: 'Active' },
-  { id: '11', name: 'VIEW_AUDIT_LOGS',      category: 'Audit',        scope: 'System',   description: 'View system audit logs',         status: 'Active' },
-  { id: '12', name: 'EXPORT_AUDIT_LOGS',    category: 'Audit',        scope: 'System',   description: 'Export audit log data',          status: 'Active' },
-  { id: '13', name: 'VIEW_ANALYTICS',       category: 'Analytics',    scope: 'System',   description: 'View platform analytics',        status: 'Active' },
-  { id: '14', name: 'MANAGE_SETTINGS',      category: 'Settings',     scope: 'System',   description: 'Manage system settings',         status: 'Active' },
-  { id: '15', name: 'MANAGE_MFA',           category: 'Security',     scope: 'System',   description: 'Enforce MFA policies',           status: 'Active' },
-  { id: '16', name: 'VIEW_SESSIONS',        category: 'Security',     scope: 'System',   description: 'View active sessions',           status: 'Active' },
-  { id: '17', name: 'REVOKE_SESSIONS',      category: 'Security',     scope: 'System',   description: 'Revoke user sessions',           status: 'Active' },
-  { id: '18', name: 'MANAGE_SUPPORT',       category: 'Support',      scope: 'System',   description: 'Manage support tickets',         status: 'Active' },
-  { id: '19', name: 'VIEW_SUPPORT',         category: 'Support',      scope: 'System',   description: 'View support requests',          status: 'Active' },
-  { id: '20', name: 'MANAGE_BILLING',       category: 'Finance',      scope: 'System',   description: 'Manage billing & invoices',      status: 'Active' },
-  { id: '21', name: 'VIEW_BILLING',         category: 'Finance',      scope: 'System',   description: 'View billing information',       status: 'Active' },
-  { id: '22', name: 'MANAGE_NOTIFICATIONS', category: 'Comms',        scope: 'System',   description: 'Send system notifications',      status: 'Active' },
-  { id: '23', name: 'VIEW_REPORTS',         category: 'Analytics',    scope: 'System',   description: 'Access platform reports',        status: 'Active' },
-  { id: '24', name: 'MANAGE_INTEGRATIONS',  category: 'Integrations', scope: 'System',   description: 'Configure third-party APIs',     status: 'Active' },
-  { id: '25', name: 'VIEW_INTEGRATIONS',    category: 'Integrations', scope: 'System',   description: 'View integration status',        status: 'Active' },
-  { id: '26', name: 'MANAGE_CAMPUS',        category: 'Campus',       scope: 'Tenant',   description: 'Manage campus operations',       status: 'Active' },
-  { id: '27', name: 'VIEW_CAMPUS',          category: 'Campus',       scope: 'Tenant',   description: 'View campus data',               status: 'Active' },
-  { id: '28', name: 'MANAGE_CONTENT',       category: 'Content',      scope: 'Tenant',   description: 'Manage published content',       status: 'Active' },
-  { id: '29', name: 'MANAGE_GIVING',        category: 'Finance',      scope: 'Tenant',   description: 'Manage giving & donations',      status: 'Active' },
-  { id: '30', name: 'VIEW_GIVING',          category: 'Finance',      scope: 'Tenant',   description: 'View giving & donations',        status: 'Active' },
-];
 
 function EmptyState({ label }: { label: string }) {
   return (
@@ -73,8 +39,8 @@ function EmptyState({ label }: { label: string }) {
 
 export default function SystemRolesPage() {
   const [activeTab, setActiveTab] = useState<'Roles' | 'Permissions'>('Roles');
-  const [roles, setRoles] = useState<Role[]>(USE_LIVE_API ? [] : MOCK_ROLES);
-  const [permissions, setPermissions] = useState<Permission[]>(USE_LIVE_API ? [] : MOCK_PERMISSIONS);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

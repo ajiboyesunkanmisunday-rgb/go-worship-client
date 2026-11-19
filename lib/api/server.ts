@@ -87,9 +87,13 @@ const baseCookie = {
 export function setSessionCookies(
   res: NextResponse,
   accessToken: string,
-  refreshToken?: string
+  refreshToken?: string,
+  rememberMe = false
 ) {
-  res.cookies.set(ACCESS_COOKIE, accessToken, { ...baseCookie, maxAge: 60 * 30 });
+  // rememberMe: persist access token for 30 days; without it expire in 30 min
+  // so the session ends when the backend token expires or the browser closes.
+  const accessMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 30;
+  res.cookies.set(ACCESS_COOKIE, accessToken, { ...baseCookie, maxAge: accessMaxAge });
   if (refreshToken) {
     res.cookies.set(REFRESH_COOKIE, refreshToken, {
       ...baseCookie,

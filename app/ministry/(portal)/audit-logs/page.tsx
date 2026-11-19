@@ -35,17 +35,6 @@ const OUTCOME_BADGE: Record<string, string> = {
   Failure: 'bg-[#fde8e8] text-[#eb0000]',
 };
 
-const MOCK_ALL: LogRow[] = [
-  { id: '1', action: 'Created',   resource: 'Member',  resourceId: '',   user: 'admin@church.org',   outcome: 'Success', summary: 'New member profile created', time: 'Oct 20, 2026 9:14 AM' },
-  { id: '2', action: 'Updated',   resource: 'Event',   resourceId: '',   user: 'pastor@church.org',  outcome: 'Success', summary: 'Sunday service updated', time: 'Oct 20, 2026 10:00 AM' },
-  { id: '3', action: 'Deleted',   resource: 'Group',   resourceId: '',   user: 'admin@church.org',   outcome: 'Success', summary: 'Youth group removed', time: 'Oct 19, 2026 3:45 PM' },
-  { id: '4', action: 'Login',     resource: 'Auth',    resourceId: '',   user: 'finance@church.org', outcome: 'Failure', summary: 'Invalid credentials attempt', time: 'Oct 19, 2026 11:30 AM' },
-];
-
-const MOCK_SECURITY: LogRow[] = [
-  { id: '5', action: 'Login',     resource: 'Auth',    resourceId: '',   user: 'admin@church.org',   outcome: 'Success', summary: 'Admin login from new device', time: 'Oct 20, 2026 8:00 AM' },
-  { id: '6', action: 'Login',     resource: 'Auth',    resourceId: '',   user: 'unknown',             outcome: 'Failure', summary: 'Multiple failed login attempts', time: 'Oct 19, 2026 2:00 AM' },
-];
 
 function ActionBadge({ action }: { action: string }) {
   return (
@@ -126,8 +115,8 @@ function LogField({ label, children }: { label: string; children: React.ReactNod
 
 export default function MinistryAuditLogsPage() {
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
-  const [allLogs, setAllLogs] = useState<LogRow[]>(USE_LIVE_API ? [] : MOCK_ALL);
-  const [securityLogs, setSecurityLogs] = useState<LogRow[]>(USE_LIVE_API ? [] : MOCK_SECURITY);
+  const [allLogs, setAllLogs] = useState<LogRow[]>([]);
+  const [securityLogs, setSecurityLogs] = useState<LogRow[]>([]);
   const [selected, setSelected] = useState<LogRow | null>(null);
 
   useEffect(() => {

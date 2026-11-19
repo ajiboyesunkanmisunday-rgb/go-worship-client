@@ -12,18 +12,9 @@ import { toast } from 'sonner';
 
 type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number; channels?: string[] };
 
-const MESSAGES: Message[] = [
-  { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
-  { title: 'Sunday Service Reminder', recipients: 'Group Leaders', status: 'Sent', rate: 100 },
-  { title: 'Midweek Recharge', recipients: 'All Member', status: 'Scheduled', rate: 0 },
-  { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
-  { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
-  { title: 'Midweek Recharge', recipients: 'All Sub Accounts', status: 'Sent', rate: 100 },
-];
-
 export default function MinistryCommunicationPage() {
-  const [messages, setMessages] = useState<Message[]>(USE_LIVE_API ? [] : MESSAGES);
-  const [activeRecipients, setActiveRecipients] = useState(USE_LIVE_API ? '0' : '260');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeRecipients, setActiveRecipients] = useState('0');
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -87,7 +78,7 @@ export default function MinistryCommunicationPage() {
                   <td className="py-4">{m.title}</td>
                   <td className="py-4">
                     <p>{m.recipients}</p>
-                    <p className="text-brand-gray-500">{m.recipientCount != null ? `${m.recipientCount} recipients` : (USE_LIVE_API ? '' : '245 recipients')}</p>
+                    <p className="text-brand-gray-500">{m.recipientCount != null ? `${m.recipientCount} recipients` : ''}</p>
                   </td>
                   <td className="py-4">
                     <span className="flex items-center gap-2 text-brand-blue">

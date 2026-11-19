@@ -10,14 +10,8 @@ import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-const MOCK_MEMBERS: TenantMember[] = [
-  { id: 'M-001', name: 'John Adeyemi', email: 'john@example.com', phone: '+1 555-0101', status: 'Active', joinedAt: 'Jan 12, 2025', groups: ['Faith Builders'] },
-  { id: 'M-002', name: 'Grace Okonkwo', email: 'grace@example.com', phone: '+1 555-0102', status: 'Active', joinedAt: 'Feb 03, 2025', groups: [] },
-  { id: 'M-003', name: 'Mercy Paul', email: 'mercy@example.com', phone: '+1 555-0103', status: 'Inactive', joinedAt: 'Nov 20, 2024', groups: ['Youth Fellowship'] },
-];
-
 export default function MinistryMembersPage() {
-  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

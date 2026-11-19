@@ -21,18 +21,9 @@ type Role = {
   updated: string;
 };
 
-const ROLES: Role[] = [
-  { id: 'CUS-1001', apiId: '', role: 'Group Leader', desc: 'Full platform control (for ministry groups).', users: 45, status: 'Active', by: 'Mary', updated: 'USA' },
-  { id: 'CUS-1002', apiId: '', role: 'Sermon Admin', desc: 'Manage sermons uploads, media, and reports but limited settings.', users: 2, status: 'Active', by: 'Mary', updated: 'Nigeria' },
-  { id: 'CUS-1003', apiId: '', role: 'Finance Admin', desc: 'Can manage giving, exports, accounts statement', users: 7, status: 'Inactive', by: 'Mary', updated: 'Nigeria' },
-  { id: 'CUS-1004', apiId: '', role: 'Event Admin', desc: 'Manage events, checkin and management of events and activities', users: 10, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
-  { id: 'CUS-1005', apiId: '', role: 'Support Agent', desc: 'Handles tickets, support requests, customer communication.', users: 30, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
-  { id: 'CUS-1006', apiId: '', role: 'Finance Manager', desc: 'Can view transactions, invoices, payouts, refunds.', users: 8, status: 'Inactive', by: 'Mercy', updated: 'Nigeria' },
-  { id: 'CUS-1006', apiId: '', role: 'Finance Manager', desc: 'Can view transactions, invoices, payouts, refunds.', users: 8, status: 'Active', by: 'Mercy', updated: 'Nigeria' },
-];
 
 export default function MinistryAdminManagementPage() {
-  const [roles, setRoles] = useState<Role[]>(USE_LIVE_API ? [] : ROLES);
+  const [roles, setRoles] = useState<Role[]>([]);
 
   const deleteRole = (apiId: string) => {
     if (!USE_LIVE_API || !apiId) return;

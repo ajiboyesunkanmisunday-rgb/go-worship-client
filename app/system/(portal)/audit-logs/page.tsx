@@ -83,13 +83,6 @@ const ACTION_BADGE: Record<string, string> = {
   Deleted: 'bg-[#fde8e8] text-[#eb0000]',
 };
 
-const LOGS: Log[] = [
-  { action: 'Created', resource: 'Tenant', user: 'John Administrator', details: 'Created new tenant: Faith Bible Church', ip: '192.168.1.100', time: 'Jan 14, 2024 2:30 PM' },
-  { action: 'Updated', resource: 'Tenant', user: 'John Administrator', details: 'Updated plan: Grace Community Church', ip: '192.168.1.100', time: 'Jan 14, 2024 2:30 PM' },
-  { action: 'Suspended', resource: 'Tenant', user: 'John Administrator', details: 'Suspended tenant: Hope Assembly', ip: '192.168.1.100', time: 'Jan 14, 2024 2:30 PM' },
-  { action: 'Created', resource: 'Tenant', user: 'John Administrator', details: 'Created new tenant: Faith Bible Church', ip: '192.168.1.100', time: 'Jan 14, 2024 2:30 PM' },
-  { action: 'Deleted', resource: 'Role', user: 'John Administrator', details: 'Deleted role: Finance Manager', ip: '192.168.1.100', time: 'Jan 14, 2024 2:30 PM' },
-];
 
 function ActionBadge({ action }: { action: string }) {
   return (
@@ -148,7 +141,7 @@ function parseArr(data: unknown): Record<string, unknown>[] {
 
 export default function SystemAuditLogsPage() {
   const [selected, setSelected] = useState<Log | null>(null);
-  const [logs, setLogs] = useState<Log[]>(USE_LIVE_API ? [] : LOGS);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
   const loadLogs = (tab: AuditTab) => {

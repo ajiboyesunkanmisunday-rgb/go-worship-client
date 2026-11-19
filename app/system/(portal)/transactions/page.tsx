@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
+import { getSystemSubscriptions, type SystemSubscription } from '@/lib/api/system';
 
 const STATUS: Record<string, string> = {
   Success: 'bg-[#e7f7ee] text-[#34a853]',
@@ -15,31 +16,24 @@ const STATUS: Record<string, string> = {
   Failed: 'bg-[#fde8e8] text-[#eb0000]',
 };
 
-const TXNS = [
-  { name: 'Adewale Bola', email: 'adminadje@gmail.com', status: 'Success', date: 'Jan 12, 2025', amount: '$55.00', method: 'Bank transfer', type: 'General Offering', channel: 'Online' },
-  { name: 'Grace Community', email: 'admin@gracecommunity.org', status: 'Pending', date: 'Jan 12, 2025', amount: '$120.00', method: 'Bank transfer', type: 'General Offering', channel: 'Offline' },
-  { name: 'Michael Ade', email: 'michael@mail.com', status: 'Success', date: 'Jan 11, 2025', amount: '$80.00', method: 'Card payment', type: 'Tithe Offering', channel: 'Online' },
-  { name: 'Cornerstone Church', email: 'admin@cornerstone.org', status: 'Failed', date: 'Jan 10, 2025', amount: '$45.00', method: 'Bank transfer', type: 'General Offering', channel: 'Online' },
-];
-
-type SysTxn = typeof TXNS[number];
+type SysTxn = {
+  name: string;
+  email: string;
+  status: string;
+  date: string;
+  amount: string;
+  method: string;
+  type: string;
+  channel: string;
+  id: string;
+};
 
 function normalizeStatus(s?: string): string {
   if (!s) return 'Pending';
   const u = s.toUpperCase();
-  if (u === 'SUCCEEDED' || u === 'SUCCESS' || u === 'COMPLETED') return 'Success';
-  if (u === 'FAILED' || u === 'CANCELED' || u === 'EXPIRED') return 'Failed';
+  if (u === 'SUCCEEDED' || u === 'SUCCESS' || u === 'COMPLETED' || u === 'ACTIVE') return 'Success';
+  if (u === 'FAILED' || u === 'CANCELED' || u === 'EXPIRED' || u === 'SUSPENDED') return 'Failed';
   return 'Pending';
-}
-
-function fmtAmt(amount: unknown, currency?: string): string {
-  const n = Number(amount);
-  if (!n && n !== 0) return String(amount ?? '');
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD' }).format(n);
-  } catch {
-    return String(n);
-  }
 }
 
 function fmtDate(iso?: string): string {
@@ -49,32 +43,54 @@ function fmtDate(iso?: string): string {
   } catch { return iso; }
 }
 
+function subToTxn(sub: SystemSubscription): SysTxn {
+  return {
+    id: sub.id ?? '',
+    name: sub.tenantId ?? '',
+    email: '',
+    status: normalizeStatus(sub.status),
+    date: fmtDate(sub.currentPeriodStart),
+    amount: '',
+    method: '',
+    type: sub.inTrial ? 'Trial' : 'Subscription',
+    channel: 'Online',
+  };
+}
+
 const TABS = ['All Transactions', 'Online', 'Offline'];
 
 /** System → Transactions (board 778:38441). */
 export default function SystemTransactionsPage() {
   const [tab, setTab] = useState(0);
-  const [txns, setTxns] = useState<SysTxn[]>(USE_LIVE_API ? [] : TXNS);
-  const [totalGiving, setTotalGiving] = useState(USE_LIVE_API ? '$0' : '$60,500');
-  const [paidInvoices, setPaidInvoices] = useState(USE_LIVE_API ? 0 : 20);
-  const [pendingAmount, setPendingAmount] = useState(USE_LIVE_API ? '$0' : '$1,200');
-  const [totalTxnCount, setTotalTxnCount] = useState(USE_LIVE_API ? 0 : 4);
+  const [txns, setTxns] = useState<SysTxn[]>([]);
+  const [totalGiving, setTotalGiving] = useState('$0');
+  const [paidInvoices, setPaidInvoices] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState('$0');
+  const [totalTxnCount, setTotalTxnCount] = useState(0);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
-    // Transaction list: /system/dashboard/admin/transactions and /system/transactions
-    // both returned 404 in localhost HAR — disabled until correct endpoint confirmed from DO.
-
-    // Stats: /system/finance/stats and /system/transactions/summary not in backend API — disabled.
 
     getUnifiedDashboard('LAST_30_DAYS', 'USD', undefined, 'system')
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
+      .catch(() => {});
+
+    getSystemSubscriptions(0, 100)
+      .then((data) => {
+        const subs = data?.content ?? [];
+        setTotalTxnCount(data?.totalElements ?? subs.length);
+        const active = subs.filter((s) => normalizeStatus(s.status) === 'Success').length;
+        const pending = subs.filter((s) => normalizeStatus(s.status) === 'Pending').length;
+        setPaidInvoices(active);
+        setPendingAmount(String(pending));
+        setTxns(subs.map(subToTxn));
+      })
       .catch(() => {});
   }, []);
 
   const filtered = tab === 0 ? txns : txns.filter((t) => t.channel === TABS[tab]);
 
-  const rows: SmartRow[] = filtered.map((t, i) => ({
+  const rows: SmartRow[] = filtered.map((t) => ({
     group: t.status,
     text: [t.name, t.email, t.status, t.date, t.amount, t.method, t.type],
     cells: [
@@ -94,7 +110,7 @@ export default function SystemTransactionsPage() {
       t.type,
       <Link
         key="a"
-        href={`/system/transactions/${t.status === 'Failed' ? 'failed' : i + 1}`}
+        href={`/system/transactions/${t.status === 'Failed' ? 'failed' : encodeURIComponent(t.id)}`}
         className="font-medium text-brand-blue no-underline"
       >
         View

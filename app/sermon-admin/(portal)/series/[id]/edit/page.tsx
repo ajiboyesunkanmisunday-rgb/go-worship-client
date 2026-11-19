@@ -13,13 +13,11 @@ import { FormAlert } from '@/components/ui/form-alert';
 
 const back = '/sermon-admin/series';
 
-const MOCK = { title: 'Faith in Action', description: 'Weekly faith teaching series.' };
-
 /** Edit an existing sermon series (GET + PUT /tenant/admin/content/series/:id). */
 export default function SermonAdminEditSeriesPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [series, setSeries] = useState(USE_LIVE_API ? { title: '', description: '' } : MOCK);
+  const [series, setSeries] = useState({ title: '', description: '' });
   const [formKey, setFormKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -29,8 +27,8 @@ export default function SermonAdminEditSeriesPage() {
     getTenantSeriesById(id)
       .then((d) => {
         setSeries({
-          title: String(d.title ?? MOCK.title),
-          description: String(d.description ?? MOCK.description),
+          title: String(d.title ?? ''),
+          description: String(d.description ?? ''),
         });
         setFormKey((k) => k + 1);
       })

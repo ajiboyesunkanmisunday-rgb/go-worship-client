@@ -20,15 +20,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 type Series = { id: string; name: string; desc: string; sermons: number; status: string; date: string };
 
-const SERIES: Series[] = [
-  { id: '', name: 'Faith in Action', desc: 'Weekly faith teaching', sermons: 12, status: 'Published', date: 'Jan 10, 2025' },
-  { id: '', name: 'Hope in Motion', desc: 'Monthly outreach program', sermons: 30, status: 'Uploading', date: 'Feb 15, 2025' },
-  { id: '', name: 'Unity in Diversity', desc: 'Quarterly community gathering', sermons: 50, status: 'Published', date: 'Mar 20, 2025' },
-  { id: '', name: 'Love as a Verb', desc: 'Annual charity event', sermons: 100, status: 'Scheduled', date: 'Apr 25, 2025' },
-  { id: '', name: 'Service Above Self', desc: 'Weekly volunteer opportunity', sermons: 20, status: 'Draft', date: 'May 30, 2025' },
-  { id: '', name: 'Service Above Self', desc: 'Weekly volunteer opportunity', sermons: 20, status: 'Draft', date: 'May 30, 2025' },
-  { id: '', name: 'Love as a Verb', desc: 'Annual charity event', sermons: 100, status: 'Scheduled', date: 'Apr 25, 2025' },
-];
 
 function normalizeSeriesStatus(raw: string): string {
   const u = raw.toUpperCase();
@@ -46,7 +37,7 @@ const folderIcon = (
 );
 
 export default function MinistryMediaPage() {
-  const [series, setSeries] = useState<Series[]>(USE_LIVE_API ? [] : SERIES);
+  const [series, setSeries] = useState<Series[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

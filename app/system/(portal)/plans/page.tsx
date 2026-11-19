@@ -19,50 +19,6 @@ type Plan = {
   highlight?: boolean;
 };
 
-const PLANS: Plan[] = [
-  {
-    id: '1',
-    name: 'Starter',
-    price: '$0',
-    cycle: '/monthly',
-    blurb: 'Perfect for getting started',
-    features: [
-      'Up to 100 members',
-      'Basic giving tools',
-      'Event management',
-      'Email support',
-    ],
-  },
-  {
-    id: '2',
-    name: 'Professional',
-    price: '$70,000',
-    cycle: '/quarterly',
-    blurb: 'Perfect for growing teams',
-    features: [
-      'Unlimited members',
-      'Advanced analytics',
-      'Priority support',
-      'Custom branding',
-      'Group management',
-    ],
-    highlight: true,
-  },
-  {
-    id: '3',
-    name: 'Enterprise',
-    price: '$250,000',
-    cycle: '/yearly',
-    blurb: 'For large multi-campus churches',
-    features: [
-      'Everything in Professional',
-      'Multi-campus support',
-      'Dedicated account manager',
-      'API access',
-      'Custom integrations',
-    ],
-  },
-];
 
 const TABS = ['Plan', 'Feature'];
 
@@ -125,10 +81,10 @@ function PlanCard({ plan }: { plan: Plan }) {
 /** System → Plans & Billing (board 778:38441). */
 export default function SystemPlansPage() {
   const [tab, setTab] = useState(0);
-  const [revenue, setRevenue] = useState(USE_LIVE_API ? '$0' : '$1300');
-  const [overdue, setOverdue] = useState(USE_LIVE_API ? '$0' : '$150');
-  const [pendingPayments, setPendingPayments] = useState(USE_LIVE_API ? '$0' : '$830');
-  const [plans, setPlans] = useState<Plan[]>(USE_LIVE_API ? [] : PLANS);
+  const [revenue, setRevenue] = useState('$0');
+  const [overdue, setOverdue] = useState('$0');
+  const [pendingPayments, setPendingPayments] = useState('$0');
+  const [plans, setPlans] = useState<Plan[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;
@@ -139,9 +95,7 @@ export default function SystemPlansPage() {
         if (arr.length === 0) return;
         const mapped: Plan[] = arr.map((p, i) => {
           const featureRaw = p.features;
-          const features: string[] = Array.isArray(featureRaw) && featureRaw.length > 0
-            ? featureRaw
-            : (PLANS[i % PLANS.length]?.features ?? []);
+          const features: string[] = Array.isArray(featureRaw) ? featureRaw : [];
           const priceNum = Number(p.price ?? 0);
           const price = priceNum
             ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(priceNum)

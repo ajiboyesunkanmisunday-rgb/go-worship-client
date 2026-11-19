@@ -17,13 +17,6 @@ const STATUS: Record<string, string> = {
 };
 
 /* Mock fallback — shown in demo mode or when the API call fails */
-const MOCK: SystemTenant[] = [
-  { id: '1', name: 'Grace Community Church',  domain: 'grace.go-worship.com',       status: 'Active',    plan: 'Enterprise', members: 830, createdAt: 'Jan 14, 2023' },
-  { id: '2', name: 'Cornerstone Church',      domain: 'cornerstone.go-worship.com', status: 'Pending',   plan: 'Pro',        members: 420, createdAt: 'Feb 02, 2023' },
-  { id: '3', name: 'Impact Church',           domain: 'impact.go-worship.com',      status: 'Active',    plan: 'Pro',        members: 610, createdAt: 'Mar 18, 2023' },
-  { id: '4', name: 'Hope Assembly',           domain: 'hope.go-worship.com',        status: 'Suspended', plan: 'Starter',    members: 150, createdAt: 'Apr 09, 2023' },
-  { id: '5', name: 'Living Faith Center',     domain: 'livingfaith.go-worship.com', status: 'Suspended', plan: 'Starter',    members:  90, createdAt: 'May 21, 2023' },
-];
 
 const TABS = ['All Tenants', 'Active', 'Pending', 'Suspended'];
 
@@ -63,7 +56,7 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
 
 export default function SystemTenantsPage() {
   const [tab, setTab] = useState(0);
-  const [tenants, setTenants] = useState<SystemTenant[]>(USE_LIVE_API ? [] : MOCK);
+  const [tenants, setTenants] = useState<SystemTenant[]>([]);
   const [loading, setLoading] = useState(USE_LIVE_API);
 
   useEffect(() => {

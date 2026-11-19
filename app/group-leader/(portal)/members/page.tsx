@@ -8,18 +8,8 @@ import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const MOCK_MEMBERS: TenantMember[] = Array.from({ length: 5 }, (_, i) => ({
-  id: `M-00${i + 1}`,
-  name: 'John Doe',
-  phone: '08035678923',
-  email: 'john@mail.com',
-  status: 'Active' as const,
-  joinedAt: 'Jan 2025',
-  groups: [],
-}));
-
 export default function GroupLeaderMembersPage() {
-  const [members, setMembers] = useState<TenantMember[]>(USE_LIVE_API ? [] : MOCK_MEMBERS);
+  const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

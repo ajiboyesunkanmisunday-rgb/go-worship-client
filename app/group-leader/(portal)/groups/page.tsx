@@ -3,7 +3,6 @@
 import { StatCard } from '@/components/ministry/shared';
 import { QuickAccess } from '@/components/group-leader/dashboard';
 import { DataPanel, type TableRow } from '@/components/group-leader/shared';
-import { GROUP_ROWS } from '@/components/group-leader/groups-data';
 import { getTenantGroups, getTenantStats, type TenantGroup, type TenantStats } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
@@ -17,7 +16,7 @@ function toRow(g: TenantGroup): TableRow {
 }
 
 export default function GroupLeaderGroupsPage() {
-  const [rows, setRows] = useState<TableRow[]>(USE_LIVE_API ? [] : GROUP_ROWS);
+  const [rows, setRows] = useState<TableRow[]>([]);
   const [stats, setStats] = useState<TenantStats | null>(null);
 
   useEffect(() => {

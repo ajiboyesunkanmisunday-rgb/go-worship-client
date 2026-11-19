@@ -17,20 +17,14 @@ const ROLE_STYLE: Record<string, string> = {
 };
 
 /* Mock fallback */
-const MOCK: SystemUser[] = [
-  { id: '1', name: 'John Adeyemi',            email: 'john@leadremit.com',         role: 'Admin',       status: 'Active',   lastLogin: 'Jun 12, 2025', createdAt: 'Dec 12, 2023' },
-  { id: '2', name: 'Grace Obi',               email: 'grace@leadremit.com',        role: 'Admin',       status: 'Active',   lastLogin: 'Jun 11, 2025', createdAt: 'Feb 02, 2024' },
-  { id: '3', name: 'Celebration Church Leads', email: 'admin@celebration.org',     role: 'Support',     status: 'Active',   lastLogin: 'Jun 10, 2025', createdAt: 'Mar 18, 2024' },
-  { id: '4', name: 'System Owner',            email: 'support@go-worship.com',     role: 'Super Admin', status: 'Active',   lastLogin: 'Jun 09, 2025', createdAt: 'Apr 09, 2024' },
-];
 
 const TABS = ['Super Admin', 'Admin', 'Support'];
 
 /** System → Platform Users (board 778:38441). */
 export default function SystemPlatformUsersPage() {
   const [tab, setTab] = useState(-1);
-  const [users, setUsers] = useState<SystemUser[]>(USE_LIVE_API ? [] : MOCK);
-  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

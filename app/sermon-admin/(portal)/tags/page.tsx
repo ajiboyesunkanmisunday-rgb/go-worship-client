@@ -15,13 +15,6 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 type Tag = { id: string; name: string; count: string; status: string; date: string };
 
-const TAGS: Tag[] = [
-  { id: '', name: 'Walking in Faith', count: '23', status: 'Inactive', date: 'Jan 2, 2025' },
-  { id: '', name: 'Embracing Change', count: '45', status: 'Active', date: 'Jan 3, 2025' },
-  { id: '', name: 'Pursuing Dreams', count: '30', status: 'Inactive', date: 'Jan 4, 2025' },
-  { id: '', name: 'Cultivating Gratitude', count: '12', status: 'Active', date: 'Jan 5, 2025' },
-];
-
 function AddTagCard() {
   return (
     <Link
@@ -43,7 +36,7 @@ function AddTagCard() {
 }
 
 export default function SermonAdminTagsPage() {
-  const [tags, setTags] = useState<Tag[]>(USE_LIVE_API ? [] : TAGS);
+  const [tags, setTags] = useState<Tag[]>([]);
 
   const deleteTag = (id: string) => {
     if (!USE_LIVE_API || !id) return;
@@ -72,7 +65,7 @@ export default function SermonAdminTagsPage() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="grid grid-cols-2 gap-4">
-          <StatCard title="Total tags" value={String(USE_LIVE_API ? tags.length : (tags.length || 20))} variant="blue" />
+          <StatCard title="Total tags" value={String(tags.length)} variant="blue" />
           <AddTagCard />
         </div>
         <QuickAccess />

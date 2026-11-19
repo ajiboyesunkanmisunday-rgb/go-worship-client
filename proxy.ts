@@ -21,7 +21,6 @@ const PORTALS = [
   { prefix: '/group-leader',   login: '/group-leader/login',   home: '/group-leader/dashboard' },
   { prefix: '/ministry-admin', login: '/ministry-admin/login', home: '/ministry-admin/dashboard' },
   { prefix: '/dashboard',      login: '/auth/login',           home: '/dashboard' },
-  { prefix: '/first-login',    login: '/auth/login',           home: '/dashboard' },
 ];
 
 /** Public auth pages (unauthenticated required). */

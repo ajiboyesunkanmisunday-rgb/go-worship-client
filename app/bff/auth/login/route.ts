@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     })
   );
 
-  const { username, email, password, captchaToken, tenantId } = incoming ?? {};
+  const { username, email, password, captchaToken, tenantId, rememberMe } = incoming ?? {};
   const identifier = username ?? email;
 
   if (!identifier || !password) {
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     {
       method: 'POST',
       headers,
-      body: JSON.stringify({ username: identifier, password, timestamp: captchaTs, nonce: hex16() }),
+      body: JSON.stringify({ username: identifier, password, rememberMe: !!rememberMe, timestamp: captchaTs, nonce: hex16() }),
     },
     upstreamBase
   );
@@ -176,6 +176,6 @@ export async function POST(req: NextRequest) {
     authLevel: data?.authLevel ?? null,
     mfa: data?.mfa ?? null,
   });
-  setSessionCookies(res, accessToken, data?.refreshToken);
+  setSessionCookies(res, accessToken, data?.refreshToken, !!rememberMe);
   return res;
 }

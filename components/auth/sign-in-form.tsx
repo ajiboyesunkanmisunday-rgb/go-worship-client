@@ -168,6 +168,7 @@ function SignInFormInner({
         if (res.allowedMethods?.length) qs.set('methods', res.allowedMethods.join(','));
         if (res.primaryFactor) qs.set('primary', res.primaryFactor);
         if (nextPath) qs.set('next', nextPath);
+        if (rememberMe) qs.set('remember', '1');
         router.push(`${mfaBasePath}/verify-otp?${qs.toString()}`);
         return;
       }
@@ -241,6 +242,7 @@ function SignInFormInner({
         const methods = (res.allowedMethods ?? []).filter((m) => m !== 'OTP_SMS');
         if (methods.length) qs.set('methods', methods.join(','));
         if (nextPath) qs.set('next', nextPath);
+        if (rememberMe) qs.set('remember', '1');
         router.push(`${mfaBasePath}/verify-otp?${qs.toString()}`);
         return;
       }

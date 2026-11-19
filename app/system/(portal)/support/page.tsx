@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { USE_LIVE_API } from '@/lib/api/config';
 import {
   AlignLeft,
   Bold,
@@ -33,13 +32,6 @@ type Ticket = {
   badges: { label: string; tone: 'open' | 'priority' }[];
 };
 
-const TICKETS: Ticket[] = [
-  { id: 't1', name: 'Grace of God Mission', preview: 'Help needed for payment failure', badges: [{ label: 'Open', tone: 'open' }, { label: 'High priority', tone: 'priority' }] },
-  { id: 't2', name: 'Christ the King', preview: 'I need help to process the payment', badges: [{ label: 'Open', tone: 'open' }, { label: 'High priority', tone: 'priority' }] },
-  { id: 't3', name: 'Believers World', preview: 'Can you review the latest marketing…', badges: [{ label: 'Open', tone: 'open' }, { label: 'High priority', tone: 'priority' }] },
-  { id: 't4', name: 'Power Solutions Inter', preview: "Let's schedule a team meeting…", badges: [{ label: 'Open', tone: 'open' }, { label: 'High priority', tone: 'priority' }] },
-  { id: 't5', name: 'Liam Johnson', preview: 'Please send me the updated project…', badges: [{ label: 'Open', tone: 'open' }, { label: 'High priority', tone: 'priority' }] },
-];
 
 const TONE = {
   open: 'bg-[#e9f0ff] text-brand-blue',
@@ -47,34 +39,25 @@ const TONE = {
 };
 
 export default function SystemSupportPage() {
-  const [tickets, setTickets] = useState<Ticket[]>(USE_LIVE_API ? [] : TICKETS);
-  const [active, setActive] = useState(USE_LIVE_API ? '' : 't1');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [active, setActive] = useState('');
   const current = tickets.find((t) => t.id === active) ?? tickets[0];
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
 
-  const [ticketTitle, setTicketTitle] = useState(USE_LIVE_API ? '' : 'Help needed for payment failure');
-  const [ticketBody, setTicketBody] = useState(USE_LIVE_API ? '' : 'I need help to process the payment after the checkout. I need to send out this campaign within today. Can you please help ASAP?');
-  const [ticketDate, setTicketDate] = useState(USE_LIVE_API ? '' : '23rd December 4:15pm');
-  const [ticketFiles, setTicketFiles] = useState<string[]>(USE_LIVE_API ? [] : ['Doc.pdf', 'Doc.pdf']);
-  const [visitorEmail, setVisitorEmail] = useState(USE_LIVE_API ? '' : 'dean.laptop@gmail.com');
-  const [visitorPhone, setVisitorPhone] = useState(USE_LIVE_API ? '' : '+234 812 345 6789');
-  const [visitorLocation, setVisitorLocation] = useState(USE_LIVE_API ? '' : 'Nigeria (View on map)');
-  const [visitorLocalTime, setVisitorLocalTime] = useState(USE_LIVE_API ? '' : '04:30 am / 2:30 pm');
-  const [visitorLanguage, setVisitorLanguage] = useState(USE_LIVE_API ? '' : 'English');
-  const [visitorIp, setVisitorIp] = useState(USE_LIVE_API ? '' : '107.116.97.201');
-  const [visitorOs, setVisitorOs] = useState(USE_LIVE_API ? '' : 'Windows 10');
-  const [visitorBrowser, setVisitorBrowser] = useState(USE_LIVE_API ? '' : 'Mozilla Firefox');
+  const [ticketTitle, setTicketTitle] = useState('');
+  const [ticketBody, setTicketBody] = useState('');
+  const [ticketDate, setTicketDate] = useState('');
+  const [ticketFiles, setTicketFiles] = useState<string[]>([]);
+  const [visitorEmail, setVisitorEmail] = useState('');
+  const [visitorPhone, setVisitorPhone] = useState('');
+  const [visitorLocation, setVisitorLocation] = useState('');
+  const [visitorLocalTime, setVisitorLocalTime] = useState('');
+  const [visitorLanguage, setVisitorLanguage] = useState('');
+  const [visitorIp, setVisitorIp] = useState('');
+  const [visitorOs, setVisitorOs] = useState('');
+  const [visitorBrowser, setVisitorBrowser] = useState('');
 
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    // /system/support/tickets not in backend API — disabled.
-  }, [active]);
-
-  useEffect(() => {
-    if (!USE_LIVE_API) return;
-    // /system/support/tickets not in backend API — disabled.
-  }, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -190,10 +173,7 @@ export default function SystemSupportPage() {
                 size="lg"
                 className="h-[40px] px-6"
                 disabled={!reply.trim() || sending}
-                onClick={async () => {
-                  if (USE_LIVE_API) {
-                    // /system/support/tickets not in backend API — disabled.
-                  }
+                onClick={() => {
                   setReply('');
                 }}
               >

@@ -10,20 +10,8 @@ import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
 
-const MOCK: UserProfile = {
-  id: '1',
-  firstName: 'Natashia',
-  lastName: 'Khalerira',
-  email: 'Khalerira002@gmail.com',
-  phoneNumber: '(+62) 821 554 - 5432',
-  church: 'Celebration Church Int.',
-  gender: 'Female',
-  location: 'Ontario, Canada',
-  role: 'Group Leader',
-};
-
 export default function GroupLeaderProfilePage() {
-  const [user, setUser] = useState<UserProfile>(USE_LIVE_API ? { id: '', firstName: '', lastName: '', email: '', phoneNumber: '', church: '', gender: '', location: '', role: '' } : MOCK);
+  const [user, setUser] = useState<UserProfile>({ id: '', firstName: '', lastName: '', email: '', phoneNumber: '', church: '', gender: '', location: '', role: '' });
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

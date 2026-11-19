@@ -71,9 +71,11 @@ export function EditTenantForm({ id }: { id: string }) {
           ...DEFAULT_TENANT,
           name: t.name || DEFAULT_TENANT.name,
           tenantUrl: t.domain || DEFAULT_TENANT.tenantUrl,
+          email: t.email || '',
+          phone: t.phone || '',
           created: t.createdAt || DEFAULT_TENANT.created,
           plan: t.plan || DEFAULT_TENANT.plan,
-          memberCount: String(t.members || DEFAULT_TENANT.memberCount),
+          memberCount: t.members != null ? String(t.members) : '',
         };
         setTenantForm(base);
         setFormKey((k) => k + 1);

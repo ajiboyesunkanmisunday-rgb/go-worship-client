@@ -8,16 +8,9 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 type UploadRow = { id: string; name: string; type: string; size: string; used: string; date: string };
 
-const UPLOADS: UploadRow[] = [
-  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { id: '', name: 'Walking in Faith', type: 'MP4 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-  { id: '', name: 'Walking in Faith', type: 'MP3 File', size: '20mb', used: 'Faith and Doubt series', date: 'Jan 2, 2025' },
-];
-
 /** Church Admin → Uploaded Media (Figma 530:26345). */
 export default function MinistryUploadedMediaPage() {
-  const [uploads, setUploads] = useState<UploadRow[]>(USE_LIVE_API ? [] : UPLOADS);
+  const [uploads, setUploads] = useState<UploadRow[]>([]);
 
   const deleteUpload = (id: string) => {
     if (!USE_LIVE_API || !id) return;

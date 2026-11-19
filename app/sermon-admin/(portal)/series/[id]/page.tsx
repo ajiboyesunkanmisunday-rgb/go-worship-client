@@ -10,14 +10,6 @@ import { USE_LIVE_API } from '@/lib/api/config';
 
 const back = '/sermon-admin/series';
 
-const MOCK = {
-  title: 'Faith in Action',
-  description: 'Weekly faith teaching series exploring how faith manifests in daily life.',
-  sermonCount: '12',
-  status: 'Published',
-  createdAt: 'Jan 10, 2025',
-};
-
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-2">
@@ -31,7 +23,7 @@ function Meta({ label, value }: { label: string; value: string }) {
 export default function SermonAdminSeriesDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [series, setSeries] = useState(USE_LIVE_API ? { title: '', description: '', sermonCount: '', status: '', createdAt: '' } : MOCK);
+  const [series, setSeries] = useState({ title: '', description: '', sermonCount: '', status: '', createdAt: '' });
 
   useEffect(() => {
     if (!USE_LIVE_API || !id) return;
@@ -40,12 +32,12 @@ export default function SermonAdminSeriesDetailPage() {
         const rawDate = String(d.createdAt ?? d.publishedAt ?? '');
         const createdAt = rawDate
           ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          : MOCK.createdAt;
+          : '';
         const rawStatus = String(d.status ?? 'Published');
         setSeries({
-          title: String(d.title ?? MOCK.title),
-          description: String(d.description ?? MOCK.description),
-          sermonCount: MOCK.sermonCount,
+          title: String(d.title ?? ''),
+          description: String(d.description ?? ''),
+          sermonCount: '',
           status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase(),
           createdAt,
         });

@@ -59,12 +59,14 @@ function LoginMfaPage({
   allowedMethods,
   primaryFactor,
   nextPath,
+  rememberMe,
   shellProps,
 }: {
   mfaSessionId: string;
   allowedMethods: string[];
   primaryFactor: string | null;
   nextPath?: string | null;
+  rememberMe?: boolean;
   shellProps?: ShellProps;
 }) {
   const router = useRouter();
@@ -137,6 +139,7 @@ function LoginMfaPage({
         method: selectedMethod,
         code,
         tokenId,
+        rememberMe,
       });
       router.replace(
         nextPath ?? (res.roles?.length ? portalForRoles(res.roles) : '/dashboard')
@@ -255,6 +258,7 @@ function VerifyOtpPageInner({ shellProps }: { shellProps?: ShellProps }) {
   const primaryFactor = params.get('primary') ?? null;
   const nextPath = params.get('next');
   const email = params.get('email');
+  const rememberMe = params.get('remember') === '1';
 
   if (mfaSessionId) {
     // OTP_SMS is not yet available — strip it to keep only TOTP and OTP_EMAIL.
@@ -267,6 +271,7 @@ function VerifyOtpPageInner({ shellProps }: { shellProps?: ShellProps }) {
         allowedMethods={allowedMethods}
         primaryFactor={primaryFactor || null}
         nextPath={nextPath}
+        rememberMe={rememberMe}
         shellProps={shellProps}
       />
     );

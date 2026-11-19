@@ -111,6 +111,7 @@ export type MfaVerifyRequest = {
   code: string;
   /** OTP_EMAIL/SMS only — from the begin response. */
   tokenId?: string | null;
+  rememberMe?: boolean;
 };
 
 export type MfaVerifyResponse = {

@@ -12,18 +12,11 @@ import { DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 
-const MOCK = {
-  totalGiving: '$6500',
-  offlineGiving: '$830',
-  recurringGivers: '130',
-  failedTransactions: '20',
-};
-
 export default function MinistryFinancePage() {
-  const [totalGiving, setTotalGiving] = useState(USE_LIVE_API ? '$0' : MOCK.totalGiving);
-  const [offlineGiving, setOfflineGiving] = useState(USE_LIVE_API ? '$0' : MOCK.offlineGiving);
-  const [recurringGivers, setRecurringGivers] = useState(USE_LIVE_API ? '0' : MOCK.recurringGivers);
-  const [failedTransactions, setFailedTransactions] = useState(USE_LIVE_API ? '0' : MOCK.failedTransactions);
+  const [totalGiving, setTotalGiving] = useState('$0');
+  const [offlineGiving, setOfflineGiving] = useState('$0');
+  const [recurringGivers, setRecurringGivers] = useState('0');
+  const [failedTransactions, setFailedTransactions] = useState('0');
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
