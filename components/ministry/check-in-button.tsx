@@ -8,14 +8,6 @@ import { useMemo, useState, useEffect } from 'react';
 import { getTenantMembers } from '@/lib/api/tenant';
 import { USE_LIVE_API } from '@/lib/api/config';
 
-const DEFAULT_ATTENDEES = [
-  'John Christain',
-  'Mary Johnson',
-  'Isaiah Christian',
-  'Michael Thompson',
-  'Grace Adeyemi',
-  'Daniel Okoro',
-];
 
 /**
  * Per-event "Check-in" action + attendee dialog.
@@ -35,7 +27,7 @@ export function CheckInButton({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [checked, setChecked] = useState<string[]>([]);
-  const [attendees, setAttendees] = useState<string[]>(USE_LIVE_API ? [] : DEFAULT_ATTENDEES);
+  const [attendees, setAttendees] = useState<string[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

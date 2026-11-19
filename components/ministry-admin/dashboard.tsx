@@ -21,48 +21,10 @@ function HelloCard({ orgName, userName }: { orgName: string; userName: string })
   );
 }
 
-const RECENT_EVENTS = [
-  {
-    name: 'Midweek Recharge',
-    date: 'Feb 21, 2025 • 6PM',
-    location: 'Main Hall',
-    registrations: '125',
-    status: 'Upcoming',
-  },
-  {
-    name: 'Weekend Workshop',
-    date: 'Feb 25, 2025 • 10AM',
-    location: 'Conference Room A',
-    registrations: '75',
-    status: 'Completed',
-  },
-  {
-    name: 'Team Building Retreat',
-    date: 'Mar 10, 2025 • 8AM',
-    location: 'Offsite Location',
-    registrations: '50',
-    status: 'Reoccurring',
-  },
-  {
-    name: 'Monthly Check-in',
-    date: 'Mar 15, 2025 • 3PM',
-    location: 'Zoom',
-    registrations: 'Unlimited',
-    status: 'Cancelled',
-  },
-  {
-    name: 'Spring Networking Event',
-    date: 'Apr 5, 2025 • 5PM',
-    location: 'Rooftop Garden',
-    registrations: '150',
-    status: 'Upcoming',
-  },
-];
-
 export function GroupLeaderDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
-  const [recentEvents, setRecentEvents] = useState<EventRow[]>(USE_LIVE_API ? [] : RECENT_EVENTS);
-  const [orgName, setOrgName] = useState(USE_LIVE_API ? '' : 'Celebration Church International');
+  const [recentEvents, setRecentEvents] = useState<EventRow[]>([]);
+  const [orgName, setOrgName] = useState('');
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
@@ -97,10 +59,10 @@ export function GroupLeaderDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Events" value={stats ? String(stats.totalEvents) : (USE_LIVE_API ? '0' : '24')} variant="purple" />
-        <StatCard title="Total Registrations" value={stats ? String(stats.totalRegistrations ?? 0) : (USE_LIVE_API ? '0' : '43')} />
-        <StatCard title="Upcoming Events" value={stats ? String(stats.upcomingEvents) : (USE_LIVE_API ? '0' : '15')} />
-        <StatCard title="Total Checkin" value={stats ? String(stats.checkedIn ?? 0) : (USE_LIVE_API ? '0' : '10')} />
+        <StatCard title="Total Events" value={stats ? String(stats.totalEvents) : '0'} variant="purple" />
+        <StatCard title="Total Registrations" value={stats ? String(stats.totalRegistrations ?? 0) : '0'} />
+        <StatCard title="Upcoming Events" value={stats ? String(stats.upcomingEvents) : '0'} />
+        <StatCard title="Total Checkin" value={stats ? String(stats.checkedIn ?? 0) : '0'} />
       </div>
 
       <EventsTable title="Recent Events" rows={recentEvents} />

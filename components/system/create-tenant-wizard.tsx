@@ -44,11 +44,6 @@ type Billing = 'Monthly' | 'Quarterly' | 'Annually';
 
 type Plan = { key: string; tier: string; price: string };
 
-const DEFAULT_PLANS: Plan[] = [
-  { key: 'starter', tier: 'Starter', price: '$0' },
-  { key: 'professional', tier: 'Professional', price: '$70,000' },
-  { key: 'enterprise', tier: 'Enterprise', price: '$250,000' },
-];
 
 const FEATURES = [
   'Omni-channel inbox (WhatsApp, IG DM, Messenger)',
@@ -132,7 +127,7 @@ export function CreateTenantWizard() {
   const router = useRouter();
   const back = '/system/tenants';
 
-  const [plans, setPlans] = useState<Plan[]>(USE_LIVE_API ? [] : DEFAULT_PLANS);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [step, setStep] = useState(1);
   const [basic, setBasic] = useState<Basic>({
     churchName: '',

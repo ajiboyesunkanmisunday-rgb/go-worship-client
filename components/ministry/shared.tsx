@@ -119,17 +119,8 @@ export type Transaction = {
   paymentId?: string;
 };
 
-const DEFAULT_TXNS: Transaction[] = [
-  { status: 'Pending', type: 'General Offering' },
-  { status: 'Success', type: 'Tithe Offering' },
-  { status: 'Failed', type: 'Offering' },
-  { status: 'Success', type: 'Thanksgiving' },
-  { status: 'Pending', type: 'General Offering' },
-  { status: 'Failed', type: 'General Offering' },
-];
-
 export function TransactionsTable({
-  rows = USE_LIVE_API ? [] : DEFAULT_TXNS,
+  rows = [],
 }: {
   rows?: Transaction[];
 }) {

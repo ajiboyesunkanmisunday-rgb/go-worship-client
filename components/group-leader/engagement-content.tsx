@@ -5,7 +5,6 @@ import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { StatCard } from '@/components/ministry/shared';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { DataPanel, type TableRow } from './shared';
-import { GROUP_ROWS } from './groups-data';
 import { getTenantGroups, getTenantStats, type TenantGroup, type TenantStats } from '@/lib/api/tenant';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { USE_LIVE_API } from '@/lib/api/config';
@@ -83,8 +82,8 @@ function EngagementChart() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <StatCard title="Active Members" value={String(stats?.activeMembers ?? (USE_LIVE_API ? 0 : 50))} variant="blue" />
-          <StatCard title="Inactive Members" value={String(stats && stats.totalMembers > 0 ? stats.totalMembers - stats.activeMembers : (USE_LIVE_API ? 0 : 15))} variant="white" />
+          <StatCard title="Active Members" value={String(stats?.activeMembers ?? 0)} variant="blue" />
+          <StatCard title="Inactive Members" value={String(stats && stats.totalMembers > 0 ? stats.totalMembers - stats.activeMembers : 0)} variant="white" />
         </div>
       </div>
     </div>
@@ -100,7 +99,7 @@ function toRow(g: TenantGroup): TableRow {
 }
 
 export function EngagementContent() {
-  const [rows, setRows] = useState<TableRow[]>(USE_LIVE_API ? [] : GROUP_ROWS);
+  const [rows, setRows] = useState<TableRow[]>([]);
 
   useEffect(() => {
     if (!USE_LIVE_API) return;

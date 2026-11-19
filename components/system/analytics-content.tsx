@@ -26,17 +26,6 @@ import { USE_LIVE_API } from '@/lib/api/config';
 const TABS = ['Finances', 'Tenants', 'Users', 'Subscription'] as const;
 type Tab = (typeof TABS)[number];
 
-const trend = [
-  { month: 'Jan', value: 120 },
-  { month: 'Feb', value: 180 },
-  { month: 'Mar', value: 150 },
-  { month: 'Apr', value: 240 },
-  { month: 'May', value: 200 },
-  { month: 'Jun', value: 320 },
-  { month: 'Jul', value: 280 },
-  { month: 'Aug', value: 360 },
-];
-
 const chartConfig = {
   value: { label: 'Value', color: '#5a4fe0' },
 } satisfies ChartConfig;
@@ -190,7 +179,7 @@ export function SystemAnalyticsContent() {
 
   const chartData = tab === 'Finances' && financeTrend.length > 0
     ? financeTrend
-    : (USE_LIVE_API ? [] : trend);
+    : [];
 
   const table = (() => {
     if (tab === 'Tenants' && liveTenants) {
