@@ -27,7 +27,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { provisionTenantMember } from '@/lib/api/tenant';
 import { ApiError } from '@/lib/api/client';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -60,12 +59,6 @@ export function AddMember() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!USE_LIVE_API) {
-      toast.success('Member added — invite email sent');
-      router.push(back);
-      return;
-    }
-
     setEnrollError(null);
     setSubmitting(true);
     try {

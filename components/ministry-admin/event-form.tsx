@@ -12,7 +12,6 @@ import { ArrowLeft, Pencil, UploadCloud } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { createTenantEvent } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 function Field({
@@ -48,7 +47,6 @@ export function EventForm({ backPath }: { backPath?: string } = {}) {
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!USE_LIVE_API) { router.push(back); return; }
     const fd = new FormData(e.currentTarget);
     const dtRaw = String(fd.get('datetime') ?? '');
     const [eventDate, eventTime] = dtRaw.includes('T') ? dtRaw.split('T') : [dtRaw, ''];

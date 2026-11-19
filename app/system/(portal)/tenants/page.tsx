@@ -7,7 +7,6 @@ import { ConfirmModal } from '@/components/shared/confirm-modal';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getSystemTenants, suspendSystemTenant, type SystemTenant } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 const STATUS: Record<string, string> = {
@@ -39,13 +38,11 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
         onOpenChange={setConfirm}
         onConfirm={async () => {
           setConfirm(false);
-          if (USE_LIVE_API) {
-            try {
-              await suspendSystemTenant(id);
-            } catch (e) {
-              toast.error(e instanceof Error ? e.message : 'Failed to suspend tenant');
-              return;
-            }
+          try {
+            await suspendSystemTenant(id);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Failed to suspend tenant');
+            return;
           }
           onSuspend();
         }}
@@ -57,10 +54,9 @@ function TenantActions({ id, onSuspend }: { id: string; onSuspend: () => void })
 export default function SystemTenantsPage() {
   const [tab, setTab] = useState(0);
   const [tenants, setTenants] = useState<SystemTenant[]>([]);
-  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSystemTenants()
       .then((data) => {
         if (data.length > 0) setTenants(data);

@@ -1,12 +1,9 @@
 'use client';
 
 /**
- * Member giving form — authenticated customer checkout.
+ * Member giving form — authenticated customer checkout via LeadRemit gateway.
  *
- * Uses the LeadRemit gateway when USE_LIVE_API=true.
- * Falls back to the mock /dashboard/givings/give/pay walkthrough in demo mode.
- *
- * Live flow (backend-confirmed):
+ * Live flow:
  *   POST /customer/payments/donations   → CheckoutSessionResponse { requiresRedirect, redirectUrl }
  *   window.location.href = redirectUrl  → hosted payment page navigates away
  */
@@ -31,7 +28,6 @@ import {
 import { Input } from '../ui/input';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 import { Button } from '../ui/button';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { getCheckoutConfig, chooseIntegration, type CheckoutConfig } from '@/lib/api/checkout';
 import { createCustomerDonation } from '@/lib/api/customer';
 
@@ -69,7 +65,6 @@ export function DonateForm() {
   });
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getCheckoutConfig()
       .then((cfg) => {
         setConfig(cfg);
@@ -84,11 +79,6 @@ export function DonateForm() {
   }, []);
 
   const onSubmit: SubmitHandler<Schema> = async (data) => {
-    if (!USE_LIVE_API) {
-      router.push('/dashboard/givings/give/pay');
-      return;
-    }
-
     if (configError || !config) {
       toast.error(configError ?? 'Giving is not available right now.');
       return;
@@ -324,7 +314,7 @@ export function DonateForm() {
             <Button
               size="lg"
               type="submit"
-              disabled={submitting || (USE_LIVE_API && !!configError)}
+              disabled={submitting || !!configError}
               className="mt-2 h-[56px] w-full"
             >
               {submitting ? 'Processing…' : 'Give Generously'}

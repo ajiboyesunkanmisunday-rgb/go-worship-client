@@ -19,7 +19,6 @@ import { useState } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { FormAlert } from '@/components/ui/form-alert';
-import { USE_LIVE_API } from '@/lib/api/config';
 import {
   registerCustomer,
   toProvisionRequest,
@@ -68,11 +67,6 @@ export function PasswordForm({ onSuccess }: Props) {
     setFormError(null);
 
     // Mock mode: no backend, keep the click-through demo behaviour.
-    if (!USE_LIVE_API) {
-      onSuccess?.();
-      return;
-    }
-
     if (!details.email) {
       setFormError('Your account details are missing. Please start again.');
       return;

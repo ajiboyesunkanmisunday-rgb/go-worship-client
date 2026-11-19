@@ -6,7 +6,6 @@ import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import { getTenantEvents, type TenantEvent } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -32,7 +31,6 @@ export default function MinistryEventsPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantEvents().then((data) => setEvents(data.map(toRow))).catch(() => { toast.error('Could not load events.'); });
   }, []);
 

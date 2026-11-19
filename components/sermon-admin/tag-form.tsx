@@ -10,22 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState, useEffect } from 'react';
-import { USE_LIVE_API } from '@/lib/api/config';
+import { FormEvent, useState } from 'react';
 
 type TagData = { name: string; description: string; status: string };
-
-const DEFAULT_TAG: TagData = {
-  name: 'Walking in Faith',
-  description: 'Sermons about walking daily in faith and trust.',
-  status: 'Inactive',
-};
 
 /** Add / Edit tag slide-over (Figma 151:12062 add, 151:12406 edit). */
 export function TagForm({
   mode,
   backTo,
-  id,
 }: {
   mode: 'add' | 'edit';
   backTo?: string;
@@ -34,22 +26,13 @@ export function TagForm({
   const router = useRouter();
   const isEdit = mode === 'edit';
   const back = backTo ?? '/sermon-admin/tags';
-  const [tag, setTag] = useState<TagData>(USE_LIVE_API && !isEdit ? { name: '', description: '', status: 'Active' } : DEFAULT_TAG);
-  const [formKey, setFormKey] = useState(0);
+  const [tag] = useState<TagData>({ name: '', description: '', status: 'Active' });
+  const [formKey] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!USE_LIVE_API || !isEdit || !id) return;
-    // /tenant/admin/sermon/tags not in backend API — listed in KNOWN_LIMITATIONS.
-  }, [isEdit, id]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (USE_LIVE_API) {
-      setSubmitError('Tag management is not available — this endpoint does not exist in the current backend version.');
-      return;
-    }
-    router.push(back);
+    setSubmitError('Tag management is not available — this endpoint does not exist in the current backend version.');
   };
 
   return (

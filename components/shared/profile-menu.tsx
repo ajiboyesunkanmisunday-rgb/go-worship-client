@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { getProfile, logout as apiLogout } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * Avatar menu in the member top bar — surfaces the Profile page actions
@@ -32,7 +31,6 @@ export function ProfileMenu({
   const [displayEmail, setDisplayEmail] = useState(emailProp ?? '');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getProfile().then((p) => {
       if (!p) return;
       const full = [p.firstName, p.lastName].filter(Boolean).join(' ');
@@ -153,9 +151,7 @@ export function ProfileMenu({
         onOpenChange={setLogout}
         onConfirm={async () => {
           setLogout(false);
-          if (USE_LIVE_API) {
-            try { await apiLogout(); } catch { /* fall through */ }
-          }
+          try { await apiLogout(); } catch { /* fall through */ }
           router.push('/auth/login');
         }}
       />

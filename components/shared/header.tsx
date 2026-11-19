@@ -10,14 +10,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 function CompanyInfo() {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {
       if (b.organizationName) setName(b.organizationName);
     }).catch(() => {});

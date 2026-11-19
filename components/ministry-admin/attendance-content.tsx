@@ -6,7 +6,6 @@ import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { EventsTable, StatCard, type EventRow } from './shared';
 import { getTenantEvents, getTenantStats } from '@/lib/api/tenant';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const chartConfig = {
   value: { label: 'Attendance', color: '#243F84' },
@@ -20,7 +19,6 @@ export function AttendanceContent() {
   const [checkInsToday, setCheckInsToday] = useState(0);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantEvents().then((data) => {
       const mapped: EventRow[] = data.map((e) => ({
         name: e.name,

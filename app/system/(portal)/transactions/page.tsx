@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
 import { getSystemSubscriptions, type SystemSubscription } from '@/lib/api/system';
 
@@ -69,7 +68,6 @@ export default function SystemTransactionsPage() {
   const [totalTxnCount, setTotalTxnCount] = useState(0);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
 
     getUnifiedDashboard('LAST_30_DAYS', 'USD', undefined, 'system')
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })

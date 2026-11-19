@@ -17,7 +17,6 @@ import {
 } from '../ui/form';
 import { PasswordInput } from '../ui/password-input';
 import { changePassword } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 export function SecurityLogin() {
@@ -102,7 +101,6 @@ function SecurityInfoForm({ submitRef, onSuccess }: SecurityInfoFormProps) {
   });
 
   const submitHandler: SubmitHandler<FormSchema> = async (data) => {
-    if (!USE_LIVE_API) { onSuccess?.(); return; }
     try {
       await changePassword(data.currentPassword, data.password, data.confirmPassword);
       toast.success('Password updated successfully.');

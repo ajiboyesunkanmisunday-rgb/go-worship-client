@@ -8,7 +8,6 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getTenantSeriesById, updateTenantSeries } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { FormAlert } from '@/components/ui/form-alert';
 
 const back = '/sermon-admin/series';
@@ -23,7 +22,7 @@ export default function SermonAdminEditSeriesPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     getTenantSeriesById(id)
       .then((d) => {
         setSeries({
@@ -37,7 +36,7 @@ export default function SermonAdminEditSeriesPage() {
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (USE_LIVE_API && id) {
+    if (id) {
       const fd = new FormData(e.currentTarget);
       // SeriesRequest schema: title, description
       const payload = {

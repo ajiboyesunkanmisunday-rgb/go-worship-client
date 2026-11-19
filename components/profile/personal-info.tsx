@@ -17,7 +17,6 @@ import { UserProfile } from '@/types/user';
 import { ActionButton } from './action-button';
 import { ProfileInfoItem } from './profile-info-item';
 import { updateProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 type Props = {
@@ -159,18 +158,16 @@ function ProfileInfoForm({ user, submitRef, onSuccess }: ProfileInfoFormProps) {
   });
 
   const submitHandler: SubmitHandler<ProfileFormSchema> = async (data) => {
-    if (USE_LIVE_API) {
-      try {
-        await updateProfile({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          mobilePhone: data.phoneNumber,
-        });
-        toast.success('Profile updated');
-      } catch {
-        toast.error('Failed to update profile');
-        return;
-      }
+    try {
+      await updateProfile({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        mobilePhone: data.phoneNumber,
+      });
+      toast.success('Profile updated');
+    } catch {
+      toast.error('Failed to update profile');
+      return;
     }
     onSuccess?.({ firstName: data.firstName, lastName: data.lastName, phoneNumber: data.phoneNumber });
   };

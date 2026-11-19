@@ -4,7 +4,6 @@ import { StatCard } from '@/components/ministry/shared';
 import { QuickAccess } from '@/components/group-leader/dashboard';
 import { DataPanel, type TableRow } from '@/components/group-leader/shared';
 import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +11,6 @@ export default function GroupLeaderMembersPage() {
   const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => {});
   }, []);
 

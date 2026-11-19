@@ -6,7 +6,6 @@ import { SERIES_STATUSES } from '@/components/sermon-admin/dashboard';
 import { DataCard, QuickAccess, StatusText, ViewEditButton } from '@/components/sermon-admin/shared';
 import type { SmartRow } from '@/components/shared/smart-table';
 import { getTenantSeries, publishTenantSeries, unpublishTenantSeries } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Series = { id: string; name: string; desc: string; count: string; status: string; date: string };
 
@@ -14,7 +13,6 @@ export default function SermonAdminSeriesPage() {
   const [series, setSeries] = useState<Series[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantSeries()
       .then((arr) => {
         if (arr.length === 0) return;
@@ -45,7 +43,7 @@ export default function SermonAdminSeriesPage() {
 
   const togglePublish = (idx: number) => {
     const s = series[idx];
-    if (!USE_LIVE_API || !s.id) return;
+    if (!s.id) return;
     const fn = s.status === 'Published' ? unpublishTenantSeries : publishTenantSeries;
     fn(s.id)
       .then(() => {
@@ -74,7 +72,7 @@ export default function SermonAdminSeriesPage() {
               : `/sermon-admin/series/${s.id || i + 1}/edit`
           }
         />
-        {USE_LIVE_API && s.id && (s.status === 'Published' || s.status === 'Draft') && (
+        {s.id && (s.status === 'Published' || s.status === 'Draft') && (
           <button
             type="button"
             onClick={() => togglePublish(i)}

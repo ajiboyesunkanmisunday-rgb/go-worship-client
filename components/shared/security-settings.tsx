@@ -18,7 +18,6 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 import { changePassword, isStepUpChallenge } from '@/lib/api/auth';
 import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { ApiError } from '@/lib/api/client';
 import { StepUpMfaDialog } from '@/components/shared/step-up-mfa-dialog';
 import { MfaManager } from './mfa-manager';
@@ -46,11 +45,6 @@ export function SecuritySettings() {
   });
 
   const onSubmit: SubmitHandler<PwForm> = async (data) => {
-    if (!USE_LIVE_API) {
-      toast.success('Password changed successfully');
-      form.reset();
-      return;
-    }
     setPwBusy(true);
     try {
       const result = await changePassword(data.currentPassword, data.newPassword, data.confirmPassword);

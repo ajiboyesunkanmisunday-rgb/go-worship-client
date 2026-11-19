@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { getSelfEvents } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type AnalyticsCardProps = {
   title: string;
@@ -76,7 +75,6 @@ export function Analytics() {
   const [counts, setCounts] = useState({ upcoming: 0, registered: 0, past: 0 });
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSelfEvents()
       .then((data) => {
         const upcoming = data.filter((e) => {

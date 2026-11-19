@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { getCustomerPaymentById, type PaymentStatusResponse } from '@/lib/api/customer';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { getTenantBranding } from '@/lib/api/tenant';
 
 type Props = {
@@ -27,14 +26,12 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
   const [orgWeb, setOrgWeb] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getCustomerPaymentById(id).then(setPayment).catch(() => {});
   }, [id]);
 

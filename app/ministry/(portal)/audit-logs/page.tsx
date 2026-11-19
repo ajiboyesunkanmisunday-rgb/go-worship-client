@@ -6,7 +6,6 @@ import { Download, MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { getTenantAuditEventsRecent } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 type AuditTab = 'All activity' | 'Security events';
@@ -120,7 +119,6 @@ export default function MinistryAuditLogsPage() {
   const [selected, setSelected] = useState<LogRow | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     const SECURITY_KW = new Set(['login', 'logout', 'mfa', 'password', 'token', 'session', 'auth', 'lock', 'unlock']);
     getTenantAuditEventsRecent()
       .then((arr) => {
@@ -169,7 +167,7 @@ export default function MinistryAuditLogsPage() {
             Track all organisation activities and changes
           </p>
         </div>
-        {USE_LIVE_API && (
+        {(
           <a
             href="/bff/gw/tenant/audit/export/recent.csv"
             download="audit-logs.csv"

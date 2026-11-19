@@ -6,7 +6,6 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { getTenantSeriesById, publishTenantSeries, unpublishTenantSeries } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const back = '/sermon-admin/series';
 
@@ -26,7 +25,7 @@ export default function SermonAdminSeriesDetailPage() {
   const [series, setSeries] = useState({ title: '', description: '', sermonCount: '', status: '', createdAt: '' });
 
   useEffect(() => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     getTenantSeriesById(id)
       .then((d) => {
         const rawDate = String(d.createdAt ?? d.publishedAt ?? '');
@@ -46,7 +45,7 @@ export default function SermonAdminSeriesDetailPage() {
   }, [id]);
 
   const togglePublish = () => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     const fn = series.status.toUpperCase() === 'PUBLISHED' ? unpublishTenantSeries : publishTenantSeries;
     fn(id)
       .then(() => {

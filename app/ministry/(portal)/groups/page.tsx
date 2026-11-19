@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { CheckSquare, Plus } from 'lucide-react';
 import { getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -32,7 +31,6 @@ export default function MinistryGroupsPage() {
   const [groups, setGroups] = useState<GroupRow[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantGroups().then((data) => setGroups(data.map(toGroupRow))).catch(() => { toast.error('Could not load groups.'); });
   }, []);
 

@@ -6,7 +6,6 @@ import { ProfileImageSection } from '@/components/profile/profile-image';
 import { SecurityLogin } from '@/components/profile/security-login';
 import { UserProfile } from '@/types/user';
 import { getProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
 
@@ -14,7 +13,6 @@ export default function MinistryAdminProfilePage() {
   const [user, setUser] = useState<UserProfile>({ id: '', firstName: '', lastName: '', email: '', phoneNumber: '', church: '', gender: '', location: '', role: '' });
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getProfile().then((p) => {
       if (!p) return;
       setUser({

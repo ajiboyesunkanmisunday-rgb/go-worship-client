@@ -16,7 +16,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { provisionSystemUser, type SystemUserType } from '@/lib/api/system';
 import { ApiError } from '@/lib/api/client';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 // userType is constrained by the backend to "SYSTEM" | "SYSTEM_ADMIN" per services.ts inviteStaff.
 // Super Admin uses userType SYSTEM_ADMIN with the SUPER_SYSTEM_ADMIN roleCode.
@@ -57,11 +56,6 @@ export function UserForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!USE_LIVE_API) {
-      setResult('success');
-      return;
-    }
-
     setEnrollError(null);
     setSubmitting(true);
     const { userType, roleCodes } = ROLE_MAP[role] ?? ROLE_MAP.admin;

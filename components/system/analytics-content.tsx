@@ -10,7 +10,6 @@ import {
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { getSystemTenants, type SystemTenant } from '@/lib/api/system';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * System → Analytics (778:38441). Distinct from the Ministry AnalyticsContent
@@ -156,7 +155,6 @@ export function SystemAnalyticsContent() {
   const [liveSubs, setLiveSubs] = useState<LiveSub[] | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSystemTenants().then(setLiveTenants).catch(() => {});
     getUnifiedDashboard('LAST_30_DAYS', 'USD', undefined, 'system')
       .then((s) => {
@@ -243,7 +241,6 @@ export function SystemAnalyticsContent() {
         })),
       };
     }
-    if (!USE_LIVE_API) return tableFor(tab);
     const emptyHeaders = tab === 'Tenants' ? ['Tenant', 'Status', 'Plan', 'Users', 'Members', 'Giving Volume', 'Created', 'Action']
       : tab === 'Users' ? ['Name', 'Email', 'Role', 'Status', 'Joined', 'Action']
       : tab === 'Subscription' ? ['Tenant', 'Plan', 'Status', 'Amount', 'Renewal', 'Action']

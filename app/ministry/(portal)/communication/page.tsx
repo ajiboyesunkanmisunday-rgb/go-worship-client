@@ -7,7 +7,6 @@ import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Bell, Mail, Plus } from 'lucide-react';
 import { getTenantCampaigns } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number; channels?: string[] };
@@ -17,7 +16,6 @@ export default function MinistryCommunicationPage() {
   const [activeRecipients, setActiveRecipients] = useState('0');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantCampaigns()
       .then((arr) => {
         if (arr.length === 0) return;

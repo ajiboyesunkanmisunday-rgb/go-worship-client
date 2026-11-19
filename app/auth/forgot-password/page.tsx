@@ -24,7 +24,6 @@ import Link from 'next/link';
 import { ResetProgress } from '@/components/auth/reset-progress';
 import { useEffect, useState } from 'react';
 import { executeRecaptcha } from '@/lib/recaptcha';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { forgotPassword } from '@/lib/api/auth';
 import { FormAlert } from '@/components/ui/form-alert';
 
@@ -56,11 +55,6 @@ export default function ForgotPasswordPage() {
   }, [countdown]);
 
   const send = async (email: string) => {
-    if (!USE_LIVE_API) {
-      setSentTo(email);
-      setCountdown(RESEND_COOLDOWN);
-      return;
-    }
     const captchaToken = await executeRecaptcha('forgot_password');
     if (!captchaToken) throw new Error('Security check failed. Please try again.');
     await forgotPassword(email, captchaToken);

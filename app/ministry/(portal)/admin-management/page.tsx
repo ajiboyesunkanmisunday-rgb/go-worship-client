@@ -7,7 +7,6 @@ import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import { getTenantRoles } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 type Role = {
@@ -26,13 +25,12 @@ export default function MinistryAdminManagementPage() {
   const [roles, setRoles] = useState<Role[]>([]);
 
   const deleteRole = (apiId: string) => {
-    if (!USE_LIVE_API || !apiId) return;
+    if (!apiId) return;
     // DELETE /tenant/admin/roles/:id not in backend API — only GET endpoints exist for tenant roles.
     setRoles((prev) => prev.filter((r) => r.apiId !== apiId));
   };
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantRoles()
       .then((arr) => {
         if (arr.length === 0) return;

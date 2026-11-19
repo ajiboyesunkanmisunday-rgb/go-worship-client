@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getSelfGroups, getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import Link from 'next/link';
@@ -13,7 +12,6 @@ function DiscoverGroupsCard() {
   const [count, setCount] = useState<number>(0);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantGroups().then((g) => setCount(g.length)).catch(() => {});
   }, []);
 
@@ -117,7 +115,6 @@ export function Analytics() {
   const [groups, setGroups] = useState<TenantGroup[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSelfGroups().then(setGroups).catch(() => {});
   }, []);
 

@@ -4,7 +4,6 @@ import { AuthLayout } from '@/components/auth/layout';
 import { OtpForm } from '@/components/auth/otp-form';
 import { ResetProgress } from '@/components/auth/reset-progress';
 import { beginLoginMfa, forgotPassword, verifyLoginMfa } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { toast } from 'sonner';
 import { portalForRoles } from '@/lib/portal';
@@ -95,10 +94,6 @@ function LoginMfaPage({
     async (method: string) => {
       setBeginError(null);
       setPhase('waiting');
-      if (!USE_LIVE_API) {
-        setPhase('enter_code');
-        return;
-      }
       try {
         const res = await beginLoginMfa({ mfaSessionId, method });
         const tid = res.tokenId ?? (res.payloadJson?.tokenId ?? null);
@@ -129,10 +124,6 @@ function LoginMfaPage({
   };
 
   const handleVerify = async (code: string) => {
-    if (!USE_LIVE_API) {
-      router.replace(nextPath ?? '/dashboard');
-      return;
-    }
     try {
       const res = await verifyLoginMfa({
         mfaSessionId,
@@ -220,7 +211,6 @@ function ForgotPasswordOtpPage({ email }: { email?: string | null }) {
 
   const handleResend = email
     ? async () => {
-        if (!USE_LIVE_API) return;
         try {
           const captchaToken = await executeRecaptcha('forgot_password');
           if (captchaToken) await forgotPassword(email, captchaToken);

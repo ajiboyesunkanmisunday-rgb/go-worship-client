@@ -9,7 +9,6 @@ import { FormAlert } from '@/components/ui/form-alert';
  *   POST /bff/auth/guest/otp/start  { email, captchaToken }
  *   POST /bff/auth/guest/otp/verify { email, tokenId, code }
  *
- * USE_LIVE_API gate: in mock mode both steps succeed immediately.
  */
 
 import { useState } from 'react';
@@ -25,7 +24,6 @@ import { AuthLayout } from '@/components/auth/layout';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { startGuestOtp, verifyGuestOtp } from '@/lib/api/auth';
 import { executeRecaptcha } from '@/lib/recaptcha';
 
@@ -51,7 +49,6 @@ export function GuestLoginForm({
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!USE_LIVE_API) { setStep('otp'); return; }
     setBusy(true);
     try {
       const captchaToken = await executeRecaptcha('guest_otp_start');
@@ -67,7 +64,6 @@ export function GuestLoginForm({
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!USE_LIVE_API) { router.push(redirectTo); return; }
     if (code.length < 6) { setError('Please enter the 6-digit code'); return; }
     setBusy(true);
     try {

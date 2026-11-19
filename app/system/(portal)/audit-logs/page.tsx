@@ -6,7 +6,6 @@ import { MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { getSystemAuditEventsRecent } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 /**
@@ -145,7 +144,6 @@ export default function SystemAuditLogsPage() {
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
   const loadLogs = (tab: AuditTab) => {
-    if (!USE_LIVE_API) return;
     // Only /system/audit/events/recent confirmed in spec — other tab-specific paths
     // are absent; load the full list once and filter client-side via matchesTab.
     if (tab !== 'All activity') return;

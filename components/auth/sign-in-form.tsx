@@ -27,7 +27,6 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import { FormAlert } from '@/components/ui/form-alert';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { portalForRoles, isRoleAllowedForPortal, type PortalKind } from '@/lib/portal';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { login, logout, googleLogin } from '@/lib/api/auth';
@@ -135,10 +134,6 @@ function SignInFormInner({
 
   const handleGoogleSignIn = async () => {
     setFormError(null);
-    if (!USE_LIVE_API) {
-      router.push(redirectTo);
-      return;
-    }
     setGoogleBusy(true);
     try {
       const idToken = await signInWithGoogle();
@@ -192,11 +187,6 @@ function SignInFormInner({
     setFormError(null);
 
     // Mock mode: no backend, keep the click-through demo behaviour.
-    if (!USE_LIVE_API) {
-      router.push(redirectTo);
-      return;
-    }
-
     setSubmitting(true);
     try {
       // reCAPTCHA v3: mint a fresh token per submit (no checkbox).

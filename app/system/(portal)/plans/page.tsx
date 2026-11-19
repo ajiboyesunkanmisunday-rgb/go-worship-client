@@ -6,7 +6,6 @@ import { Check, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getSystemBillingPlans } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 type Plan = {
@@ -87,7 +86,6 @@ export default function SystemPlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     // /system/billing/stats not in backend API — disabled.
 
     getSystemBillingPlans()

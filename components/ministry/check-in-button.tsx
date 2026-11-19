@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Check, Search, X } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { getTenantMembers } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 
 /**
@@ -30,7 +29,6 @@ export function CheckInButton({
   const [attendees, setAttendees] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMembers().then((members) => {
       const names = members.map((m) => m.name).filter(Boolean);
       if (names.length > 0) setAttendees(names);

@@ -6,7 +6,6 @@ import { SecurityLogin } from '@/components/profile/security-login';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types/user';
 import { getProfile, listSessions, revokeSession, type SessionInfo } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
 
@@ -28,7 +27,6 @@ export default function ProfilePage() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getProfile().then((p) => {
       if (!p) return;
       setUser({

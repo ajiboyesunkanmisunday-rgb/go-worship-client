@@ -7,7 +7,6 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api/client';
 import { getSystemBranding, updateSystemBranding, type SystemBrandingUpdatePayload } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { changePassword as apiChangePassword, isStepUpChallenge } from '@/lib/api/auth';
 import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
 import { StepUpMfaDialog } from '@/components/shared/step-up-mfa-dialog';
@@ -245,9 +244,7 @@ function SystemHealthPanel() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    if (USE_LIVE_API) {
-      // /system/health and /actuator/health not in backend API — disabled.
-    }
+    // /system/health and /actuator/health not in backend API — disabled.
     setCheckedAt(new Date());
     setLoading(false);
   }, []);
@@ -323,7 +320,6 @@ export function SystemSettings() {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     const flattenInto = (obj: Record<string, unknown>, out: ConfigMap, prefix = '') => {
       for (const [k, v] of Object.entries(obj)) {
         const key = prefix ? `${prefix}.${k}` : k;
@@ -348,7 +344,7 @@ export function SystemSettings() {
     const fd = new FormData(formRef.current);
     const payload: ConfigMap = {};
     fd.forEach((v, k) => { payload[k] = String(v); });
-    if (USE_LIVE_API && tab === 'Branding') {
+    if (tab === 'Branding') {
       try {
         await updateSystemBranding(payload as SystemBrandingUpdatePayload);
         toast.success('Branding settings saved');

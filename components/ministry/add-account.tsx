@@ -30,7 +30,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { provisionTenantUser, type TenantUserType } from '@/lib/api/tenant';
 import { ApiError } from '@/lib/api/client';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 
 /** Maps the form role selector → backend userType + roleCodes. */
@@ -130,12 +129,6 @@ export function AddAccount() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!USE_LIVE_API) {
-      toast.success('Account created');
-      router.push(back);
-      return;
-    }
-
     setEnrollError(null);
     setSubmitting(true);
     const { userType, roleCodes } = ROLE_MAP[role] ?? ROLE_MAP.sub_admin;

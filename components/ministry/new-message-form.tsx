@@ -13,7 +13,6 @@ import { ArrowLeft, Bell, Mail, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { sendCampaign, createTenantCampaign, type CreateCampaignPayload } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 function Field({
@@ -59,27 +58,22 @@ export function NewMessageForm() {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    if (USE_LIVE_API) {
-      const payload: CreateCampaignPayload = {
-        name: String(fd.get('title') ?? ''),
-        body: String(fd.get('body') ?? ''),
-        audienceType: String(fd.get('recipients') ?? '') || undefined,
-        scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
-      };
-      try {
-        const created = await createTenantCampaign(payload);
-        const campaignId = String(created?.id ?? created?.campaignId ?? '');
-        if (campaignId && !schedule) {
-          await sendCampaign(campaignId);
-        }
-        router.push(back);
-        return;
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
-        return;
+    const payload: CreateCampaignPayload = {
+      name: String(fd.get('title') ?? ''),
+      body: String(fd.get('body') ?? ''),
+      audienceType: String(fd.get('recipients') ?? '') || undefined,
+      scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
+    };
+    try {
+      const created = await createTenantCampaign(payload);
+      const campaignId = String(created?.id ?? created?.campaignId ?? '');
+      if (campaignId && !schedule) {
+        await sendCampaign(campaignId);
       }
+      router.push(back);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
     }
-    router.push(back);
   };
 
   return (

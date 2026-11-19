@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { getTenantEvents, getTenantBranding, type TenantEvent } from '@/lib/api/tenant';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { EventsTable, QuickAccessCard, StatCard, type EventRow } from './shared';
 
 function HelloCard({ orgName, userName }: { orgName: string; userName: string }) {
@@ -28,7 +27,6 @@ export function GroupLeaderDashboard() {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantBranding().then((b) => {
       if (b.organizationName) setOrgName(b.organizationName);
     }).catch(() => {});

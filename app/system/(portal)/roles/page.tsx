@@ -5,7 +5,6 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { cn } from '@/lib/utils';
 import { ShieldCheck, ClipboardList } from 'lucide-react';
 import { getSystemRoles, getSystemPermissions } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Role = {
   id: string;
@@ -43,7 +42,6 @@ export default function SystemRolesPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
 
     getSystemRoles()
       .then((arr) => {

@@ -17,7 +17,6 @@ import {
   getCheckoutConfig,
   chooseIntegration,
 } from '@/lib/api/checkout';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 function Field({
   label,
@@ -53,7 +52,6 @@ export default function CheckoutGivingPage() {
   const campuses = config.campuses?.length ? config.campuses : null;
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getCheckoutConfig()
       .then((c) => setConfig(c))
       .catch(() => {});
@@ -62,11 +60,6 @@ export default function CheckoutGivingPage() {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-
-    if (!USE_LIVE_API) {
-      router.push('/checkout/pay');
-      return;
-    }
 
     const fd = new FormData(e.currentTarget);
     const donorType = String(fd.get('donorType') ?? 'guest') as 'member' | 'guest';

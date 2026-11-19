@@ -13,7 +13,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getTenantGroup, createTenantGroup, updateTenantGroup, getTenantMembers, type TenantGroup, type TenantMember } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 function Field({
@@ -73,12 +72,11 @@ export function CreateGroupForm({
   const [leaders, setLeaders] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    if (!isEdit || !USE_LIVE_API || !id) return;
+    if (!isEdit || !id) return;
     getTenantGroup(id).then((g: TenantGroup | null) => { if (g) setGroup(g); }).catch(() => {});
   }, [id, isEdit]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMembers().then((members: TenantMember[]) => {
       const mapped = members.filter((m) => m.name).map((m) => ({ id: m.id, name: m.name }));
       if (mapped.length > 0) setLeaders(mapped);
@@ -89,7 +87,6 @@ export function CreateGroupForm({
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!USE_LIVE_API) { router.push(`${basePath}/success`); return; }
     const fd = new FormData(e.currentTarget);
     const payload = {
       name: String(fd.get('name') ?? ''),

@@ -7,7 +7,6 @@ import {
   type EventRow,
 } from '@/components/ministry-admin/shared';
 import { getTenantEvents } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 
 export default function MinistryAdminRegistrationsPage() {
@@ -15,7 +14,6 @@ export default function MinistryAdminRegistrationsPage() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantEvents().then((events) => {
       const mapped: EventRow[] = events.map((e) => {
         let date = e.eventDate

@@ -22,7 +22,6 @@ import { ResetProgress } from '@/components/auth/reset-progress';
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
 import { resetPassword } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const formSchema = z
   .object({
@@ -59,21 +58,19 @@ function SetPasswordInner() {
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
     setFormError(null);
 
-    if (USE_LIVE_API) {
-      if (!token) {
-        setFormError('Your reset session has expired. Please start over.');
-        return;
-      }
-      setSubmitting(true);
-      try {
-        await resetPassword(token, data.password);
-      } catch (e) {
-        setFormError(e instanceof Error ? e.message : 'Could not reset your password.');
-        setSubmitting(false);
-        return;
-      } finally {
-        setSubmitting(false);
-      }
+    if (!token) {
+      setFormError('Your reset session has expired. Please start over.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await resetPassword(token, data.password);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Could not reset your password.');
+      setSubmitting(false);
+      return;
+    } finally {
+      setSubmitting(false);
     }
 
     router.push('/auth/login');

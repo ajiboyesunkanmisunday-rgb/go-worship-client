@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { getTenantSeries as fetchTenantSeries } from '@/lib/api/tenant';
 
 export const SERIES_STATUSES = [
@@ -26,7 +25,6 @@ export function SermonAdminDashboard() {
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getUnifiedDashboard('LAST_30_DAYS', 'USD', 'CONTENT').then((s) => { if (s) setStats(s); }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');

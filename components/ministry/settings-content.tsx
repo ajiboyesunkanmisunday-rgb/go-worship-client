@@ -6,7 +6,6 @@ import { PencilLine, Upload, Trash2, CheckCircle2, Loader2, Plus, X } from 'luci
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { USE_LIVE_API } from '@/lib/api/config';
 import {
   getTenantBranding,
   updateTenantBranding,
@@ -128,7 +127,7 @@ function SecurityTab() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
+
     getTenantSecuritySettings().then(setSettings).catch(() => {});
   }, []);
 
@@ -140,7 +139,7 @@ function SecurityTab() {
   };
 
   const save = async () => {
-    if (!USE_LIVE_API || !settings) return;
+    if (!settings) return;
     setSaving(true);
     try {
       await updateTenantSecuritySettings(settings);
@@ -178,15 +177,15 @@ function SecurityTab() {
       <Toggle
         label="Require MFA for all members"
         on={mfaRequired}
-        onChange={USE_LIVE_API && settings ? () => toggle('mfaRequired') : undefined}
+        onChange={settings ? () => toggle('mfaRequired') : undefined}
       />
       <Toggle
         label="Login alerts"
         on={loginAlerts}
-        onChange={USE_LIVE_API && settings ? () => toggle('notifyAdminOnHighRiskLogin') : undefined}
+        onChange={settings ? () => toggle('notifyAdminOnHighRiskLogin') : undefined}
       />
 
-      {USE_LIVE_API && settings && (
+      {settings && (
         <div className="mt-4 flex justify-end">
           <Button size="sm" onClick={save} disabled={saving} className="gap-1.5">
             {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
@@ -212,7 +211,6 @@ function BrandingTab() {
   const [uploadCategory, setUploadCategory] = useState('LOGO');
 
   useEffect(() => {
-    if (!USE_LIVE_API) { setLoading(false); return; }
     Promise.all([getTenantBranding(), getTenantBrandingAssets()])
       .then(([b, a]) => { setData(b); setAssets(a); })
       .catch(() => {})
@@ -220,7 +218,6 @@ function BrandingTab() {
   }, []);
 
   const handleSave = async () => {
-    if (!USE_LIVE_API) { toast.success('Branding saved (mock)'); return; }
     setSaving(true);
     try {
       await updateTenantBranding(data);
@@ -231,7 +228,6 @@ function BrandingTab() {
   };
 
   const handleActivate = async () => {
-    if (!USE_LIVE_API) { toast.success('Branding activated (mock)'); return; }
     setActivating(true);
     try {
       await activateTenantBranding();
@@ -244,7 +240,6 @@ function BrandingTab() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!USE_LIVE_API) { toast.success('Asset uploaded (mock)'); return; }
     try {
       await uploadBrandingAsset(uploadCategory, file);
       toast.success('Asset uploaded');
@@ -258,7 +253,6 @@ function BrandingTab() {
   };
 
   const handleDeleteAsset = async (id: string) => {
-    if (!USE_LIVE_API) { setAssets((a) => a.filter((x) => x.id !== id)); return; }
     try {
       await deleteBrandingAsset(id);
       setAssets((a) => a.filter((x) => x.id !== id));
@@ -408,7 +402,6 @@ function SubscriptionTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!USE_LIVE_API) { setLoading(false); return; }
     Promise.all([getTenantSubscription(), getTenantInvoices()])
       .then(([s, inv]) => { setSub(s); setInvoices(inv); })
       .catch(() => {})
@@ -495,7 +488,7 @@ function ProfileTab() {
   const [location, setLocation] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
+
     getTenantBranding().then(setBranding).catch(() => {});
     getProfile().then(setProfile).catch(() => {});
   }, []);
@@ -512,11 +505,10 @@ function ProfileTab() {
 
 function NotificationsTab() {
   const [settings, setSettings] = useState<TenantNotificationSettings | null>(null);
-  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!USE_LIVE_API) { setLoading(false); return; }
     getTenantNotificationSettings()
       .then(setSettings)
       .catch(() => {})
@@ -528,7 +520,7 @@ function NotificationsTab() {
   };
 
   const save = async () => {
-    if (!USE_LIVE_API || !settings) return;
+    if (!settings) return;
     setSaving(true);
     try {
       await updateTenantNotificationSettings(settings);
@@ -556,14 +548,14 @@ function NotificationsTab() {
       <Toggle
         label="Subscription expiry reminders"
         on={expiryOn}
-        onChange={USE_LIVE_API && settings ? () => toggle('subscriptionExpiryRemindersEnabled') : undefined}
+        onChange={settings ? () => toggle('subscriptionExpiryRemindersEnabled') : undefined}
       />
       <Toggle
         label="Inactive account reminders"
         on={inactiveOn}
-        onChange={USE_LIVE_API && settings ? () => toggle('inactiveTenantRemindersEnabled') : undefined}
+        onChange={settings ? () => toggle('inactiveTenantRemindersEnabled') : undefined}
       />
-      {USE_LIVE_API && settings && (
+      {settings && (
         <div className="mt-4 flex justify-end">
           <Button size="sm" onClick={save} disabled={saving} className="gap-1.5">
             {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
@@ -577,10 +569,9 @@ function NotificationsTab() {
 
 function PaymentBillingTab() {
   const [payments, setPayments] = useState<BillingPayment[]>([]);
-  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!USE_LIVE_API) { setLoading(false); return; }
     getTenantBillingPayments()
       .then((data) => {
         const arr = data?.content ?? [];
@@ -604,7 +595,7 @@ function PaymentBillingTab() {
     );
   }
 
-  if (!USE_LIVE_API || payments.length === 0) {
+  if (payments.length === 0) {
     return (
       <div className="rounded-[14px] bg-white p-6">
         <p className="text-[14px] text-brand-gray-500">No billing payment records available.</p>
@@ -656,13 +647,12 @@ type Campus = { id: string; code: string; name: string; address: string; active:
 
 function CampusesTab() {
   const [campuses, setCampuses] = useState<Campus[]>([]);
-  const [loading, setLoading] = useState(USE_LIVE_API);
+  const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ code: '', name: '', address: '' });
 
   useEffect(() => {
-    if (!USE_LIVE_API) { setLoading(false); return; }
     getTenantCampuses()
       .then((data: TenantCampus[]) => {
         const mapped: Campus[] = data
@@ -685,15 +675,6 @@ function CampusesTab() {
   const cancel = () => { setAdding(false); setEditId(null); };
 
   const save = async () => {
-    if (!USE_LIVE_API) {
-      if (adding) {
-        setCampuses((prev) => [...prev, { id: String(Date.now()), ...form, active: true }]);
-      } else if (editId) {
-        setCampuses((prev) => prev.map((c) => c.id === editId ? { ...c, ...form } : c));
-      }
-      cancel();
-      return;
-    }
     try {
       if (adding) {
         const res = await createTenantCampus(form);
@@ -708,7 +689,6 @@ function CampusesTab() {
   };
 
   const deleteCampus = async (id: string) => {
-    if (!USE_LIVE_API) { setCampuses((prev) => prev.filter((c) => c.id !== id)); return; }
     try {
       await deleteTenantCampus(id);
       setCampuses((prev) => prev.filter((c) => c.id !== id));

@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import { TransactionsTable, type Transaction } from './shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * Tabs per the Church Admin "Analytics Dashboard" frame (494:22178). The frame's
@@ -29,7 +28,6 @@ export function AnalyticsContent() {
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getUnifiedDashboard()
       .then((s) => {
         if (s && s.trend.length > 0) {
@@ -40,7 +38,7 @@ export function AnalyticsContent() {
   }, []);
 
   useEffect(() => {
-    if (!USE_LIVE_API || tab === 'Finance') return;
+    if (tab === 'Finance') return;
     setTabTrend([]);
     // /tenant/admin/analytics/:slug/trend not in backend API — disabled.
   }, [tab]);

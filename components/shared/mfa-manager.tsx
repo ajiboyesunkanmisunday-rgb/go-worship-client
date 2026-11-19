@@ -18,7 +18,6 @@ import {
   type MfaSettings,
 } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type MfaMethod = 'OTP_EMAIL' | 'TOTP' | 'OTP_SMS';
 
@@ -85,18 +84,6 @@ export function MfaManager() {
   const [totpUnavailable, setTotpUnavailable] = useState(false);
 
   const refresh = async () => {
-    if (!USE_LIVE_API) {
-      setSettings({
-        mfaEnabled: true,
-        preferredMethod: 'TOTP',
-        enrolledMethods: ['TOTP'],
-        totpEnrolled: true,
-        otpEmailAvailable: true,
-        eligibleMethods: ['TOTP', 'OTP_EMAIL'],
-      });
-      setLoading(false);
-      return;
-    }
     try {
       const res = await getMfaSettings();
       setSettings(res.data ?? null);

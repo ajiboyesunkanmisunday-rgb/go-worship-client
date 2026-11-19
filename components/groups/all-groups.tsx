@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { SheetPage } from '../ui/sheet-page';
 import { useState, useEffect } from 'react';
 import { getSelfGroups, type TenantGroup } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 export function AllGroups() {
   const router = useRouter();
@@ -15,7 +14,6 @@ export function AllGroups() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSelfGroups().then(setGroups).catch(() => {});
   }, []);
 

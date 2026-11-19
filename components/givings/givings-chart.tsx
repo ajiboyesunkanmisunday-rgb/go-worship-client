@@ -9,7 +9,6 @@ import {
 import { cn, formatAbbreviatedNumber, formatCurrency } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const chartConfig = {
   givings: {
@@ -22,7 +21,6 @@ export function GivingsChart() {
   const [chartData, setChartData] = useState<{ month: string; amount: number }[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getUnifiedDashboard().then((s) => {
       if (s && s.trend.length > 0) {
         setChartData(s.trend.map((p) => ({ month: p.label, amount: p.value })));

@@ -10,7 +10,6 @@ import {
   ViewEditButton,
 } from '@/components/sermon-admin/shared';
 import { getTenantSermons, publishTenantSermon, unpublishTenantSermon } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Sermon = { id: string; title: string; speaker: string; series: string; date: string; status: string };
 
@@ -18,7 +17,6 @@ export default function SermonAdminSermonsPage() {
   const [sermons, setSermons] = useState<Sermon[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantSermons()
       .then((arr) => {
         if (arr.length === 0) return;
@@ -48,7 +46,7 @@ export default function SermonAdminSermonsPage() {
 
   const togglePublish = (idx: number) => {
     const s = sermons[idx];
-    if (!USE_LIVE_API || !s.id) return;
+    if (!s.id) return;
     const fn = s.status === 'Published' ? unpublishTenantSermon : publishTenantSermon;
     fn(s.id)
       .then(() => {
@@ -78,7 +76,7 @@ export default function SermonAdminSermonsPage() {
               : `/sermon-admin/sermons/${s.id || i + 1}/edit`
           }
         />
-        {USE_LIVE_API && s.id && (s.status === 'Published' || s.status === 'Draft') && (
+        {s.id && (s.status === 'Published' || s.status === 'Draft') && (
           <button
             type="button"
             onClick={() => togglePublish(i)}

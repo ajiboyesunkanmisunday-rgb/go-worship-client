@@ -7,7 +7,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { type SystemStats, getSystemAuditEventsRecent, getSystemBillingPlans } from '@/lib/api/system';
 import { getUnifiedDashboard, type DashboardSection } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /* Family codes from the API map to human-readable tab labels. */
 const FAMILY_LABELS: Record<string, string> = {
@@ -120,7 +119,6 @@ export function SystemDashboard() {
   const [stats, setStats] = useState<SystemStats>({ totalTenants: 0, activeTenants: 0, totalUsers: 0, givingVolume: '', trialTenants: 0, overduePayments: 0 });
 
   const loadFamily = useCallback(async (family: string) => {
-    if (!USE_LIVE_API) return;
     const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'), 'system');
     if (!u) return;
 
@@ -145,7 +143,6 @@ export function SystemDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
 
     loadFamily('PLATFORM');
 

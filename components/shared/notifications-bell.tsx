@@ -4,38 +4,12 @@ import { cn } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { getTenantNotificationMessages } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Notification = {
   title: string;
   body: string;
   unread?: boolean;
 };
-
-/** Matches Figma "All Notification" panel (114:6466). */
-const NOTIFICATIONS: Notification[] = [
-  {
-    title: 'Upcoming Event Reminder',
-    body: 'Midweek Recharge starts today at 6:00 PM.',
-    unread: true,
-  },
-  {
-    title: 'Event Registration Updates',
-    body: "You're registered for Faith Conference 2025.",
-  },
-  {
-    title: 'Group Meeting Reminders',
-    body: 'Receive reminders for meetings in your groups.',
-  },
-  {
-    title: 'Group Announcements',
-    body: 'New announcement from the Youth Fellowship group.',
-  },
-  {
-    title: 'Giving Confirmation',
-    body: 'Thank you for your gift of ₦25,000. Your receipt is ready.',
-  },
-];
 
 export function NotificationsBell({
   tone = 'light',
@@ -46,11 +20,11 @@ export function NotificationsBell({
   endpoint?: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(USE_LIVE_API && endpoint ? [] : NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API || !endpoint) return;
+    if (!endpoint) return;
     getTenantNotificationMessages()
       .then((arr) => {
         const mapped: Notification[] = arr.slice(0, 8).map((n) => ({

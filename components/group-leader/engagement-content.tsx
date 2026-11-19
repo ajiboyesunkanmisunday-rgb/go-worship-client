@@ -7,7 +7,6 @@ import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { DataPanel, type TableRow } from './shared';
 import { getTenantGroups, getTenantStats, type TenantGroup, type TenantStats } from '@/lib/api/tenant';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const config = {
   v: { label: 'Engagement', color: '#243f84' },
@@ -19,7 +18,6 @@ function EngagementChart() {
   const [engagementScore, setEngagementScore] = useState('—');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantStats().then((s) => {
       if (s) {
         setStats(s);
@@ -102,7 +100,6 @@ export function EngagementContent() {
   const [rows, setRows] = useState<TableRow[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantGroups().then((groups) => {
       const mapped = groups.map(toRow);
       if (mapped.length > 0) setRows(mapped);

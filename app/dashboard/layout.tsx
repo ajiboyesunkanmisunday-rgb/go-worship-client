@@ -4,7 +4,6 @@ import { IdleTimeout } from '@/components/auth/idle-timeout';
 import { SiteContextProvider } from '@/lib/site-context';
 import { fetchSiteContext } from '@/lib/api/bootstrap';
 import { resolveUpstreamFromHeaders } from '@/lib/api/server';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { headers } from 'next/headers';
 import { cn } from '@/lib/utils';
 
@@ -13,15 +12,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let context = null;
+  const hdrs = await headers();
+  const upstream = resolveUpstreamFromHeaders(hdrs);
+  const context = await fetchSiteContext(upstream);
 
-  if (USE_LIVE_API) {
-    const hdrs = await headers();
-    const upstream = resolveUpstreamFromHeaders(hdrs);
-    context = await fetchSiteContext(upstream);
-  }
-
-  if (USE_LIVE_API && context?.subscriptionAccess === 'NO_ACCESS') {
+  if (context?.subscriptionAccess === 'NO_ACCESS') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#F4F7FF] p-8">
         <div className="flex max-w-[440px] flex-col items-center gap-4 rounded-[16px] bg-white p-10 text-center shadow-sm">

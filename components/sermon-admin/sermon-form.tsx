@@ -12,7 +12,6 @@ import { ArrowLeft, Music, Pencil, UploadCloud, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getTenantSeries, getTenantSermonById, createTenantSermon, updateTenantSermon } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 function Field({
@@ -89,14 +88,7 @@ function CoverChip({ onRemove }: { onRemove(): void }) {
   );
 }
 
-const SERMON = {
-  title: 'Walk by Faith and Love',
-  speaker: 'Pastor Christain John',
-  date: '2025-11-20',
-  description:
-    'We walk by faith and not by sight, according to The scriptures that says, we are blessed when we walk by faith Heb 11:1 - end',
-  link: 'https://www.youtube.com/watch?v=1hkEg5ugqD0',
-};
+const EMPTY_SERMON = { title: '', speaker: '', date: '', description: '', link: '' };
 
 const COPY = {
   add: { title: 'Add New Sermon', submit: 'Publish Sermon' },
@@ -123,13 +115,11 @@ export function SermonForm({
   const back = backTo ?? '/sermon-admin/sermons';
   const [hasAudio, setHasAudio] = useState(isEdit);
   const [hasCover, setHasCover] = useState(isEdit);
-  const [sermon, setSermon] = useState(USE_LIVE_API && !isEdit ? { title: '', speaker: '', date: '', description: '', link: '' } : SERMON);
+  const [sermon, setSermon] = useState(EMPTY_SERMON);
   const [formKey, setFormKey] = useState(0);
   const [seriesOpts, setSeriesOpts] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
-
     getTenantSeries()
       .then((arr) => {
         const opts = arr
@@ -146,13 +136,13 @@ export function SermonForm({
       getTenantSermonById(id)
         .then((d) => {
           const rawDate = String(d.sermonDate ?? d.createdAt ?? '');
-          const date = rawDate ? rawDate.split('T')[0] : SERMON.date;
+          const date = rawDate ? rawDate.split('T')[0] : '';
           setSermon({
-            title: String(d.title ?? SERMON.title),
-            speaker: String(d.speakerName ?? SERMON.speaker),
+            title: String(d.title ?? ''),
+            speaker: String(d.speakerName ?? ''),
             date,
-            description: String(d.description ?? SERMON.description),
-            link: SERMON.link,
+            description: String(d.description ?? ''),
+            link: '',
           });
           setFormKey((k) => k + 1);
         })
@@ -162,25 +152,23 @@ export function SermonForm({
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (USE_LIVE_API) {
-      const fd = new FormData(e.currentTarget);
-      const payload = {
-        title: fd.get('title') as string,
-        speakerName: fd.get('speaker') as string,
-        sermonDate: fd.get('date') as string,
-        description: fd.get('description') as string,
-        seriesId: fd.get('series') as string || undefined,
-      };
-      try {
-        if (isEdit && id) {
-          await updateTenantSermon(id, payload);
-        } else {
-          await createTenantSermon(payload);
-        }
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Failed to save sermon. Please try again.');
-        return;
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      title: fd.get('title') as string,
+      speakerName: fd.get('speaker') as string,
+      sermonDate: fd.get('date') as string,
+      description: fd.get('description') as string,
+      seriesId: fd.get('series') as string || undefined,
+    };
+    try {
+      if (isEdit && id) {
+        await updateTenantSermon(id, payload);
+      } else {
+        await createTenantSermon(payload);
       }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save sermon. Please try again.');
+      return;
     }
     router.push(back);
   };

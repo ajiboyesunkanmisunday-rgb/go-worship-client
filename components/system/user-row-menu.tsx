@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { deleteSystemUser } from '@/lib/api/system';
 import { forgotPassword } from '@/lib/api/auth';
 import { executeRecaptcha } from '@/lib/recaptcha';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Props = {
   userId: string;
@@ -43,10 +42,6 @@ export function UserRowMenu({ userId, userEmail, userName, onRefresh }: Props) {
   ];
 
   async function handleReset() {
-    if (!USE_LIVE_API) {
-      toast.success('Password reset email sent (mock mode).');
-      return;
-    }
     setBusy(true);
     try {
       const captchaToken = await executeRecaptcha('forgot_password');
@@ -64,12 +59,6 @@ export function UserRowMenu({ userId, userEmail, userName, onRefresh }: Props) {
   }
 
   async function handleDeactivate() {
-    if (!USE_LIVE_API) {
-      toast.success('User deactivated (mock mode).');
-      setConfirm(false);
-      onRefresh?.();
-      return;
-    }
     setBusy(true);
     try {
       await deleteSystemUser(userId);

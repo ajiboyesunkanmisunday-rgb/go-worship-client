@@ -5,7 +5,6 @@ import { SheetPage } from '../ui/sheet-page';
 import { cn } from '@/lib/utils';
 import { EventCard } from './event-card';
 import { getSelfEvents, TenantEvent } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import type { Event } from '@/types/event';
 
 function mapTenantEvent(e: TenantEvent): Event {
@@ -35,7 +34,6 @@ export function RegisteredEvents({ isIntercepted = false }: Props) {
   const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSelfEvents()
       .then((data) => {
         const mapped = data.map(mapTenantEvent);

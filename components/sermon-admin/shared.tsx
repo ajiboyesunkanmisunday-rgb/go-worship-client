@@ -5,7 +5,6 @@ import { FolderClosed, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { useState, useEffect } from 'react';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /* ---------------- Quick Access ---------------- */
 
@@ -38,7 +37,6 @@ export function QuickAccess() {
   const [storageSubtitle, setStorageSubtitle] = useState('View media library');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     // /tenant/media/storage-stats not in backend API — disabled.
   }, []);
 

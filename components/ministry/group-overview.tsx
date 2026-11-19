@@ -8,7 +8,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getTenantGroup, type TenantGroup } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -64,7 +63,7 @@ export function GroupOverview({ id }: { id?: string }) {
   );
 
   useEffect(() => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     getTenantGroup(id).then((g: TenantGroup | null) => { if (g) setGroup(g); }).catch(() => {});
   }, [id]);
 

@@ -9,7 +9,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useEffect } from 'react';
 import { getSystemBillingPlan, createSystemBillingPlan, updateSystemBillingPlan, deleteSystemBillingPlan } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 function Field({
@@ -27,35 +26,27 @@ function Field({
   );
 }
 
-const PLAN = {
-  name: 'Professional',
-  price: '70000',
-  users: '500',
-  features:
-    'Unlimited Members\nAdvanced Analytics\nPriority support\nCustom branding',
-};
-
 /** Create / Edit subscription plan slide-over (System → Plans & Billing). */
 export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string }) {
   const router = useRouter();
   const isEdit = mode === 'edit';
   const back = '/system/plans';
   const [result, setResult] = useState<'success' | 'error' | null>(null);
-  const [plan, setPlan] = useState(USE_LIVE_API && !isEdit ? { name: '', price: '', users: '', features: '' } : PLAN);
+  const [plan, setPlan] = useState({ name: '', price: '', users: '', features: '' });
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
-    if (!USE_LIVE_API || !isEdit || !id) return;
+    if (!isEdit || !id) return;
     getSystemBillingPlan(id)
       .then((d) => {
         const featureRaw = d.features;
         const features = Array.isArray(featureRaw)
           ? featureRaw.join('\n')
-          : typeof featureRaw === 'string' ? featureRaw : PLAN.features;
+          : typeof featureRaw === 'string' ? featureRaw : '';
         setPlan({
-          name: String(d.name ?? PLAN.name),
-          price: String(d.price ?? PLAN.price),
-          users: String(d.maxUsers ?? PLAN.users),
+          name: String(d.name ?? ''),
+          price: String(d.price ?? ''),
+          users: String(d.maxUsers ?? ''),
           features,
         });
         setFormKey((k) => k + 1);
@@ -73,17 +64,15 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
       maxUsers: Number(fd.get('users') ?? 0),
       features: featuresRaw.split('\n').map((s) => s.trim()).filter(Boolean),
     };
-    if (USE_LIVE_API) {
-      try {
-        if (isEdit && id) {
-          await updateSystemBillingPlan(id, payload);
-        } else {
-          await createSystemBillingPlan(payload);
-        }
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Failed to save plan. Please try again.');
-        return;
+    try {
+      if (isEdit && id) {
+        await updateSystemBillingPlan(id, payload);
+      } else {
+        await createSystemBillingPlan(payload);
       }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save plan. Please try again.');
+      return;
     }
     setResult('success');
   };
@@ -163,7 +152,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
             <button
               type="button"
               onClick={async () => {
-                if (USE_LIVE_API && id) {
+                if (id) {
                   try {
                     await deleteSystemBillingPlan(id);
                   } catch {}

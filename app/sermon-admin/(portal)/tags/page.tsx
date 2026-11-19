@@ -11,7 +11,6 @@ import {
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { ArrowUpRight, Layers } from 'lucide-react';
 import Link from 'next/link';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type Tag = { id: string; name: string; count: string; status: string; date: string };
 
@@ -39,13 +38,12 @@ export default function SermonAdminTagsPage() {
   const [tags, setTags] = useState<Tag[]>([]);
 
   const deleteTag = (id: string) => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     // /tenant/admin/sermon/tags not in backend API — disabled.
     setTags((prev) => prev.filter((t) => t.id !== id));
   };
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     // /tenant/admin/sermon/tags not in backend API — disabled.
   }, []);
 

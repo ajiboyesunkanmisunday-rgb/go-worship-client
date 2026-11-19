@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -14,7 +13,6 @@ export default function MinistryMembersPage() {
   const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => { toast.error('Could not load members.'); });
   }, []);
 

@@ -8,7 +8,6 @@ import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { FolderPlus } from 'lucide-react';
 import { getTenantSeries } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -40,7 +39,6 @@ export default function MinistryMediaPage() {
   const [series, setSeries] = useState<Series[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantSeries()
       .then((arr) => {
         if (arr.length === 0) return;

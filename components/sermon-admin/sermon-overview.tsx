@@ -6,7 +6,6 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Music } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getTenantSermonById, publishTenantSermon, unpublishTenantSermon } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 function Meta({ label, value }: { label: string; value: string }) {
@@ -30,7 +29,7 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
   const [sermon, setSermon] = useState<Sermon>({ title: '', status: '', speaker: '', series: '', date: '', duration: '', videoUrl: '', description: '', fileName: '' });
 
   useEffect(() => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     getTenantSermonById(id)
       .then((d) => {
         const rawDate = String(d.publishedAt ?? d.createdAt ?? d.sermonDate ?? '');
@@ -121,7 +120,7 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
             <button
               type="button"
               onClick={async () => {
-                if (USE_LIVE_API && id) {
+                if (id) {
                   const action = sermon.status.toUpperCase() === 'PUBLISHED' ? 'unpublish' : 'publish';
                   try {
                     await (action === 'unpublish' ? unpublishTenantSermon(id) : publishTenantSermon(id));

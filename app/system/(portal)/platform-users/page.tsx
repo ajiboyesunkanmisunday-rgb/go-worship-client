@@ -7,7 +7,6 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getSystemUsers, type SystemUser } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { toast } from 'sonner';
 
 const ROLE_STYLE: Record<string, string> = {
@@ -27,7 +26,6 @@ export default function SystemPlatformUsersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSystemUsers()
       .then((data) => {
         if (data.length > 0) setUsers(data);

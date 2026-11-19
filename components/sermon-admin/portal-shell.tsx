@@ -19,7 +19,6 @@ import { usePathname } from 'next/navigation';
 import { RoleSwitcher } from '@/components/shared/role-switcher';
 import { useState, useEffect } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const NAV_ITEMS = [
   { href: '/sermon-admin/dashboard', label: 'Dashboard', icon: LayoutGrid },
@@ -66,7 +65,6 @@ function Topbar() {
   const [orgLocation, setOrgLocation] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantBranding()
       .then((b) => {
         if (b.organizationName) setOrgName(b.organizationName);

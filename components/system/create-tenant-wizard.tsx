@@ -12,7 +12,6 @@ import { StepUpMfaDialog, isStepUpChallenge } from '@/components/shared/step-up-
 import type { StepUpMfaChallengeResponse } from '@/components/shared/step-up-mfa-dialog';
 import { provisionTenant, getSystemBillingPlans } from '@/lib/api/system';
 import { ApiError } from '@/lib/api/client';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 /**
  * "Create New Tenant" — the 3-step wizard from the System board (778:38441,
@@ -143,7 +142,6 @@ export function CreateTenantWizard() {
   const [plan, setPlan] = useState<string>('professional');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSystemBillingPlans()
       .then((arr) => {
         if (arr.length === 0) return;
@@ -178,11 +176,6 @@ export function CreateTenantWizard() {
       : basic.customDomain || '—';
 
   const handleCreate = async () => {
-    if (!USE_LIVE_API) {
-      setResult('success');
-      return;
-    }
-
     setEnrollError(null);
     setSubmitting(true);
     const slug = slugify(basic.churchName);

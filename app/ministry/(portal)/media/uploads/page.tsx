@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { Music } from 'lucide-react';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type UploadRow = { id: string; name: string; type: string; size: string; used: string; date: string };
 
@@ -13,13 +12,12 @@ export default function MinistryUploadedMediaPage() {
   const [uploads, setUploads] = useState<UploadRow[]>([]);
 
   const deleteUpload = (id: string) => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     // /tenant/admin/media not in backend API — disabled.
     setUploads((prev) => prev.filter((u) => u.id !== id));
   };
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     // /tenant/admin/media not in backend API — disabled.
   }, []);
 

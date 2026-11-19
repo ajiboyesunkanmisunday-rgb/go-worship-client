@@ -7,14 +7,12 @@ import {
   type EventRow,
 } from '@/components/ministry-admin/shared';
 import { getTenantEvents } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useEffect, useState } from 'react';
 
 export default function MinistryAdminCheckInPage() {
   const [rows, setRows] = useState<EventRow[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantEvents().then((events) => {
       const mapped: EventRow[] = events.map((e) => ({
         name: e.name,

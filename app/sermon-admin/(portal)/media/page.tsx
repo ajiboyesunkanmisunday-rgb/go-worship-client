@@ -7,7 +7,6 @@ import { DataCard, QuickAccess } from '@/components/sermon-admin/shared';
 import { EditDeleteActions } from '@/components/sermon-admin/row-actions';
 import { ArrowUpRight, FolderPlus, Music } from 'lucide-react';
 import Link from 'next/link';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 type MediaFile = { id: string; name: string; type: string; size: string; used: string; date: string };
 
@@ -35,13 +34,12 @@ export default function SermonAdminMediaPage() {
   const [media, setMedia] = useState<MediaFile[]>([]);
 
   const deleteMedia = (id: string) => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     // /tenant/admin/media not in backend API — disabled.
     setMedia((prev) => prev.filter((m) => m.id !== id));
   };
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     // /tenant/admin/media not in backend API — disabled.
   }, []);
 

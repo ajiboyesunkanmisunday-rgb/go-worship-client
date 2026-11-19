@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { getProfile, logout } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 
@@ -20,7 +19,6 @@ import { Button } from '@/components/ui/button';
  *   NEXT_PUBLIC_IDLE_WARNING_MS   (default     60 000 ms = 60 s)
  *   NEXT_PUBLIC_IDLE_HEARTBEAT_MS (default    300 000 ms = 5 min)
  *
- * LIVE-ONLY: inert when USE_LIVE_API is false.
  */
 
 const IDLE_MS =
@@ -55,8 +53,6 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
   const sessionExpiredOnServer = useRef(false);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
-
     const clearTimers = () => {
       if (idleTimer.current) clearTimeout(idleTimer.current);
       if (warnTimer.current) clearTimeout(warnTimer.current);

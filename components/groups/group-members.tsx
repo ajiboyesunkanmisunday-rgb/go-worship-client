@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { getTenantMembers, type TenantMember } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 
 const FILTERS = ['All member', 'Youth Fellowship', 'Music Group', 'Prayer Group'];
@@ -23,7 +22,6 @@ export function GroupMembers() {
   const [members, setMembers] = useState<TenantMember[]>([]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => {});
   }, []);
 

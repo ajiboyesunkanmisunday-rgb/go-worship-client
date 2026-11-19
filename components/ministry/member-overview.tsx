@@ -8,7 +8,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getTenantMember, type TenantMember } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -30,7 +29,7 @@ export function MemberOverview({ id }: { id?: string }) {
   );
 
   useEffect(() => {
-    if (!USE_LIVE_API || !id) return;
+    if (!id) return;
     getTenantMember(id).then((m: TenantMember | null) => { if (m) setMember(m); }).catch(() => {});
   }, [id]);
 

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { getSelfEvents, getSelfGroups } from '@/lib/api/tenant';
 import { getProfile } from '@/lib/api/auth';
 import { getCustomerPayments } from '@/lib/api/customer';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { CurrencyCircleDollarIcon } from '@/icons/currency';
 import { CalendarDays, Handshake } from 'lucide-react';
 import { ReactNode, SVGProps } from 'react';
@@ -87,7 +86,6 @@ export function Analytics() {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);

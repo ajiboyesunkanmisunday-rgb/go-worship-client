@@ -9,7 +9,6 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { createTenantSeries } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { FormAlert } from '@/components/ui/form-alert';
 
 const back = '/sermon-admin/series';
@@ -22,24 +21,22 @@ export default function SermonAdminAddSeriesPage() {
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (USE_LIVE_API) {
-      const fd = new FormData(e.currentTarget);
-      // SeriesRequest schema: title, description (no name/status fields)
-      const payload = {
-        title: String(fd.get('name') ?? ''),
-        description: String(fd.get('description') ?? ''),
-      };
-      try {
-        setSubmitting(true);
-        setSubmitError(null);
-        await createTenantSeries(payload);
-      } catch (err) {
-        setSubmitError(err instanceof Error ? err.message : 'Failed to create series. Please try again.');
-        setSubmitting(false);
-        return;
-      } finally {
-        setSubmitting(false);
-      }
+    const fd = new FormData(e.currentTarget);
+    // SeriesRequest schema: title, description (no name/status fields)
+    const payload = {
+      title: String(fd.get('name') ?? ''),
+      description: String(fd.get('description') ?? ''),
+    };
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+      await createTenantSeries(payload);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create series. Please try again.');
+      setSubmitting(false);
+      return;
+    } finally {
+      setSubmitting(false);
     }
     router.push(back);
   };

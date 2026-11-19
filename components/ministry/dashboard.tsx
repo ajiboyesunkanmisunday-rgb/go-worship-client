@@ -7,7 +7,6 @@ import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 import { getUnifiedDashboard, type DashboardSection } from '@/lib/api/dashboard';
 import { getTenantBranding } from '@/lib/api/tenant';
 import { getProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { StatCard } from '@/components/ministry/shared';
 
 /* Family codes → human-readable tab labels */
@@ -112,7 +111,6 @@ export function MinistryDashboard() {
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
 
   const loadFamily = useCallback(async (family: string) => {
-    if (!USE_LIVE_API) return;
     const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'));
     if (!u) return;
 
@@ -122,7 +120,6 @@ export function MinistryDashboard() {
   }, [userName]);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
 
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');

@@ -45,7 +45,6 @@ import {
   type RecurringGiving,
   type RecurringGivingFrequency,
 } from '@/lib/api/giving';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const FREQUENCIES: RecurringGivingFrequency[] = [
   'WEEKLY',
@@ -86,10 +85,6 @@ export function RecurringContent() {
 
   const load = async () => {
     setLoading(true);
-    if (!USE_LIVE_API) {
-      setLoading(false);
-      return;
-    }
     try {
       const [pm, rg] = await Promise.all([getPaymentMethods(), getRecurringGiving()]);
       setMethods(Array.isArray(pm) ? pm : []);

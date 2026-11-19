@@ -8,7 +8,6 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { getTenantMember, type TenantMember } from '@/lib/api/tenant';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { use } from 'react';
 
 const back = '/ministry/members';
@@ -24,28 +23,25 @@ export default function MinistryEditMemberPage({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMember(id).then((m) => { if (m) setMember(m); }).catch(() => {});
   }, [id]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (USE_LIVE_API) {
-      const fd = new FormData(e.currentTarget);
-      const payload = {
-        displayName: String(fd.get('name') ?? ''),
-        phone: String(fd.get('phone') ?? '') || undefined,
-        status: String(fd.get('status') ?? 'ACTIVE'),
-      };
-      try {
-        setSubmitting(true);
-        // PUT/PATCH /tenant/admin/users/:id not in backend API — no user-update endpoint in spec.
-        void payload;
-      } catch {
-        // fall through to navigate
-      } finally {
-        setSubmitting(false);
-      }
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      displayName: String(fd.get('name') ?? ''),
+      phone: String(fd.get('phone') ?? '') || undefined,
+      status: String(fd.get('status') ?? 'ACTIVE'),
+    };
+    try {
+      setSubmitting(true);
+      // PUT/PATCH /tenant/admin/users/:id not in backend API — no user-update endpoint in spec.
+      void payload;
+    } catch {
+      // fall through to navigate
+    } finally {
+      setSubmitting(false);
     }
     router.push(back);
   };

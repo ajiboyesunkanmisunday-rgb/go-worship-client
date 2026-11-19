@@ -25,7 +25,6 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { registerTenant } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
 import { FormAlert } from '@/components/ui/form-alert';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -127,11 +126,6 @@ export function RegisterChurchForm() {
     }
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
-      return;
-    }
-
-    if (!USE_LIVE_API) {
-      router.push('/auth/register-church/success');
       return;
     }
 

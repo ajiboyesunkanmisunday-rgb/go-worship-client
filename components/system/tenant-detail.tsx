@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSystemTenant, getSystemTenantPaymentGateways, suspendSystemTenant, softDeleteSystemTenant, type SystemTenant, type TenantPaymentGatewayAssignment } from '@/lib/api/system';
-import { USE_LIVE_API } from '@/lib/api/config';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   ArrowLeft,
@@ -86,7 +85,6 @@ export function TenantDetail({ id }: { id: string }) {
   const stats = buildStats(tenant);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getSystemTenant(id).then((t: SystemTenant | null) => { if (t) setTenant(t); }).catch(() => {});
     getSystemTenantPaymentGateways(id)
       .then((data) => {
@@ -106,7 +104,6 @@ export function TenantDetail({ id }: { id: string }) {
   }, [id]);
 
   const handleSuspend = async () => {
-    if (!USE_LIVE_API) return;
     setMenu(false);
     setSuspending(true);
     try {
@@ -121,7 +118,6 @@ export function TenantDetail({ id }: { id: string }) {
   };
 
   const handleDelete = async () => {
-    if (!USE_LIVE_API) { setDel(false); router.push(back); return; }
     setDeleting(true);
     try {
       await softDeleteSystemTenant(id);
@@ -354,7 +350,6 @@ function MembersTab({ id }: { id: string }) {
   const [openMember, setOpenMember] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     tryGetTenantResource(id, 'members')
       .then((data) => {
         if (!data) return;
@@ -583,7 +578,6 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
   const [receipt, setReceipt] = useState<{ failed: boolean; row?: TxnRow } | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     tryGetTenantResource(id, 'transactions')
       .then((data) => {
         if (!data) return;
@@ -825,7 +819,6 @@ function GroupsTab({ id }: { id: string }) {
   const [openGroup, setOpenGroup] = useState<GroupRow | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     tryGetTenantResource(id, 'groups')
       .then((data) => {
         if (!data) return;
@@ -1036,7 +1029,6 @@ function EventsTab({ id }: { id: string }) {
   const [openEvent, setOpenEvent] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     tryGetTenantResource(id, 'events')
       .then((data) => {
         if (!data) return;
@@ -1202,7 +1194,6 @@ function BillingTab({ id }: { id: string }) {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRow | null>(null);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     tryGetTenantResource(id, 'billing/invoices')
       .then((data) => {
         if (!data) return;

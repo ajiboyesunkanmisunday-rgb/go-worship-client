@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import { getTenantMembers, getTenantBranding, type TenantMember } from '@/lib/api/tenant';
 import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 const GREEN_ICON =
   'flex size-10 items-center justify-center rounded-full bg-[#22a45d] text-white';
@@ -59,7 +58,6 @@ export function GroupLeaderDashboard() {
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getTenantMembers().then(setMembers).catch(() => {});
     getUnifiedDashboard('LAST_30_DAYS', 'USD', 'TENANT_OPERATIONS').then((s) => { if (s) setStats(s); }).catch(() => {});
     getProfile().then((p) => {

@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { getProfile, logout } from '@/lib/api/auth';
-import { USE_LIVE_API } from '@/lib/api/config';
 
 function roleLabel(roles: string[] | undefined): string {
   if (!roles?.length) return 'Admin';
@@ -39,7 +38,6 @@ export function AdminProfileMenu({
   const [displayRole, setDisplayRole] = useState('');
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getProfile()
       .then((p) => {
         if (!p) return;
@@ -68,9 +66,7 @@ export function AdminProfileMenu({
 
   const handleLogout = async () => {
     setOpen(false);
-    if (USE_LIVE_API) {
-      try { await logout(); } catch { /* fall through */ }
-    }
+    try { await logout(); } catch { /* fall through */ }
     router.push('/auth/login');
   };
 

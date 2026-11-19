@@ -7,7 +7,6 @@ import {
   type Transaction,
 } from '@/components/ministry/shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
@@ -20,7 +19,6 @@ export default function MinistryFinancePage() {
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
 
   useEffect(() => {
-    if (!USE_LIVE_API) return;
     getUnifiedDashboard()
       .then((s) => { if (s) setTotalGiving(s.totalGiving); })
       .catch(() => { toast.error('Could not load dashboard stats.'); });

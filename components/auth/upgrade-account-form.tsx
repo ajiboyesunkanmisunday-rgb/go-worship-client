@@ -10,7 +10,6 @@
  * This is called while the user already holds a guest session cookie.
  * The /bff/gw proxy forwards the Bearer token from the httpOnly cookie.
  *
- * USE_LIVE_API gate: mock mode shows success toast and redirects immediately.
  */
 
 import { useState } from 'react';
@@ -20,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { upgradeGuestToCustomer } from '@/lib/api/auth';
 import { ApiError } from '@/lib/api/client';
-import { USE_LIVE_API } from '@/lib/api/config';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { FormAlert } from '@/components/ui/form-alert';
@@ -43,12 +41,6 @@ export function UpgradeAccountForm() {
     }
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
-      return;
-    }
-
-    if (!USE_LIVE_API) {
-      toast.success('Account upgraded successfully!');
-      router.push('/dashboard');
       return;
     }
 
