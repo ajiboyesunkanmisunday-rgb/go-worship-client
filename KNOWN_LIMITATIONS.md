@@ -22,3 +22,4 @@ The following features are not yet available because the corresponding backend e
 | System tenant detail — Events tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/events` endpoint |
 | System tenant detail — Billing tab (`components/system/tenant-detail.tsx`) | Table renders but no data: backend has no `GET /system/tenants/:id/billing/invoices` endpoint |
 | System tenant detail — Media tab (`components/system/tenant-detail.tsx`) | Static empty-state renders; no media API endpoint exists for tenant-scoped media in the current backend |
+| Sermon tag create/edit (`components/sermon-admin/tag-form.tsx`) | Form renders but submit shows error: no tag management endpoint exists in the current backend |

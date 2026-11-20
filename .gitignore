@@ -46,3 +46,7 @@ next-env.d.ts
 
 # Claude Code session files
 .claude/
+
+# Local design reference files (not for production)
+/public/design-sa.svg
+/public/dv.html
