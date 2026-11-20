@@ -126,7 +126,7 @@ export function DataCard({
       filterAll={filterAll}
       showSearch={showSearch}
       sortToggle={sortToggle}
-      exportLabel="Export CVS"
+      exportLabel="Export CSV"
       headerRowClassName="bg-[#f7f9fc]"
     />
   );
