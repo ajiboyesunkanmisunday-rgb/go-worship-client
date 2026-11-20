@@ -33,7 +33,7 @@ import {
   type TenantCampus,
   type BillingPayment,
 } from '@/lib/api/tenant';
-import { getProfile, type Profile } from '@/lib/api/auth';
+import { getProfile, updateProfile, type Profile } from '@/lib/api/auth';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -50,13 +50,32 @@ function Field({
   label,
   value,
   action = 'Edit',
+  onSave,
 }: {
   label: string;
   value: string;
   action?: string;
+  onSave?: (newValue: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!onSave) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setEditing(false);
+    } catch {
+      toast.error(`Failed to save ${label.toLowerCase()}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between gap-4 border-b border-[#f0f0f0] py-4 last:border-0">
@@ -68,7 +87,7 @@ function Field({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') setEditing(false);
+              if (e.key === 'Enter') handleSave();
               if (e.key === 'Escape') {
                 setDraft(value);
                 setEditing(false);
@@ -80,17 +99,21 @@ function Field({
           <p className="mt-1 text-[14px] font-medium">{draft}</p>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => setEditing((v) => !v)}
-        className={cn(
-          'flex items-center gap-1 rounded-[7px] px-3 py-1.5 text-[13px] font-medium text-white transition-colors',
-          editing ? 'bg-brand-blue' : 'bg-brand-gray-300 hover:bg-brand-gray-400'
-        )}
-      >
-        {editing ? 'Save' : action}
-        <PencilLine className="size-3.5" />
-      </button>
+      {onSave && (
+        <button
+          type="button"
+          onClick={editing ? handleSave : () => setEditing(true)}
+          disabled={saving}
+          className={cn(
+            'flex items-center gap-1 rounded-[7px] px-3 py-1.5 text-[13px] font-medium text-white transition-colors',
+            editing ? 'bg-brand-blue' : 'bg-brand-gray-300 hover:bg-brand-gray-400',
+            saving && 'opacity-60'
+          )}
+        >
+          {saving ? <Loader2 className="size-3.5 animate-spin" /> : <PencilLine className="size-3.5" />}
+          {editing ? 'Save' : action}
+        </button>
+      )}
     </div>
   );
 }
@@ -485,20 +508,41 @@ function SubscriptionTab() {
 function ProfileTab() {
   const [branding, setBranding] = useState<TenantBranding>({});
   const [profile, setProfile] = useState<Profile>({});
-  const [location, setLocation] = useState('');
 
   useEffect(() => {
-
     getTenantBranding().then(setBranding).catch(() => {});
     getProfile().then(setProfile).catch(() => {});
   }, []);
 
   return (
     <div className="rounded-[14px] bg-white p-6">
-      <Field label="Church Name" value={branding.organizationName || ''} />
-      <Field label="Email" value={profile.email || ''} />
-      <Field label="Phone number" value={profile.mobilePhone || ''} />
-      <Field label="Location" value={location} />
+      <Field
+        label="Church Name"
+        value={branding.organizationName || ''}
+        onSave={async (v) => {
+          await updateTenantBranding({ organizationName: v });
+          setBranding((b) => ({ ...b, organizationName: v }));
+          toast.success('Church name saved');
+        }}
+      />
+      <Field
+        label="Email"
+        value={profile.email || ''}
+        onSave={async (v) => {
+          await updateProfile({ email: v });
+          setProfile((p) => ({ ...p, email: v }));
+          toast.success('Email saved');
+        }}
+      />
+      <Field
+        label="Phone number"
+        value={profile.mobilePhone || ''}
+        onSave={async (v) => {
+          await updateProfile({ mobilePhone: v });
+          setProfile((p) => ({ ...p, mobilePhone: v }));
+          toast.success('Phone number saved');
+        }}
+      />
     </div>
   );
 }
