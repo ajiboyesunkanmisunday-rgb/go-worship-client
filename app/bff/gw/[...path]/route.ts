@@ -99,6 +99,7 @@ async function proxy(req: NextRequest, path: string[]) {
       body: body || undefined,
       redirect: 'manual',
       cache: 'no-store',
+      signal: AbortSignal.timeout(29000),
     });
   };
 

@@ -62,6 +62,7 @@ export function upstreamFetch(
     ...init,
     headers,
     cache: 'no-store',
+    signal: init.signal ?? AbortSignal.timeout(29000),
   });
 }
 
