@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import {
   getSystemTenant,
   getSystemTenantPaymentGateways,
+  assignSystemTenantPaymentGateways,
+  setSystemTenantGatewayActive,
+  setSystemTenantPrimaryGateway,
+  getSystemPaymentGateways,
+  updateSystemTenantMerchantAccount,
   suspendSystemTenant,
   softDeleteSystemTenant,
   getSystemTenantManagement,
@@ -17,6 +22,7 @@ import {
   getSystemTenantMerchantAccount,
   type SystemTenant,
   type TenantPaymentGatewayAssignment,
+  type SystemPaymentGateway,
   type SystemTenantManagementResponse,
 } from '@/lib/api/system';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -69,6 +75,70 @@ const TABS = [
   'Media',
 ] as const;
 type Tab = (typeof TABS)[number];
+
+function GatewayAssignPanel({ tenantId, onAssigned }: { tenantId: string; onAssigned: () => void }) {
+  const [available, setAvailable] = useState<SystemPaymentGateway[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [assigning, setAssigning] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    getSystemPaymentGateways().then(setAvailable).catch(() => {});
+  }, [open]);
+
+  const handleAssign = async () => {
+    if (selected.length === 0) return;
+    setAssigning(true);
+    try {
+      await assignSystemTenantPaymentGateways(tenantId, selected);
+      toast.success('Gateways assigned.');
+      setOpen(false);
+      setSelected([]);
+      onAssigned();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Assignment failed.');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 border-t border-[#f2f2f2] pt-4">
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)} className="text-[13px] font-medium text-brand-blue hover:opacity-70">
+          + Assign Gateway
+        </button>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <p className="text-[13px] font-semibold">Assign Payment Gateways</p>
+          <div className="flex flex-wrap gap-2">
+            {available.map((gw) => {
+              const gwId = String(gw.id ?? '');
+              const on = selected.includes(gwId);
+              return (
+                <button
+                  key={gwId}
+                  type="button"
+                  onClick={() => setSelected((p) => on ? p.filter((x) => x !== gwId) : [...p, gwId])}
+                  className={cn('rounded-[6px] border px-3 py-1.5 text-[12px] transition-colors', on ? 'border-brand-blue bg-[#e9f0ff] text-brand-blue' : 'border-[#ddd] text-[#333] hover:bg-[#f5f5f5]')}
+                >
+                  {gw.displayName ?? gw.gatewayType ?? gwId}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => { setOpen(false); setSelected([]); }} className="text-[13px] text-brand-gray-500 hover:opacity-70">Cancel</button>
+            <button type="button" disabled={assigning || selected.length === 0} onClick={() => void handleAssign()} className="flex h-[36px] items-center gap-1 rounded-[7px] bg-brand-blue px-4 text-[13px] font-medium text-white disabled:opacity-50">
+              {assigning ? 'Assigning…' : 'Assign'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function buildStats(t: SystemTenant) {
   return [
@@ -292,10 +362,10 @@ export function TenantDetail({ id }: { id: string }) {
             <div className="rounded-[14px] border border-[#eee] p-6 lg:col-span-2">
               <h2 className="text-[18px] font-bold">Payment Gateways</h2>
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[480px] border-collapse text-[12px]">
+                <table className="w-full min-w-[560px] border-collapse text-[12px]">
                   <thead>
                     <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
-                      {['Gateway', 'Status', 'Primary', 'Checkout', 'Billing'].map((h) => (
+                      {['Gateway', 'Status', 'Primary', 'Checkout', 'Billing', 'Actions'].map((h) => (
                         <th key={h} className="pb-2 font-medium">{h}</th>
                       ))}
                     </tr>
@@ -310,11 +380,54 @@ export function TenantDetail({ id }: { id: string }) {
                         <td className="py-3">{g.primaryGateway ? 'Yes' : 'No'}</td>
                         <td className="py-3">{g.allowCustomerCheckout ? 'Yes' : 'No'}</td>
                         <td className="py-3">{g.allowSubscriptionBilling ? 'Yes' : 'No'}</td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await setSystemTenantGatewayActive(id, g.id, !g.active);
+                                  setGateways((prev) => prev.map((x) => x.id === g.id ? { ...x, active: !g.active } : x));
+                                  toast.success(`Gateway ${g.active ? 'deactivated' : 'activated'}.`);
+                                } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed.'); }
+                              }}
+                              className="text-brand-blue hover:opacity-70"
+                            >
+                              {g.active ? 'Deactivate' : 'Activate'}
+                            </button>
+                            {!g.primaryGateway && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await setSystemTenantPrimaryGateway(id, g.id);
+                                    setGateways((prev) => prev.map((x) => ({ ...x, primaryGateway: x.id === g.id })));
+                                    toast.success('Primary gateway set.');
+                                  } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed.'); }
+                                }}
+                                className="text-brand-gray-500 hover:opacity-70"
+                              >
+                                Set Primary
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              <GatewayAssignPanel tenantId={id} onAssigned={() => {
+                getSystemTenantPaymentGateways(id).then((data) => {
+                  const mapped: PaymentGateway[] = data.map((g) => ({
+                    ...g, id: String(g.id ?? ''), gatewayType: String(g.gatewayType ?? ''),
+                    displayName: String(g.displayName ?? g.gatewayType ?? ''), active: Boolean(g.active),
+                    primaryGateway: Boolean(g.primaryGateway), allowCustomerCheckout: Boolean(g.allowCustomerCheckout),
+                    allowSubscriptionBilling: Boolean(g.allowSubscriptionBilling),
+                  }));
+                  setGateways(mapped);
+                }).catch(() => {});
+              }} />
             </div>
           )}
         </div>
@@ -519,11 +632,99 @@ function SystemSubscriptionTab({ id }: { id: string }) {
     </div>
   );
 
+  const handleUpdateMerchant = async (payload: Record<string, unknown>) => {
+    try {
+      await updateSystemTenantMerchantAccount(id, payload);
+      toast.success('Merchant account updated.');
+      getSystemTenantMerchantAccount(id).then((m) => { if (m) setMerchant(m); }).catch(() => {});
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed.');
+    }
+  };
+
   return (
     <div className="mt-6 flex flex-col gap-5">
       {sub ? renderKV(sub, 'Subscription') : <p className="text-[13px] text-brand-gray-400">No subscription data.</p>}
       {lifecycle && renderKV(lifecycle, 'Subscription Lifecycle')}
-      {merchant && renderKV(merchant, 'Merchant Account')}
+      {merchant ? (
+        <MerchantAccountEditor merchant={merchant} onSave={handleUpdateMerchant} />
+      ) : (
+        <p className="text-[13px] text-brand-gray-400">No merchant account data.</p>
+      )}
+    </div>
+  );
+}
+
+function MerchantAccountEditor({ merchant, onSave }: { merchant: Record<string, unknown>; onSave: (p: Record<string, unknown>) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const stringFields = Object.entries(merchant)
+    .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+    .map(([k]) => k);
+
+  useEffect(() => {
+    const f: Record<string, string> = {};
+    stringFields.forEach((k) => { f[k] = String(merchant[k] ?? ''); });
+    setForm(f);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchant]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(form);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-[14px] border border-[#eee] p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-[18px] font-bold">Merchant Account</h2>
+        {!editing && (
+          <button type="button" onClick={() => setEditing(true)} className="text-[13px] font-medium text-brand-blue hover:opacity-70">Edit</button>
+        )}
+      </div>
+      {editing ? (
+        <div className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {stringFields.map((k) => (
+              <div key={k} className="flex flex-col gap-1">
+                <label className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</label>
+                <input
+                  value={form[k] ?? ''}
+                  onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))}
+                  className="h-[36px] rounded-[6px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 pt-1">
+            <button type="button" onClick={() => setEditing(false)} className="text-[13px] text-brand-gray-500 hover:opacity-70">Cancel</button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => void handleSave()}
+              className="flex h-[38px] items-center gap-2 rounded-[8px] bg-brand-blue px-5 text-[13px] font-medium text-white disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 text-[13px]">
+          {stringFields.map((k) => (
+            <div key={k} className="flex flex-col gap-0.5">
+              <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+              <span className="font-medium">{String(merchant[k])}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
