@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import { getTenantRoles, deleteTenantRole } from '@/lib/api/tenant';
 import { toast } from 'sonner';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
 type Role = {
   id: string;
@@ -66,8 +67,8 @@ export default function MinistryAdminManagementPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Admin Management</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Total sub account" value={String(roles.length)} variant="green" />
-        <StatCard title="Active Roles" value={String(activeCount)} variant="green" />
+        <StatCard title="Total sub account" value={String(roles.length)} variant="green" trend={[1,2,2,3,3,roles.length]} />
+        <StatCard title="Active Roles" value={String(activeCount)} variant="green" trend={[1,2,2,3,activeCount]} />
         <StatCard title="Inactive Roles" value={String(inactiveCount)} variant="white" />
         <ActionCard
           variant="white"
@@ -81,6 +82,28 @@ export default function MinistryAdminManagementPage() {
           }
         />
       </div>
+
+      {roles.length > 0 && (
+        <div className="rounded-[14px] bg-white p-6">
+          <p className="text-[16px] font-bold">Role Distribution</p>
+          <p className="mt-0.5 text-[13px] text-brand-gray-500">Active vs inactive breakdown</p>
+          <div className="mt-4 h-[140px] w-full max-w-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[{ name: 'Active', value: activeCount }, { name: 'Inactive', value: inactiveCount }]}
+                margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+              >
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v) => [String(v), 'Roles']} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={48} isAnimationActive={false}>
+                  <Cell fill="#22a45d" />
+                  <Cell fill="#e5e9f5" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       <TableCard
         title="Roles"

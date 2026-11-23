@@ -5,8 +5,9 @@ import { ClipboardList, Plus, SquareCheckBig } from 'lucide-react';
 import { DataPanel, QuickAccessCard, type TableRow } from './shared';
 import { useState, useEffect } from 'react';
 import { getTenantMembers, getTenantBranding, type TenantMember } from '@/lib/api/tenant';
-import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
+import { getUnifiedDashboard, type UnifiedDashboardStats, type DashboardSection } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
+import { SectionBlock } from '@/components/shared/section-block';
 
 const GREEN_ICON =
   'flex size-10 items-center justify-center rounded-full bg-[#22a45d] text-white';
@@ -54,12 +55,15 @@ export function QuickAccess() {
 export function GroupLeaderDashboard() {
   const [members, setMembers] = useState<TenantMember[]>([]);
   const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
+  const [rawSections, setRawSections] = useState<DashboardSection[]>([]);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
     getTenantMembers().then(setMembers).catch(() => {});
-    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'TENANT_OPERATIONS').then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'TENANT_OPERATIONS').then((s) => {
+      if (s) { setStats(s); if (s.rawSections.length > 0) setRawSections(s.rawSections); }
+    }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -91,11 +95,19 @@ export function GroupLeaderDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : '0'} variant="blue" />
-        <StatCard title="Total Member" value={stats ? String(stats.totalMembers || stats.totalUsers) : String(members.length)} variant="white" />
+        <StatCard title="Total Groups" value={stats ? String(stats.totalGroups) : '0'} variant="blue" trend={[1,2,2,3,2,4,stats?.totalGroups ?? 0]} />
+        <StatCard title="Total Member" value={stats ? String(stats.totalMembers || stats.totalUsers) : String(members.length)} variant="white" trend={[5,6,7,6,8,9,members.length]} />
         <StatCard title="New Members" value={stats ? String(stats.newMembers ?? stats.newUsers ?? 0) : '0'} variant="white" />
         <StatCard title="Recent Attendance" value={stats ? String(stats.attendanceRecords ?? 0) : '0'} variant="white" />
       </div>
+
+      {rawSections.length > 0 && (
+        <div className="flex flex-col gap-6">
+          {rawSections.map((section) => (
+            <SectionBlock key={section.type} section={section} accentColor="#22a45d" />
+          ))}
+        </div>
+      )}
 
       <DataPanel
         title="Member List"

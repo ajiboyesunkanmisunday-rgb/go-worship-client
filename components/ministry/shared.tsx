@@ -4,19 +4,26 @@ import Link from 'next/link';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ReceiptButton } from '@/components/ministry/receipt-button';
 import { USE_LIVE_API } from '@/lib/api/config';
+import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 
 export function StatCard({
   title,
   value,
   variant,
   subtitle,
+  trend,
 }: {
   title: string;
   value: string;
   variant: 'blue' | 'green' | 'white';
   subtitle?: string;
+  trend?: number[];
 }) {
   const blue = variant === 'blue';
+  const sparkData = (trend && trend.length > 1) ? trend.map((v) => ({ v })) : null;
+  const sparkColor = blue ? 'rgba(255,255,255,0.8)' : '#243f84';
+  const sparkFill = blue ? 'rgba(255,255,255,0.15)' : 'rgba(36,63,132,0.1)';
+
   return (
     <div
       className={cn(
@@ -43,6 +50,30 @@ export function StatCard({
           />
         </span>
       </div>
+      {sparkData && (
+        <div className="pointer-events-none h-[44px] w-full overflow-hidden">
+          <ResponsiveContainer width="100%" height={44}>
+            <AreaChart data={sparkData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={`sg-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={sparkColor} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={sparkColor}
+                strokeWidth={1.5}
+                fill={`url(#sg-${title.replace(/\s+/g, '')})`}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {!sparkData && <span />}
       <p
         className={cn('text-[32px] font-bold', blue ? 'text-white' : 'text-black')}
       >

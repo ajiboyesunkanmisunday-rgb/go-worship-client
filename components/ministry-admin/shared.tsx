@@ -2,17 +2,23 @@ import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ArrowUpRight, CheckSquare, NotebookText, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 
 export function StatCard({
   title,
   value,
   variant = 'light',
+  trend,
 }: {
   title: string;
   value: string;
   variant?: 'light' | 'purple';
+  trend?: number[];
 }) {
   const purple = variant === 'purple';
+  const sparkData = (trend && trend.length > 1) ? trend.map((v) => ({ v })) : null;
+  const sparkColor = purple ? 'rgba(255,255,255,0.8)' : '#243f84';
+
   return (
     <div
       className={cn(
@@ -21,10 +27,7 @@ export function StatCard({
       )}
       style={
         purple
-          ? {
-              backgroundImage:
-                'linear-gradient(-34deg, #460e70 3.7%, #454ae3 128%)',
-            }
+          ? { backgroundImage: 'linear-gradient(-34deg, #460e70 3.7%, #454ae3 128%)' }
           : undefined
       }
     >
@@ -48,6 +51,30 @@ export function StatCard({
           />
         </span>
       </div>
+      {sparkData && (
+        <div className="pointer-events-none h-[48px] w-full overflow-hidden">
+          <ResponsiveContainer width="100%" height={48}>
+            <AreaChart data={sparkData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={`ma-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={sparkColor} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={sparkColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={sparkColor}
+                strokeWidth={1.5}
+                fill={`url(#ma-${title.replace(/\s+/g, '')})`}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {!sparkData && <span />}
       <p
         className={cn(
           'text-[48px] font-semibold lg:text-[55px]',

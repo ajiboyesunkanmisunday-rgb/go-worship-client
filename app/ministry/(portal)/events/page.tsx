@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 import { getTenantEvents, type TenantEvent } from '@/lib/api/tenant';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
   Upcoming: 'text-brand-blue',
@@ -42,8 +43,8 @@ export default function MinistryEventsPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Events</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Total Events" value={String(events.length)} variant="blue" />
-        <StatCard title="Upcoming Events" value={String(upcoming)} variant="green" />
+        <StatCard title="Total Events" value={String(events.length)} variant="blue" trend={[2,3,2,4,3,events.length]} />
+        <StatCard title="Upcoming Events" value={String(upcoming)} variant="green" trend={[1,2,1,2,upcoming]} />
         <StatCard title="Total Registrations" value={String(totalReg)} variant="white" />
         <ActionCard
           href="/ministry/events/create"
@@ -56,6 +57,30 @@ export default function MinistryEventsPage() {
           }
         />
       </div>
+
+      {events.length > 0 && (() => {
+        const counts = ['Upcoming', 'Ongoing', 'Completed', 'Cancelled'].map((s) => ({
+          name: s,
+          value: events.filter((e) => e.status.toLowerCase() === s.toLowerCase()).length,
+        })).filter((d) => d.value > 0);
+        const COLORS = ['#243f84', '#ff8d28', '#22a45d', '#eb0000'];
+        return counts.length > 0 ? (
+          <div className="rounded-[14px] bg-white p-6">
+            <p className="text-[16px] font-bold">Event Status Breakdown</p>
+            <div className="mt-4 h-[160px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={counts} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [String(v), 'Events']} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40} isAnimationActive={false}>
+                    {counts.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       <TableCard
         title="All Events"

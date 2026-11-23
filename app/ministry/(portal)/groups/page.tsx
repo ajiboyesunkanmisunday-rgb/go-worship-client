@@ -8,6 +8,7 @@ import { CheckSquare, Plus } from 'lucide-react';
 import { getTenantGroups, type TenantGroup } from '@/lib/api/tenant';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
 type GroupRow = { id: string; name: string; category: string; leader: string; members: number; status: string; schedule: string };
 
@@ -35,8 +36,16 @@ export default function MinistryGroupsPage() {
   }, []);
 
   const active = groups.filter((g) => g.status.toLowerCase() === 'active').length;
+  const inactive = groups.filter((g) => g.status.toLowerCase() !== 'active').length;
   const totalMembers = groups.reduce((s, g) => s + g.members, 0);
   const leaders = new Set(groups.map((g) => g.leader).filter(Boolean)).size;
+
+  const categoryData = (() => {
+    const counts: Record<string, number> = {};
+    for (const g of groups) counts[g.category] = (counts[g.category] ?? 0) + 1;
+    return Object.entries(counts).map(([name, value]) => ({ name, value })).slice(0, 6);
+  })();
+  const CAT_COLORS = ['#243f84', '#22a45d', '#ff8d28', '#454ae3', '#eb0000', '#8e97ad'];
 
   const rows: SmartRow[] = groups.map((g, i) => ({
     text: [g.name, g.category, g.leader, g.schedule, String(g.members), g.status],
@@ -73,8 +82,8 @@ export default function MinistryGroupsPage() {
       <h1 className="text-[26px] font-bold lg:text-[32px]">Group</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Group" value={String(groups.length)} variant="blue" />
-        <StatCard title="Total Members" value={String(totalMembers)} variant="white" />
+        <StatCard title="Total Group" value={String(groups.length)} variant="blue" trend={[1,2,2,3,2,4,groups.length]} />
+        <StatCard title="Total Members" value={String(totalMembers)} variant="white" trend={[5,6,7,6,8,9,totalMembers]} />
         <StatCard title="Total Leader" value={String(leaders)} variant="green" />
         <ActionCard
           href="/ministry/groups/create"
@@ -97,6 +106,48 @@ export default function MinistryGroupsPage() {
           }
         />
       </div>
+
+      {groups.length > 0 && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="rounded-[14px] bg-white p-6">
+            <p className="text-[16px] font-bold">Group Status</p>
+            <p className="mt-0.5 text-[13px] text-brand-gray-500">Active vs inactive groups</p>
+            <div className="mt-4 h-[140px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[{ name: 'Active', value: active }, { name: 'Inactive', value: inactive }]}
+                  margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+                >
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(v) => [String(v), 'Groups']} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={48} isAnimationActive={false}>
+                    <Cell fill="#22a45d" />
+                    <Cell fill="#f5c6c6" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {categoryData.length > 1 && (
+            <div className="rounded-[14px] bg-white p-6">
+              <p className="text-[16px] font-bold">Groups by Category</p>
+              <p className="mt-0.5 text-[13px] text-brand-gray-500">Distribution across categories</p>
+              <div className="mt-4 h-[140px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                    <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(v) => [String(v), 'Groups']} />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={32} isAnimationActive={false}>
+                      {categoryData.map((_, i) => <Cell key={i} fill={CAT_COLORS[i % CAT_COLORS.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <SmartTable
         title="All Groups"

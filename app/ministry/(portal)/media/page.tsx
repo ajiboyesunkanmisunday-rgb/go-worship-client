@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { FolderPlus } from 'lucide-react';
 import { getTenantSeries } from '@/lib/api/tenant';
 import { toast } from 'sonner';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
   Published: 'text-[#34a853]',
@@ -62,19 +63,48 @@ export default function MinistryMediaPage() {
   }, []);
 
   const draftCount = series.filter((s) => s.status === 'Draft').length;
+  const publishedCount = series.filter((s) => s.status === 'Published').length;
+  const scheduledCount = series.filter((s) => s.status === 'Scheduled').length;
+  const uploadingCount = series.filter((s) => s.status === 'Uploading').length;
   const totalSermons = series.reduce((sum, s) => sum + s.sermons, 0);
+
+  const statusData = [
+    { name: 'Published', value: publishedCount },
+    { name: 'Draft', value: draftCount },
+    { name: 'Scheduled', value: scheduledCount },
+    { name: 'Uploading', value: uploadingCount },
+  ].filter((d) => d.value > 0);
+  const MEDIA_COLORS = ['#22a45d', '#eb0000', '#ff8d28', '#243f84'];
 
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-[26px] font-bold lg:text-[32px]">Media</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard title="Total Series" value={String(series.length)} variant="blue" />
+        <StatCard title="Total Series" value={String(series.length)} variant="blue" trend={[1,2,2,3,3,series.length]} />
         <StatCard title="Total Sermon" value={String(totalSermons)} variant="green" />
         <StatCard title="Draft Sermons" value={String(draftCount)} variant="green" />
         <ActionCard href="/ministry/media/new" title="Add New Sermon" subtitle="Click here to add sermons" icon={folderIcon} />
         <ActionCard href="/ministry/media/series/new" title="Create new series" subtitle="Click here to create a series" icon={folderIcon} />
       </div>
+
+      {series.length > 0 && statusData.length > 0 && (
+        <div className="rounded-[14px] bg-white p-6">
+          <p className="text-[16px] font-bold">Series by Status</p>
+          <p className="mt-0.5 text-[13px] text-brand-gray-500">Publication status breakdown</p>
+          <div className="mt-4 h-[150px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statusData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v) => [String(v), 'Series']} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={48} isAnimationActive={false}>
+                  {statusData.map((_, i) => <Cell key={i} fill={MEDIA_COLORS[i % MEDIA_COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       <TableCard
         title="Recent Activity"

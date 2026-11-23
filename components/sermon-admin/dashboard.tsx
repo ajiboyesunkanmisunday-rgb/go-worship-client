@@ -5,9 +5,10 @@ import type { SmartRow } from '@/components/shared/smart-table';
 import { DataCard, QuickAccess, StatusText, ViewEditButton } from './shared';
 import { useEffect, useState } from 'react';
 import { getTenantBranding } from '@/lib/api/tenant';
-import { getUnifiedDashboard, type UnifiedDashboardStats } from '@/lib/api/dashboard';
+import { getUnifiedDashboard, type UnifiedDashboardStats, type DashboardSection } from '@/lib/api/dashboard';
 import { getProfile } from '@/lib/api/auth';
 import { getTenantSeries as fetchTenantSeries } from '@/lib/api/tenant';
+import { SectionBlock } from '@/components/shared/section-block';
 
 export const SERIES_STATUSES = [
   'Published',
@@ -20,12 +21,15 @@ type SeriesItem = { name: string; desc: string; count: string; status: string; d
 
 export function SermonAdminDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
+  const [rawSections, setRawSections] = useState<DashboardSection[]>([]);
   const [series, setSeries] = useState<SeriesItem[]>([]);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
-    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'CONTENT').then((s) => { if (s) setStats(s); }).catch(() => {});
+    getUnifiedDashboard('LAST_30_DAYS', 'USD', 'CONTENT').then((s) => {
+      if (s) { setStats(s); if (s.rawSections.length > 0) setRawSections(s.rawSections); }
+    }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -93,11 +97,19 @@ export function SermonAdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Series" value={stats ? String(stats.totalGroups) : String(series.length)} variant="blue" />
+        <StatCard title="Total Series" value={stats ? String(stats.totalGroups) : String(series.length)} variant="blue" trend={[2,3,2,4,3,5,4,series.length]} />
         <StatCard title="Total Sermons" value={stats ? String(stats.totalEvents) : '0'} variant="white" />
-        <StatCard title="Published Sermons" value={String(publishedCount)} variant="white" />
+        <StatCard title="Published Sermons" value={String(publishedCount)} variant="white" trend={[1,2,1,3,2,3,publishedCount]} />
         <StatCard title="Draft Sermons" value={String(draftCount)} variant="white" />
       </div>
+
+      {rawSections.length > 0 && (
+        <div className="flex flex-col gap-6">
+          {rawSections.map((section) => (
+            <SectionBlock key={section.type} section={section} />
+          ))}
+        </div>
+      )}
 
       <DataCard
         title="Recent Activity"
