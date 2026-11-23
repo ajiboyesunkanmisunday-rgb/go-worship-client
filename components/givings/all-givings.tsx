@@ -3,23 +3,24 @@
 import { Giving } from '@/types/giving';
 import { usePaginationParams } from '@/hooks/use-pagination-params';
 import { useEffect, useRef, useState } from 'react';
-import { getCustomerPayments, type PaymentResponse } from '@/lib/api/customer';
+import { getCustomerPayments, paymentToGiving, type PaymentResponse } from '@/lib/api/customer';
 import { GivingsTable } from './givings-table';
 
 function mapPaymentToGiving(p: PaymentResponse): Giving {
-  const rawStatus = (p.status ?? '').toUpperCase();
+  const base = paymentToGiving(p);
+  const rawStatus = base.status.toUpperCase();
   const status =
     rawStatus === 'SUCCEEDED' ? 'Completed' :
     rawStatus === 'FAILED'    ? 'Failed' :
     rawStatus === 'CANCELED' || rawStatus === 'EXPIRED' ? 'Cancelled' : 'Pending';
   return {
-    id: p.id,
-    amount: p.amount ?? 0,
-    campaign: p.purpose || '—',
+    id: base.id,
+    amount: base.amount,
+    campaign: base.purpose,
     paymentMethod: (p.gatewayType as string) || '—',
     type: ((p as Record<string, unknown>)['donationType'] as string) || '—',
     status,
-    dateCreated: p.paidAt || p.requestedAt || new Date().toISOString(),
+    dateCreated: base.date || new Date().toISOString(),
   };
 }
 

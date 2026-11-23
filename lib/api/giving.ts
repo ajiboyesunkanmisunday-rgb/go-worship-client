@@ -1,20 +1,9 @@
 /**
- * Customer recurring giving + saved payment methods.
+ * Recurring giving types and display utilities.
  *
- * Backend (CustomerPaymentMethodController at /api/v1/customer/payment-methods):
- *   GET    /customer/payment-methods
- *   DELETE /customer/payment-methods/{paymentMethodId}
- *   PATCH  /customer/payment-methods/{paymentMethodId}/default
- *
- * Backend (CustomerRecurringGivingController at /api/v1/customer/recurring-giving):
- *   GET   /customer/recurring-giving
- *   POST  /customer/recurring-giving
- *   PATCH /customer/recurring-giving/{scheduleId}/pause
- *   PATCH /customer/recurring-giving/{scheduleId}/resume
- *   PATCH /customer/recurring-giving/{scheduleId}/cancel
+ * API calls for payment methods and recurring giving schedules are in
+ * customer.ts, which is the canonical source for customer-facing operations.
  */
-
-import { api } from './client';
 
 /* -------- Payment Methods -------- */
 
@@ -27,17 +16,6 @@ export type PaymentMethod = {
   isDefault?: boolean;
   [key: string]: unknown;
 };
-
-export const getPaymentMethods = () =>
-  api.get<PaymentMethod[]>('/customer/payment-methods');
-
-/** PATCH /customer/payment-methods/{id}/default */
-export const setDefaultPaymentMethod = (id: string) =>
-  api.patch<unknown>(`/customer/payment-methods/${encodeURIComponent(id)}/default`);
-
-/** DELETE /customer/payment-methods/{id} */
-export const deletePaymentMethod = (id: string) =>
-  api.del<unknown>(`/customer/payment-methods/${encodeURIComponent(id)}`);
 
 /** Short display label for a saved card, e.g. "Visa ending 4242". */
 export function cardLabel(method: PaymentMethod) {
@@ -84,21 +62,6 @@ export type CreateRecurringGivingRequest = {
   fundId: string;
   paymentMethodId: string;
 };
-
-export const getRecurringGiving = () =>
-  api.get<RecurringGiving[]>('/customer/recurring-giving');
-
-export const createRecurringGiving = (payload: CreateRecurringGivingRequest) =>
-  api.post<RecurringGiving>('/customer/recurring-giving', payload);
-
-export const pauseRecurringGiving = (id: string) =>
-  api.patch<unknown>(`/customer/recurring-giving/${encodeURIComponent(id)}/pause`);
-
-export const resumeRecurringGiving = (id: string) =>
-  api.patch<unknown>(`/customer/recurring-giving/${encodeURIComponent(id)}/resume`);
-
-export const cancelRecurringGiving = (id: string) =>
-  api.patch<unknown>(`/customer/recurring-giving/${encodeURIComponent(id)}/cancel`);
 
 /** Human-readable frequency label. */
 export function frequencyLabel(f: RecurringGivingFrequency): string {
