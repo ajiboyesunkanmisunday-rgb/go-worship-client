@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, Plus, X, Users } from 'lucide-react';
 import {
   getTenantEvents,
+  getTenantEvent,
   publishTenantEvent,
   unpublishTenantEvent,
   archiveTenantEvent,
@@ -37,9 +38,10 @@ const STATUS_COLORS: Record<string, string> = {
 type EventModal =
   | { type: 'attendance'; event: TenantEvent }
   | { type: 'registrations'; event: TenantEvent }
-  | { type: 'edit'; event: TenantEvent };
+  | { type: 'edit'; event: TenantEvent }
+  | { type: 'detail'; event: TenantEvent };
 
-function EventActionsMenu({ event, onStatusChange, onEdit }: { event: TenantEvent; onStatusChange: (id: string, status: string) => void; onEdit: (e: TenantEvent) => void }) {
+function EventActionsMenu({ event, onStatusChange, onEdit, onView }: { event: TenantEvent; onStatusChange: (id: string, status: string) => void; onEdit: (e: TenantEvent) => void; onView: (e: TenantEvent) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -67,6 +69,7 @@ function EventActionsMenu({ event, onStatusChange, onEdit }: { event: TenantEven
   }
 
   const items = [
+    { label: 'View', handler: () => { setOpen(false); onView(event); } },
     { label: 'Edit', handler: () => { setOpen(false); onEdit(event); } },
     ...(isPublished
       ? [{ label: 'Unpublish', handler: () => run('Unpublish', () => unpublishTenantEvent(event.id), 'Draft') }]
@@ -120,6 +123,8 @@ export default function MinistryEventsPage() {
   const [editForm, setEditForm] = useState<Partial<CreateEventPayload>>({});
   const [editSaving, setEditSaving] = useState(false);
   const [attendeeId, setAttendeeId] = useState('');
+  const [detailEventData, setDetailEventData] = useState<TenantEvent | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     getTenantEvents()
@@ -154,6 +159,16 @@ export default function MinistryEventsPage() {
   function openEdit(event: TenantEvent) {
     setEditForm({ name: event.name, location: event.location, eventDate: event.eventDate, eventTime: event.eventTime });
     setModal({ type: 'edit', event });
+  }
+
+  function openDetail(event: TenantEvent) {
+    setDetailEventData(null);
+    setDetailLoading(true);
+    setModal({ type: 'detail', event });
+    getTenantEvent(event.id)
+      .then((fresh) => { if (fresh) setDetailEventData(fresh); })
+      .catch(() => toast.error('Could not load event detail.'))
+      .finally(() => setDetailLoading(false));
   }
 
   async function handleSaveEdit() {
@@ -301,7 +316,7 @@ export default function MinistryEventsPage() {
                     <div className="flex items-center gap-2">
                       <CheckInButton eventName={e.name} highlighted={false} />
                       {e.id && (
-                        <EventActionsMenu event={e} onStatusChange={handleStatusChange} onEdit={openEdit} />
+                        <EventActionsMenu event={e} onStatusChange={handleStatusChange} onEdit={openEdit} onView={openDetail} />
                       )}
                       {e.id && (
                         <button
@@ -350,6 +365,42 @@ export default function MinistryEventsPage() {
                 </button>
               </div>
             </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Event Detail Modal */}
+      <Dialog.Root open={modal?.type === 'detail'} onOpenChange={(v) => { if (!v) { setModal(null); setDetailEventData(null); } }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[94%] max-w-[500px] max-h-[80vh] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+            <div className="flex items-center justify-between mb-5">
+              <Dialog.Title className="text-[18px] font-bold">Event Detail</Dialog.Title>
+              <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+            </div>
+            {detailLoading ? (
+              <p className="py-6 text-center text-[13px] text-brand-gray-500">Loading…</p>
+            ) : detailEventData ? (
+              <div className="grid grid-cols-2 gap-4 text-[13px]">
+                {([
+                  ['Name', detailEventData.name],
+                  ['Type', detailEventData.type],
+                  ['Status', detailEventData.status],
+                  ['Date', detailEventData.eventDate],
+                  ['Time', detailEventData.eventTime],
+                  ['Location', detailEventData.location],
+                  ['Registrations', String(detailEventData.registrations ?? '—')],
+                  ['Created', detailEventData.createdAt ? new Date(detailEventData.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined],
+                ] as [string, string | undefined][]).filter(([, v]) => v).map(([label, value]) => (
+                  <div key={label} className="flex flex-col gap-0.5">
+                    <span className="text-[11px] text-brand-gray-500">{label}</span>
+                    <span className="font-medium break-words">{value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-6 text-center text-[13px] text-brand-gray-500">No detail available.</p>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

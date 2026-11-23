@@ -27,9 +27,11 @@ import {
   deleteTenantCheckoutLink,
   getTenantCheckoutLinks,
   getTenantBillingPayments,
+  getTenantBillingPayment,
   type DonationFund,
   type CreateDonationFundPayload,
   type TenantCheckoutLink,
+  type BillingPayment,
 } from '@/lib/api/tenant';
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils';
@@ -117,6 +119,9 @@ export default function MinistryFinancePage() {
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [donationDetail, setDonationDetail] = useState<Record<string, unknown> | null>(null);
   const [donationDetailOpen, setDonationDetailOpen] = useState(false);
+  const [billingPaymentDetail, setBillingPaymentDetail] = useState<BillingPayment | null>(null);
+  const [billingPaymentDetailOpen, setBillingPaymentDetailOpen] = useState(false);
+  const [billingPaymentLoading, setBillingPaymentLoading] = useState(false);
   const [docIdInput, setDocIdInput] = useState('');
   const [docDetail, setDocDetail] = useState<Record<string, unknown> | null>(null);
 
@@ -184,6 +189,7 @@ export default function MinistryFinancePage() {
             date: p['createdAt'] ? new Date(String(p['createdAt'])).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined,
             amount: p['amount'] != null ? `${p['currency'] ?? 'USD'} ${p['amount']}` : undefined,
             method: String(p['paymentMethodId'] ?? ''),
+            paymentId: p['id'] ? String(p['id']) : undefined,
           };
         });
         setTxns(mapped);
@@ -448,7 +454,18 @@ export default function MinistryFinancePage() {
         </div>
       )}
 
-      <TransactionsTable rows={txns} />
+      <TransactionsTable
+        rows={txns}
+        onViewDetail={(paymentId) => {
+          setBillingPaymentDetail(null);
+          setBillingPaymentLoading(true);
+          setBillingPaymentDetailOpen(true);
+          getTenantBillingPayment(paymentId)
+            .then((p) => setBillingPaymentDetail(p))
+            .catch(() => toast.error('Could not load payment detail.'))
+            .finally(() => setBillingPaymentLoading(false));
+        }}
+      />
 
       {/* Document Lookup */}
       <div className="rounded-[14px] bg-white p-6">
@@ -629,6 +646,50 @@ export default function MinistryFinancePage() {
                 <button type="button" className="flex h-[44px] flex-1 items-center justify-center rounded-[8px] border border-[#ddd] text-[14px] text-[#333] hover:bg-[#f5f5f5]">Cancel</button>
               </Dialog.Close>
             </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Billing Payment Detail Modal */}
+      <Dialog.Root open={billingPaymentDetailOpen} onOpenChange={(v) => { if (!v) { setBillingPaymentDetailOpen(false); setBillingPaymentDetail(null); setBillingPaymentLoading(false); } }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[500px] max-h-[80vh] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+            <div className="flex items-center justify-between mb-5">
+              <Dialog.Title className="text-[18px] font-bold">Payment Detail</Dialog.Title>
+              <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+            </div>
+            {billingPaymentLoading ? (
+              <p className="py-6 text-center text-[13px] text-brand-gray-500">Loading…</p>
+            ) : billingPaymentDetail === null ? (
+              <p className="py-6 text-center text-[13px] text-brand-gray-500">No detail available.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 text-[13px]">
+                {(Object.entries(billingPaymentDetail) as [string, unknown][])
+                  .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+                  .map(([k, v]) => (
+                    <div key={k} className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                      <span className="font-medium break-all">{String(v)}</span>
+                    </div>
+                  ))}
+                {billingPaymentDetail.payer && typeof billingPaymentDetail.payer === 'object' && (
+                  <div className="col-span-2 mt-2 rounded-[10px] border border-[#f0f0f0] p-3">
+                    <p className="text-[11px] font-semibold text-brand-gray-500 mb-2">Payer</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.entries(billingPaymentDetail.payer as Record<string, unknown>))
+                        .filter(([, v]) => v != null && v !== '')
+                        .map(([k, v]) => (
+                          <div key={k} className="flex flex-col gap-0.5">
+                            <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                            <span className="text-[12px] font-medium break-all">{String(v)}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

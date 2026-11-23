@@ -152,8 +152,10 @@ export type Transaction = {
 
 export function TransactionsTable({
   rows = [],
+  onViewDetail,
 }: {
   rows?: Transaction[];
+  onViewDetail?: (paymentId: string) => void;
 }) {
   const smartRows: SmartRow[] = rows.map((t, i) => ({
     group: t.status,
@@ -183,15 +185,25 @@ export function TransactionsTable({
       t.amount ?? '—',
       t.method ?? '—',
       t.type,
-      <ReceiptButton
-        key="a"
-        highlighted={i === 0}
-        name={t.name}
-        date={t.date}
-        method={t.method}
-        fund={t.type}
-        amount={t.amount}
-      />,
+      <span key="a" className="flex items-center gap-2">
+        <ReceiptButton
+          highlighted={i === 0}
+          name={t.name}
+          date={t.date}
+          method={t.method}
+          fund={t.type}
+          amount={t.amount}
+        />
+        {onViewDetail && t.paymentId && (
+          <button
+            type="button"
+            onClick={() => onViewDetail(t.paymentId!)}
+            className="text-[11px] font-medium text-brand-blue hover:underline"
+          >
+            Detail
+          </button>
+        )}
+      </span>,
     ],
   }));
 
