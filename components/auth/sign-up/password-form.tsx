@@ -22,6 +22,7 @@ import { FormAlert } from '@/components/ui/form-alert';
 import {
   registerCustomer,
   toProvisionRequest,
+  usernameFromEmail,
   type SignUpDetails,
 } from '@/lib/api/registration';
 
@@ -71,6 +72,11 @@ export function PasswordForm({ onSuccess }: Props) {
       return;
     }
 
+    const normalizedDetails: SignUpDetails = {
+      ...(details as SignUpDetails),
+      email: usernameFromEmail(details.email),
+    };
+
     setSubmitting(true);
     try {
       // reCAPTCHA v3: mint a fresh token per submit (no checkbox).
@@ -82,7 +88,7 @@ export function PasswordForm({ onSuccess }: Props) {
       }
       await registerCustomer(
         toProvisionRequest(
-          details as SignUpDetails,
+          normalizedDetails,
           data.password,
           data.confirmPassword,
           captchaToken

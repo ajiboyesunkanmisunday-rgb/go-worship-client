@@ -31,14 +31,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import {
-  getPaymentMethods,
-  setDefaultPaymentMethod,
-  deletePaymentMethod,
-  getRecurringGiving,
-  createRecurringGiving,
-  pauseRecurringGiving,
-  resumeRecurringGiving,
-  cancelRecurringGiving,
+  getCustomerPaymentMethods,
+  setDefaultCustomerPaymentMethod,
+  revokeCustomerPaymentMethod,
+  getCustomerRecurringGiving,
+  createCustomerRecurringGiving,
+  pauseCustomerRecurringGiving,
+  resumeCustomerRecurringGiving,
+  cancelCustomerRecurringGiving,
+} from '@/lib/api/customer';
+import {
   frequencyLabel,
   cardLabel,
   type PaymentMethod,
@@ -86,9 +88,9 @@ export function RecurringContent() {
   const load = async () => {
     setLoading(true);
     try {
-      const [pm, rg] = await Promise.all([getPaymentMethods(), getRecurringGiving()]);
-      setMethods(Array.isArray(pm) ? pm : []);
-      setSchedules(Array.isArray(rg) ? rg : []);
+      const [pm, rg] = await Promise.all([getCustomerPaymentMethods(), getCustomerRecurringGiving()]);
+      setMethods(Array.isArray(pm) ? (pm as unknown as PaymentMethod[]) : []);
+      setSchedules(Array.isArray(rg) ? (rg as unknown as RecurringGiving[]) : []);
     } catch {
       toast.error('Could not load giving data');
     } finally {
@@ -101,7 +103,7 @@ export function RecurringContent() {
   const onSubmit: SubmitHandler<Schema> = async (data) => {
     setBusy(true);
     try {
-      await createRecurringGiving({
+      await createCustomerRecurringGiving({
         amount: parseFloat(data.amount),
         currency: data.currency,
         frequency: data.frequency as RecurringGivingFrequency,
@@ -122,7 +124,7 @@ export function RecurringContent() {
   const handlePause = async (id: string) => {
     setBusy(true);
     try {
-      await pauseRecurringGiving(id);
+      await pauseCustomerRecurringGiving(id);
       toast.success('Paused');
       await load();
     } catch (e) {
@@ -135,7 +137,7 @@ export function RecurringContent() {
   const handleResume = async (id: string) => {
     setBusy(true);
     try {
-      await resumeRecurringGiving(id);
+      await resumeCustomerRecurringGiving(id);
       toast.success('Resumed');
       await load();
     } catch (e) {
@@ -149,7 +151,7 @@ export function RecurringContent() {
     if (!confirm('Cancel this recurring gift?')) return;
     setBusy(true);
     try {
-      await cancelRecurringGiving(id);
+      await cancelCustomerRecurringGiving(id);
       toast.success('Cancelled');
       await load();
     } catch (e) {
@@ -162,7 +164,7 @@ export function RecurringContent() {
   const handleSetDefault = async (id: string) => {
     setBusy(true);
     try {
-      await setDefaultPaymentMethod(id);
+      await setDefaultCustomerPaymentMethod(id);
       toast.success('Default card updated');
       await load();
     } catch (e) {
@@ -176,7 +178,7 @@ export function RecurringContent() {
     if (!confirm('Remove this payment method?')) return;
     setBusy(true);
     try {
-      await deletePaymentMethod(id);
+      await revokeCustomerPaymentMethod(id);
       toast.success('Card removed');
       await load();
     } catch (e) {

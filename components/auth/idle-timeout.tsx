@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getProfile, logout } from '@/lib/api/auth';
+import { getProfile, logout, refreshAuthToken } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -145,8 +145,9 @@ export function IdleTimeout({ loginPath = '/auth/login' }: { loginPath?: string 
       return;
     }
 
-    // Refresh server lastActivity so the backend doesn't expire us.
+    // Attempt token refresh, then confirm the session is still alive.
     try {
+      await refreshAuthToken('').catch(() => {});
       await getProfile();
     } catch {
       // Session expired between the warning and the click — redirect now.
