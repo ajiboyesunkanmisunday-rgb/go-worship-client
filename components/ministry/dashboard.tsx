@@ -109,18 +109,30 @@ export function MinistryDashboard() {
   const [orgName, setOrgName] = useState('');
   const [dashFamily, setDashFamily] = useState('TENANT_OPERATIONS');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadFamily = useCallback(async (family: string) => {
-    const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'));
-    if (!u) return;
-
-    if (u.adminDisplayName && !userName) setUserName(u.adminDisplayName);
-    if (u.availableFamilies.length > 0) setFamilies(u.availableFamilies);
-    setRawSections(u.rawSections);
+    setLoading(true);
+    setError(null);
+    try {
+      const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'));
+      if (!u) {
+        setRawSections([]);
+        return;
+      }
+      if (u.adminDisplayName && !userName) setUserName(u.adminDisplayName);
+      if (u.availableFamilies.length > 0) setFamilies(u.availableFamilies);
+      setRawSections(u.rawSections);
+    } catch {
+      setError('Dashboard data could not be loaded. Please try again.');
+      setRawSections([]);
+    } finally {
+      setLoading(false);
+    }
   }, [userName]);
 
   useEffect(() => {
-
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
       if (name) setUserName(name);
@@ -170,13 +182,27 @@ export function MinistryDashboard() {
         })}
       </div>
 
-      {rawSections.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-[90px] animate-pulse rounded-[14px] bg-white" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-[14px] border border-red-100 bg-red-50 px-5 py-4 text-[13px] text-red-600">
+          {error}
+        </div>
+      ) : rawSections.length > 0 ? (
         <div className="flex flex-col gap-6">
           {rawSections.map((section) => (
             <SectionBlock key={section.type} section={section} />
           ))}
         </div>
-      ) : null}
+      ) : (
+        <div className="rounded-[14px] bg-white px-5 py-8 text-center text-[13px] text-brand-gray-500">
+          No data available for this category.
+        </div>
+      )}
     </div>
   );
 }

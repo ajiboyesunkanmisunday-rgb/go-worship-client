@@ -12,9 +12,13 @@ export function AllGroups() {
   const router = useRouter();
   const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSelfGroups().then(setGroups).catch(() => {});
+    getSelfGroups()
+      .then(setGroups)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = groups.filter((g) =>
@@ -61,7 +65,14 @@ export function AllGroups() {
         </div>
 
         <ul className="mt-4 flex flex-col divide-y divide-[#ededed]">
-          {filtered.map((g) => (
+          {loading ? (
+            <li className="py-6 text-center text-[13px] text-brand-gray-400">Loading groups…</li>
+          ) : filtered.length === 0 ? (
+            <li className="py-6 text-center text-[13px] text-brand-gray-400">
+              {search ? 'No groups match your search.' : 'No groups found.'}
+            </li>
+          ) : null}
+          {!loading && filtered.map((g) => (
             <li key={g.id} className="flex items-center gap-4 py-5">
               <div className="relative h-[110px] w-[160px] shrink-0 overflow-hidden rounded-[7px]">
                 <Image

@@ -32,14 +32,15 @@ export function RegisteredEvents({ isIntercepted = false }: Props) {
     [isIntercepted]
   );
   const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getSelfEvents()
       .then((data) => {
-        const mapped = data.map(mapTenantEvent);
-        if (mapped.length > 0) setEvents(mapped);
+        setEvents(data.map(mapTenantEvent));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -71,7 +72,11 @@ export function RegisteredEvents({ isIntercepted = false }: Props) {
         </div>
 
         <div className="w-full flex flex-col justify-start items-start gap-6">
-          {events.map((event) => (
+          {loading ? (
+            <p className="w-full text-center text-[14px] text-brand-gray-400">Loading events…</p>
+          ) : events.length === 0 ? (
+            <p className="w-full text-center text-[14px] text-brand-gray-400">No registered events.</p>
+          ) : events.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
         </div>

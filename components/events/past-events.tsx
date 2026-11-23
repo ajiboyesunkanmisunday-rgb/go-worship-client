@@ -32,6 +32,7 @@ export function PastEvents({ isIntercepted = false }: Props) {
     [isIntercepted]
   );
   const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getSelfEvents()
@@ -42,9 +43,10 @@ export function PastEvents({ isIntercepted = false }: Props) {
             return s.includes('past') || s.includes('completed') || s.includes('ended');
           })
           .map(mapTenantEvent);
-        if (past.length > 0) setEvents(past);
+        setEvents(past);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -76,7 +78,11 @@ export function PastEvents({ isIntercepted = false }: Props) {
         </div>
 
         <div className="w-full flex flex-col justify-start items-start gap-6">
-          {events.map((event) => (
+          {loading ? (
+            <p className="w-full text-center text-[14px] text-brand-gray-400">Loading events…</p>
+          ) : events.length === 0 ? (
+            <p className="w-full text-center text-[14px] text-brand-gray-400">No past events.</p>
+          ) : events.map((event) => (
             <EventCard key={event.id} event={event} isPast />
           ))}
         </div>

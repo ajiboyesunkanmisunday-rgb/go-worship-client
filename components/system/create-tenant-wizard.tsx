@@ -388,6 +388,11 @@ export function CreateTenantWizard() {
       {/* ---------------- Step 2: Plan ---------------- */}
       {step === 2 && (
         <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {plans.length === 0 && (
+            <p className="col-span-3 py-6 text-center text-[13px] text-brand-gray-400">
+              Loading subscription plans…
+            </p>
+          )}
           {plans.map((p) => {
             const active = p.key === plan;
             return (

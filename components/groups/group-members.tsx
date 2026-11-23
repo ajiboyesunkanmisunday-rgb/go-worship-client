@@ -11,9 +11,13 @@ import { cn } from '@/lib/utils';
 export function GroupMembers() {
   const router = useRouter();
   const [members, setMembers] = useState<TenantMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getTenantMembers().then(setMembers).catch(() => {});
+    getTenantMembers()
+      .then(setMembers)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -47,7 +51,12 @@ export function GroupMembers() {
         </div>
 
         <ul className="mt-4 flex flex-col divide-y divide-[#ededed]">
-          {members.map((m) => (
+          {loading ? (
+            <li className="py-6 text-center text-[13px] text-brand-gray-400">Loading members…</li>
+          ) : members.length === 0 ? (
+            <li className="py-6 text-center text-[13px] text-brand-gray-400">No members found.</li>
+          ) : null}
+          {!loading && members.map((m) => (
             <li key={m.id} className="flex items-center gap-4 py-4">
               <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-gray-200">
                 <Image

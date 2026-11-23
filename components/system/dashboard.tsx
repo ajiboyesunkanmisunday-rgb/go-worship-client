@@ -117,28 +117,42 @@ export function SystemDashboard() {
   const [dashFamily, setDashFamily] = useState('PLATFORM');
   const [families, setFamilies] = useState<string[]>(DEFAULT_FAMILIES);
   const [stats, setStats] = useState<SystemStats>({ totalTenants: 0, activeTenants: 0, totalUsers: 0, givingVolume: '', trialTenants: 0, overduePayments: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadFamily = useCallback(async (family: string) => {
-    const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'), 'system');
-    if (!u) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const u = await getUnifiedDashboard('LAST_30_DAYS', 'USD', family.toUpperCase().replace(/ /g, '_'), 'system');
+      if (!u) {
+        setRawSections([]);
+        return;
+      }
 
-    if (u.adminDisplayName) setAdminName(u.adminDisplayName);
-    if (u.availableFamilies.length > 0) setFamilies(u.availableFamilies);
+      if (u.adminDisplayName) setAdminName(u.adminDisplayName);
+      if (u.availableFamilies.length > 0) setFamilies(u.availableFamilies);
 
-    setRawSections(u.rawSections);
+      setRawSections(u.rawSections);
 
-    // Keep stats for bottom panels
-    setStats((prev) => ({
-      ...prev,
-      totalTenants:    u.totalTenants,
-      activeTenants:   u.activeTenants,
-      trialTenants:    u.newTenants ?? prev.trialTenants,
-      totalUsers:      u.totalUsers,
-      givingVolume:    u.totalGiving,
-    }));
+      // Keep stats for bottom panels
+      setStats((prev) => ({
+        ...prev,
+        totalTenants:    u.totalTenants,
+        activeTenants:   u.activeTenants,
+        trialTenants:    u.newTenants ?? prev.trialTenants,
+        totalUsers:      u.totalUsers,
+        givingVolume:    u.totalGiving,
+      }));
 
-    if (u.trend.length > 0) {
-      setTrendData(u.trend.map((p) => ({ month: p.label, value: p.value })));
+      if (u.trend.length > 0) {
+        setTrendData(u.trend.map((p) => ({ month: p.label, value: p.value })));
+      }
+    } catch {
+      setError('Dashboard data could not be loaded. Please try again.');
+      setRawSections([]);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -233,13 +247,27 @@ export function SystemDashboard() {
       </div>
 
       {/* Dynamic sections from API */}
-      {rawSections.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-[90px] animate-pulse rounded-[14px] bg-white" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-[14px] border border-red-100 bg-red-50 px-5 py-4 text-[13px] text-red-600">
+          {error}
+        </div>
+      ) : rawSections.length > 0 ? (
         <div className="flex flex-col gap-6">
           {rawSections.map((section) => (
             <SectionBlock key={section.type} section={section} />
           ))}
         </div>
-      ) : null}
+      ) : (
+        <div className="rounded-[14px] bg-white px-5 py-8 text-center text-[13px] text-brand-gray-500">
+          No data available for this category.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.7fr_1fr]">
         <div className="rounded-[14px] bg-white p-6">
