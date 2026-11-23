@@ -10,6 +10,7 @@ import {
   getSystemAuditSensitiveActions,
   getSystemAuditRolePermissionChanges,
   getSystemAuditPaymentGatewayChanges,
+  getSystemAuditEventById,
   systemAuditExportUrl,
 } from '@/lib/api/system';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ import { toast } from 'sonner';
  */
 
 type Log = {
+  id?: string;
   action: string;
   resource: string;
   user: string;
@@ -123,6 +125,7 @@ function fmtLogDate(iso?: string): string {
 
 function mapLogRow(e: Record<string, unknown>): Log {
   return {
+    id:       String(e['id'] ?? e['eventId'] ?? e['auditId'] ?? ''),
     action:   normalizeAction(String(e['action'] ?? e['eventType'] ?? e['type'] ?? '')),
     resource: String(e['resource'] ?? e['resourceType'] ?? e['entityType'] ?? e['target'] ?? ''),
     user:     String(e['performedBy'] ?? e['actor'] ?? e['username'] ?? e['user'] ?? e['userId'] ?? 'Administrator'),
@@ -146,6 +149,7 @@ function parseArr(data: unknown): Record<string, unknown>[] {
 
 export default function SystemAuditLogsPage() {
   const [selected, setSelected] = useState<Log | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<Record<string, unknown> | null>(null);
   const [logs, setLogs] = useState<Log[]>([]);
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
@@ -189,7 +193,15 @@ export default function SystemAuditLogsPage() {
       <button
         key="m"
         type="button"
-        onClick={() => { setSelected(l); }}
+        onClick={() => {
+          setSelected(l);
+          setSelectedDetail(null);
+          if (l.id) {
+            getSystemAuditEventById(l.id)
+              .then((d) => setSelectedDetail(d as Record<string, unknown>))
+              .catch(() => {});
+          }
+        }}
         aria-label="Log details"
         className="flex size-7 items-center justify-center rounded-full hover:bg-[#eef1f6]"
       >
@@ -254,7 +266,7 @@ export default function SystemAuditLogsPage() {
 
       <Dialog.Root
         open={!!selected}
-        onOpenChange={(v) => !v && setSelected(null)}
+        onOpenChange={(v) => { if (!v) { setSelected(null); setSelectedDetail(null); } }}
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
@@ -285,6 +297,22 @@ export default function SystemAuditLogsPage() {
                 <LogField label="IP Address">{selected.ip}</LogField>
                 <LogField label="Timestamp">{selected.time}</LogField>
                 <LogField label="Details">{selected.details}</LogField>
+              </div>
+            )}
+            {selectedDetail && (
+              <div className="mt-4 rounded-[8px] bg-[#f6f8fc] p-3">
+                <p className="mb-2 text-[11px] font-medium text-brand-gray-500 uppercase tracking-wide">Extended Details</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+                  {Object.entries(selectedDetail)
+                    .filter(([, v]) => v !== null && v !== undefined && typeof v !== 'object')
+                    .slice(0, 10)
+                    .map(([k, v]) => (
+                      <div key={k}>
+                        <span className="text-[10px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}: </span>
+                        <span className="font-medium text-[#333]">{String(v)}</span>
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
           </Dialog.Content>

@@ -91,7 +91,7 @@ function GatewayAssignPanel({ tenantId, onAssigned }: { tenantId: string; onAssi
     if (selected.length === 0) return;
     setAssigning(true);
     try {
-      await assignSystemTenantPaymentGateways(tenantId, selected);
+      await assignSystemTenantPaymentGateways(tenantId, { gatewayCodes: selected });
       toast.success('Gateways assigned.');
       setOpen(false);
       setSelected([]);

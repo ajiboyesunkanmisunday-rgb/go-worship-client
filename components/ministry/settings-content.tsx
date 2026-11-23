@@ -24,6 +24,10 @@ import {
   updateTenantCampus,
   deleteTenantCampus,
   getTenantBillingPayments,
+  checkoutTenantInvoice,
+  generateTenantInvoiceDocument,
+  getTenantBillingPaymentReceipt,
+  getTenantSecurityPosture,
   getTenantCustomDomainStatus,
   prepareTenantCustomDomain,
   verifyTenantCustomDomain,
@@ -165,11 +169,12 @@ function Toggle({ label, on = true, onChange }: { label: string; on?: boolean; o
 function SecurityTab() {
   const [twoFactor, setTwoFactor] = useState(false);
   const [settings, setSettings] = useState<TenantSecuritySettings | null>(null);
+  const [posture, setPosture] = useState<Record<string, unknown> | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-
     getTenantSecuritySettings().then(setSettings).catch(() => {});
+    getTenantSecurityPosture().then(setPosture).catch(() => {});
   }, []);
 
   const toggle = (key: keyof TenantSecuritySettings) => {
@@ -236,6 +241,25 @@ function SecurityTab() {
       )}
 
       <TwoFactorModal open={twoFactor} onOpenChange={setTwoFactor} />
+
+      {posture && Object.keys(posture).length > 0 && (
+        <div className="mt-5 rounded-[12px] border border-[#f0f0f0] p-4">
+          <p className="mb-3 text-[13px] font-semibold">Security Posture</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 text-[12px]">
+            {Object.entries(posture).map(([k, v]) => {
+              if (v === null || v === undefined || typeof v === 'object') return null;
+              const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+              const isGood = v === true || String(v).toLowerCase() === 'good' || String(v).toLowerCase() === 'pass';
+              return (
+                <div key={k} className="flex flex-col gap-0.5 rounded-[8px] border border-[#f0f0f0] p-3">
+                  <span className="text-[10px] text-brand-gray-500 uppercase tracking-wide">{label}</span>
+                  <span className={cn('font-medium', isGood ? 'text-[#34a853]' : 'text-[#eb0000]')}>{String(v)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -661,21 +685,54 @@ function SubscriptionTab() {
             <table className="w-full min-w-[540px] border-collapse text-[12px]">
               <thead>
                 <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
-                  {['Reference', 'Amount', 'Status', 'Date', 'Paid'].map((h) => (
+                  {['Reference', 'Amount', 'Status', 'Date', 'Paid', 'Actions'].map((h) => (
                     <th key={h} className="pb-2 font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-[#f2f2f2]">
-                    <td className="py-3 font-mono">{inv.reference || inv.id}</td>
-                    <td className="py-3">{inv.currency} {inv.amount}</td>
-                    <td className={cn('py-3 font-medium', statusColor(inv.status))}>{inv.status}</td>
-                    <td className="py-3">{inv.createdAt}</td>
-                    <td className="py-3">{inv.paidAt || '—'}</td>
-                  </tr>
-                ))}
+                {invoices.map((inv) => {
+                  const isPaid = /paid|success/i.test(inv.status ?? '');
+                  return (
+                    <tr key={inv.id} className="border-b border-[#f2f2f2]">
+                      <td className="py-3 font-mono">{inv.reference || inv.id}</td>
+                      <td className="py-3">{inv.currency} {inv.amount}</td>
+                      <td className={cn('py-3 font-medium', statusColor(inv.status))}>{inv.status}</td>
+                      <td className="py-3">{inv.createdAt}</td>
+                      <td className="py-3">{inv.paidAt || '—'}</td>
+                      <td className="py-3">
+                        <span className="flex items-center gap-2">
+                          {!isPaid && inv.id && (
+                            <button
+                              type="button"
+                              className="text-[11px] font-medium text-brand-blue hover:underline"
+                              onClick={async () => {
+                                try {
+                                  const res = await checkoutTenantInvoice(inv.id!);
+                                  const url = res?.checkoutUrl as string | undefined;
+                                  if (url) window.open(url, '_blank');
+                                  else toast.success('Invoice checkout initiated.');
+                                } catch (e) { toast.error(e instanceof Error ? e.message : 'Checkout failed.'); }
+                              }}
+                            >Pay</button>
+                          )}
+                          {inv.id && (
+                            <button
+                              type="button"
+                              className="text-[11px] font-medium text-brand-gray-500 hover:underline"
+                              onClick={async () => {
+                                try {
+                                  await generateTenantInvoiceDocument(inv.id!);
+                                  toast.success('Invoice document generated.');
+                                } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not generate document.'); }
+                              }}
+                            >Download</button>
+                          )}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -879,7 +936,7 @@ function PaymentBillingTab() {
             <table className="w-full min-w-[480px] border-collapse text-[12px]">
               <thead>
                 <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
-                  {['Reference', 'Amount', 'Status', 'Date'].map((h) => (
+                  {['Reference', 'Amount', 'Status', 'Date', 'Actions'].map((h) => (
                     <th key={h} className="pb-2 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -891,15 +948,30 @@ function PaymentBillingTab() {
                   const amount = p.amount != null ? `${currency} ${p.amount}` : '—';
                   const status = p.status ?? '—';
                   const date = fmtDate(p.requestedAt ?? p.paidAt ?? '');
-                  const statusColor = status.toLowerCase() === 'success' || status.toLowerCase() === 'paid'
-                    ? 'text-[#34a853]' : status.toLowerCase().includes('fail') || status.toLowerCase() === 'failed'
-                    ? 'text-[#eb0000]' : 'text-[#ff8d28]';
+                  const isPaid = status.toLowerCase() === 'success' || status.toLowerCase() === 'paid';
+                  const statusColorClass = isPaid ? 'text-[#34a853]' : status.toLowerCase().includes('fail') ? 'text-[#eb0000]' : 'text-[#ff8d28]';
                   return (
                     <tr key={p.id ?? i} className="border-b border-[#f2f2f2]">
                       <td className="py-3 font-mono">{ref}</td>
                       <td className="py-3">{amount}</td>
-                      <td className={cn('py-3 font-medium', statusColor)}>{status}</td>
+                      <td className={cn('py-3 font-medium', statusColorClass)}>{status}</td>
                       <td className="py-3">{date}</td>
+                      <td className="py-3">
+                        {isPaid && p.id && (
+                          <button
+                            type="button"
+                            className="text-[11px] font-medium text-brand-blue hover:underline"
+                            onClick={async () => {
+                              try {
+                                const res = await getTenantBillingPaymentReceipt(p.id!);
+                                const url = (res as Record<string, unknown>)?.downloadUrl as string | undefined;
+                                if (url) window.open(url, '_blank');
+                                else toast.success('Receipt generated.');
+                              } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not get receipt.'); }
+                            }}
+                          >Receipt</button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

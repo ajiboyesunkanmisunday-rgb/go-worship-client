@@ -10,11 +10,14 @@ import {
   publishTenantEvent,
   unpublishTenantEvent,
   archiveTenantEvent,
+  updateTenantEvent,
+  recordEventAttendance,
   getEventAttendance,
   getEventRegistrations,
   cancelEventRegistration,
   type TenantEvent,
   type EventRegistration,
+  type CreateEventPayload,
 } from '@/lib/api/tenant';
 import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
@@ -32,9 +35,10 @@ const STATUS_COLORS: Record<string, string> = {
 
 type EventModal =
   | { type: 'attendance'; event: TenantEvent }
-  | { type: 'registrations'; event: TenantEvent };
+  | { type: 'registrations'; event: TenantEvent }
+  | { type: 'edit'; event: TenantEvent };
 
-function EventActionsMenu({ event, onStatusChange }: { event: TenantEvent; onStatusChange: (id: string, status: string) => void }) {
+function EventActionsMenu({ event, onStatusChange, onEdit }: { event: TenantEvent; onStatusChange: (id: string, status: string) => void; onEdit: (e: TenantEvent) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -62,6 +66,7 @@ function EventActionsMenu({ event, onStatusChange }: { event: TenantEvent; onSta
   }
 
   const items = [
+    { label: 'Edit', handler: () => { setOpen(false); onEdit(event); } },
     ...(isPublished
       ? [{ label: 'Unpublish', handler: () => run('Unpublish', () => unpublishTenantEvent(event.id), 'Draft') }]
       : [{ label: 'Publish', handler: () => run('Publish', () => publishTenantEvent(event.id), 'Published') }]
@@ -109,6 +114,9 @@ export default function MinistryEventsPage() {
   const [modal, setModal] = useState<EventModal | null>(null);
   const [modalData, setModalData] = useState<EventRegistration[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<CreateEventPayload>>({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [attendeeId, setAttendeeId] = useState('');
 
   useEffect(() => {
     getTenantEvents()
@@ -138,6 +146,43 @@ export default function MinistryEventsPage() {
       .then((arr) => setModalData(arr))
       .catch(() => toast.error('Could not load registrations.'))
       .finally(() => setModalLoading(false));
+  }
+
+  function openEdit(event: TenantEvent) {
+    setEditForm({ name: event.name, location: event.location, eventDate: event.eventDate, eventTime: event.eventTime });
+    setModal({ type: 'edit', event });
+  }
+
+  async function handleSaveEdit() {
+    if (modal?.type !== 'edit') return;
+    setEditSaving(true);
+    try {
+      await updateTenantEvent(modal.event.id, editForm);
+      setEvents((prev) => prev.map((e) => e.id === modal.event.id ? { ...e, ...editForm } : e));
+      toast.success('Event updated.');
+      setModal(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update event.');
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  async function handleRecordAttendance(eventId: string) {
+    if (!attendeeId.trim()) return;
+    try {
+      await recordEventAttendance({ event: { id: eventId }, userProfileId: attendeeId.trim(), status: 'PRESENT', source: 'MANUAL' });
+      toast.success('Attendance recorded.');
+      setAttendeeId('');
+      // Reload attendance list
+      setModalLoading(true);
+      getEventAttendance(eventId)
+        .then((arr) => setModalData(arr as unknown as EventRegistration[]))
+        .catch(() => {})
+        .finally(() => setModalLoading(false));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not record attendance.');
+    }
   }
 
   async function handleCancelRegistration(regId: string) {
@@ -240,7 +285,7 @@ export default function MinistryEventsPage() {
                     <div className="flex items-center gap-2">
                       <CheckInButton eventName={e.name} highlighted={false} />
                       {e.id && (
-                        <EventActionsMenu event={e} onStatusChange={handleStatusChange} />
+                        <EventActionsMenu event={e} onStatusChange={handleStatusChange} onEdit={openEdit} />
                       )}
                       {e.id && (
                         <button
@@ -261,8 +306,40 @@ export default function MinistryEventsPage() {
         </table>
       </TableCard>
 
+      {/* Edit Event Modal */}
+      <Dialog.Root open={modal?.type === 'edit'} onOpenChange={(v) => { if (!v) setModal(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[94%] max-w-[500px] max-h-[90vh] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+            <div className="flex items-center justify-between mb-5">
+              <Dialog.Title className="text-[18px] font-bold">Edit Event</Dialog.Title>
+              <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+            </div>
+            <div className="flex flex-col gap-4">
+              {(['name', 'location', 'eventDate', 'eventTime'] as const).map((field) => (
+                <div key={field} className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
+                  <input
+                    value={String(editForm[field] ?? '')}
+                    onChange={(e) => setEditForm((p) => ({ ...p, [field]: e.target.value }))}
+                    type={field === 'eventDate' ? 'date' : field === 'eventTime' ? 'time' : 'text'}
+                    className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue"
+                  />
+                </div>
+              ))}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Dialog.Close className="text-[13px] text-brand-gray-500 hover:opacity-70">Cancel</Dialog.Close>
+                <button type="button" disabled={editSaving} onClick={() => void handleSaveEdit()} className="h-[40px] rounded-[8px] bg-brand-blue px-5 text-[13px] font-medium text-white disabled:opacity-50">
+                  {editSaving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       {/* Attendance / Registrations Modal */}
-      <Dialog.Root open={!!modal} onOpenChange={(v) => { if (!v) setModal(null); }}>
+      <Dialog.Root open={modal?.type === 'attendance' || modal?.type === 'registrations'} onOpenChange={(v) => { if (!v) setModal(null); }}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
           <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[94%] max-w-[560px] max-h-[80vh] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[16px] bg-white data-[state=open]:animate-in data-[state=open]:zoom-in-95 flex flex-col">
@@ -279,6 +356,23 @@ export default function MinistryEventsPage() {
                 </span>
               </Dialog.Close>
             </div>
+            {modal?.type === 'attendance' && (
+              <div className="flex items-center gap-2 px-6 pb-3">
+                <input
+                  value={attendeeId}
+                  onChange={(e) => setAttendeeId(e.target.value)}
+                  placeholder="User profile ID to record…"
+                  className="h-[36px] flex-1 rounded-[8px] border border-[#ddd] px-3 text-[12px] outline-none focus:border-brand-blue"
+                />
+                <button
+                  type="button"
+                  onClick={() => { if (modal?.event.id) void handleRecordAttendance(modal.event.id); }}
+                  className="h-[36px] rounded-[8px] bg-brand-blue px-3 text-[12px] font-medium text-white hover:opacity-90"
+                >
+                  Record
+                </button>
+              </div>
+            )}
             <div className="overflow-y-auto px-6 pb-6">
               {modalLoading ? (
                 <p className="py-8 text-center text-[13px] text-brand-gray-500">Loading…</p>

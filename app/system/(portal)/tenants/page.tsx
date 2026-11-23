@@ -6,7 +6,7 @@ import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getSystemTenants, suspendSystemTenant, type SystemTenant } from '@/lib/api/system';
+import { getSystemTenants, getSystemTenantManagementPage, suspendSystemTenant, type SystemTenant } from '@/lib/api/system';
 import { toast } from 'sonner';
 
 const STATUS: Record<string, string> = {
@@ -55,11 +55,36 @@ export default function SystemTenantsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSystemTenants()
-      .then((data) => {
-        if (data.length > 0) setTenants(data);
+    // Prefer paginated management endpoint (richer data); fall back to basic list.
+    getSystemTenantManagementPage(0, 50)
+      .then((page) => {
+        type R = Record<string, unknown>;
+        const items: R[] = Array.isArray(page) ? (page as R[]) : (Array.isArray((page as R)?.['content']) ? (page as R)['content'] as R[] : []);
+        if (items.length > 0) {
+          const rawStatus = (s: string) => (['Active', 'Suspended', 'Pending'] as const).find((v) => v.toLowerCase() === s.toLowerCase()) ?? 'Active';
+          const mapped: SystemTenant[] = items.map((t) => ({
+            id: String(t['id'] ?? ''),
+            name: String(t['name'] ?? t['organizationName'] ?? ''),
+            domain: String(t['domain'] ?? t['customDomain'] ?? ''),
+            status: rawStatus(String(t['status'] ?? 'Active')),
+            plan: String(t['planName'] ?? t['subscriptionPlan'] ?? ''),
+            members: Number(t['memberCount'] ?? t['members'] ?? 0),
+            totalGiving: String(t['totalGiving'] ?? ''),
+            createdAt: String(t['createdAt'] ?? ''),
+          }));
+          setTenants(mapped);
+          return;
+        }
+        return getSystemTenants();
       })
-      .catch(() => {})
+      .then((data) => {
+        if (data && data.length > 0) setTenants(data as SystemTenant[]);
+      })
+      .catch(() => {
+        getSystemTenants()
+          .then((data) => { if (data.length > 0) setTenants(data); })
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, []);
 

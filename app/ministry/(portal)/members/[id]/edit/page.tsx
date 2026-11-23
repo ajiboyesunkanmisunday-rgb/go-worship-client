@@ -7,7 +7,7 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
-import { getTenantMember, updateTenantUser, type TenantMember } from '@/lib/api/tenant';
+import { getTenantMember, updateTenantUser, getTenantRoles, getTenantUserRoles, setTenantUserRoles, type TenantMember, type TenantRole } from '@/lib/api/tenant';
 import { toast } from 'sonner';
 import { use } from 'react';
 
@@ -22,10 +22,36 @@ export default function MinistryEditMemberPage({
   const router = useRouter();
   const [member, setMember] = useState<TenantMember>({ id: '', name: '', email: '', phone: '', status: 'Active', joinedAt: '', groups: [] });
   const [submitting, setSubmitting] = useState(false);
+  const [allRoles, setAllRoles] = useState<TenantRole[]>([]);
+  const [userRoleIds, setUserRoleIds] = useState<string[]>([]);
+  const [savingRoles, setSavingRoles] = useState(false);
 
   useEffect(() => {
     getTenantMember(id).then((m) => { if (m) setMember(m); }).catch(() => {});
+    getTenantRoles().then(setAllRoles).catch(() => {});
+    getTenantUserRoles(id)
+      .then((data) => {
+        const arr = Array.isArray(data) ? (data as TenantRole[]) : [];
+        setUserRoleIds(arr.map((r) => String(r.id ?? '')).filter(Boolean));
+      })
+      .catch(() => {});
   }, [id]);
+
+  const toggleRole = (roleId: string) => {
+    setUserRoleIds((prev) => prev.includes(roleId) ? prev.filter((r) => r !== roleId) : [...prev, roleId]);
+  };
+
+  const saveRoles = async () => {
+    setSavingRoles(true);
+    try {
+      await setTenantUserRoles(id, { roleIds: userRoleIds });
+      toast.success('Roles updated.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update roles.');
+    } finally {
+      setSavingRoles(false);
+    }
+  };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,6 +135,31 @@ export default function MinistryEditMemberPage({
             </button>
           </Button>
         </form>
+
+        {allRoles.length > 0 && (
+          <div className="mt-6 flex flex-col gap-3">
+            <p className="text-[14px] font-semibold">Roles</p>
+            <div className="flex flex-wrap gap-2">
+              {allRoles.map((role) => {
+                const rid = String(role.id ?? '');
+                const checked = userRoleIds.includes(rid);
+                return (
+                  <button
+                    key={rid}
+                    type="button"
+                    onClick={() => toggleRole(rid)}
+                    className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${checked ? 'bg-brand-blue text-white' : 'bg-[#f2f2f2] text-[#333] hover:bg-[#e6e6e6]'}`}
+                  >
+                    {String(role.name ?? role.code ?? rid)}
+                  </button>
+                );
+              })}
+            </div>
+            <Button size="sm" disabled={savingRoles} onClick={() => void saveRoles()} className="self-end">
+              {savingRoles ? 'Saving…' : 'Save Roles'}
+            </Button>
+          </div>
+        )}
       </div>
     </SheetPage>
   );

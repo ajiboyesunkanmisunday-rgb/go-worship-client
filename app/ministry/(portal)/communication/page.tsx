@@ -9,8 +9,10 @@ import { Bell, Mail, Plus, X } from 'lucide-react';
 import {
   getTenantCampaigns,
   cancelCampaign,
+  updateTenantCampaign,
   getTenantCommunicationsSent,
   getTenantCommunicationRecipients,
+  type CreateCampaignPayload,
 } from '@/lib/api/tenant';
 import { toast } from 'sonner';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
@@ -30,11 +32,63 @@ type Message = {
 
 type Recipient = { name?: string; email?: string; phone?: string; status?: string };
 
+function EditCampaignModal({ msg, onClose, onSaved }: { msg: Message; onClose: () => void; onSaved: (id: string, updates: Partial<Message>) => void }) {
+  const [form, setForm] = useState({ title: msg.title, recipients: msg.recipients });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload: Partial<CreateCampaignPayload> = { subject: form.title, audienceType: form.recipients };
+      await updateTenantCampaign(msg.id, payload);
+      onSaved(msg.id, { title: form.title, recipients: form.recipients });
+      toast.success('Campaign updated.');
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update campaign.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[94%] max-w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+          <div className="flex items-center justify-between mb-5">
+            <Dialog.Title className="text-[18px] font-bold">Edit Campaign</Dialog.Title>
+            <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+          </div>
+          <form onSubmit={(e) => void handleSave(e)} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Subject</label>
+              <input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Audience</label>
+              <input value={form.recipients} onChange={(e) => setForm((p) => ({ ...p, recipients: e.target.value }))} className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" />
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button type="button" onClick={onClose} className="text-[13px] text-brand-gray-500 hover:opacity-70">Cancel</button>
+              <button type="submit" disabled={saving} className="h-[40px] rounded-[8px] bg-brand-blue px-5 text-[13px] font-medium text-white disabled:opacity-50">
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 export default function MinistryCommunicationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [recipientsModal, setRecipientsModal] = useState<{ batchId: string; title: string } | null>(null);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [loadingRecipients, setLoadingRecipients] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Message | null>(null);
 
   useEffect(() => {
     // Load campaigns (notification-based)
@@ -98,6 +152,10 @@ export default function MinistryCommunicationPage() {
       })
       .catch(() => { toast.error('Could not load recipients.'); })
       .finally(() => setLoadingRecipients(false));
+  }
+
+  function handleCampaignSaved(id: string, updates: Partial<Message>) {
+    setMessages((prev) => prev.map((m) => m.id === id ? { ...m, ...updates } : m));
   }
 
   function handleCancel(msg: Message) {
@@ -230,13 +288,22 @@ export default function MinistryCommunicationPage() {
                     <span className="flex items-center gap-2">
                       <ReceiptButton highlighted={i === 0} name={m.recipients} date={m.date} />
                       {(m.status === 'Scheduled' || m.status === 'SCHEDULED' || m.status === 'Pending') && m.id && (
-                        <button
-                          type="button"
-                          onClick={() => handleCancel(m)}
-                          className="text-[11px] font-medium text-[#eb0000] hover:underline"
-                        >
-                          Cancel
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCampaign(m)}
+                            className="text-[11px] font-medium text-brand-blue hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCancel(m)}
+                            className="text-[11px] font-medium text-[#eb0000] hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </>
                       )}
                     </span>
                   </td>
@@ -291,6 +358,14 @@ export default function MinistryCommunicationPage() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {editingCampaign && (
+        <EditCampaignModal
+          msg={editingCampaign}
+          onClose={() => setEditingCampaign(null)}
+          onSaved={handleCampaignSaved}
+        />
+      )}
     </div>
   );
 }

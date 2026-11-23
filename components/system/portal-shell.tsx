@@ -14,6 +14,7 @@ import {
   Settings,
   LifeBuoy,
   ShieldCheck,
+  FileCode2,
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
 import { TopbarSearch } from '@/components/shared/topbar-search';
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
   { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },
   { href: '/system/communication', label: 'Communications', icon: MessageSquare },
   { href: '/system/support', label: 'Support management', icon: LifeBuoy },
+  { href: '/system/site-templates', label: 'Site Templates', icon: FileCode2 },
   { href: '/system/settings', label: 'Settings', icon: Settings },
 ];
 

@@ -5,6 +5,7 @@ import {
   BarChart3,
   CalendarDays,
   DollarSign,
+  FileCode2,
   FolderOpen,
   LayoutGrid,
   Radio,
@@ -47,6 +48,7 @@ const NAV_ITEMS = [
     icon: UserCog,
   },
   { href: '/ministry/audit-logs', label: 'Audit Logs', icon: ShieldAlert },
+  { href: '/ministry/site-templates', label: 'Site Templates', icon: FileCode2 },
   { href: '/ministry/settings', label: 'Settings', icon: Settings },
 ];
 
