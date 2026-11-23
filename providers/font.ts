@@ -12,7 +12,7 @@ export const poppins = Poppins({
 
 export const plusJakartaSans = PlusJakartaSans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: 'variable',
   variable: '--font-plus-jakarta-sans',
   display: 'swap',
 });
