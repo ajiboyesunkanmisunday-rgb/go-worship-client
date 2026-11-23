@@ -19,8 +19,14 @@ import {
   deactivateDonationFund,
   deleteDonationFund,
   exportTenantPaymentsDocument,
+  getTenantDonation,
+  getTenantDocument,
+  downloadTenantDocument,
+  createTenantCheckoutLink,
+  deleteTenantCheckoutLink,
   type DonationFund,
   type CreateDonationFundPayload,
+  type TenantCheckoutLink,
 } from '@/lib/api/tenant';
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils';
@@ -102,6 +108,14 @@ export default function MinistryFinancePage() {
   const [fundForm, setFundForm] = useState<FundFormState>(EMPTY_FUND_FORM);
   const [savingFund, setSavingFund] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [checkoutLinks, setCheckoutLinks] = useState<TenantCheckoutLink[]>([]);
+  const [checkoutLinkForm, setCheckoutLinkForm] = useState({ label: '', fundId: '', amount: '', currency: 'USD' });
+  const [creatingLink, setCreatingLink] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [donationDetail, setDonationDetail] = useState<Record<string, unknown> | null>(null);
+  const [donationDetailOpen, setDonationDetailOpen] = useState(false);
+  const [docIdInput, setDocIdInput] = useState('');
+  const [docDetail, setDocDetail] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     getUnifiedDashboard('LAST_30_DAYS', 'USD', 'FINANCE')
@@ -198,6 +212,61 @@ export default function MinistryFinancePage() {
         toast.success('Fund deleted.');
       })
       .catch((e: unknown) => { toast.error(e instanceof Error ? e.message : 'Could not delete fund.'); });
+  }
+
+  async function handleFetchDocument(id: string) {
+    if (!id.trim()) return;
+    try {
+      const doc = await getTenantDocument(id.trim());
+      setDocDetail(doc as Record<string, unknown>);
+    } catch { toast.error('Document not found.'); }
+  }
+
+  async function handleDownloadDocument(id: string) {
+    if (!id.trim()) return;
+    try {
+      const res = await downloadTenantDocument(id.trim());
+      const url = (res as Record<string, unknown>)?.downloadUrl as string | undefined;
+      if (url) window.open(url, '_blank');
+      else toast.success('Download initiated.');
+    } catch { toast.error('Could not download document.'); }
+  }
+
+  function handleCreateCheckoutLink() {
+    setCreatingLink(true);
+    const payload: Partial<TenantCheckoutLink> = {
+      label: checkoutLinkForm.label || undefined,
+      fundId: checkoutLinkForm.fundId || undefined,
+      amount: checkoutLinkForm.amount ? Number(checkoutLinkForm.amount) : undefined,
+      currency: checkoutLinkForm.currency || 'USD',
+    };
+    createTenantCheckoutLink(payload)
+      .then((link) => {
+        setCheckoutLinks((prev) => [...prev, link]);
+        setLinkModalOpen(false);
+        setCheckoutLinkForm({ label: '', fundId: '', amount: '', currency: 'USD' });
+        toast.success('Checkout link created.');
+      })
+      .catch((e: unknown) => { toast.error(e instanceof Error ? e.message : 'Could not create link.'); })
+      .finally(() => setCreatingLink(false));
+  }
+
+  function handleDeleteCheckoutLink(id: string) {
+    deleteTenantCheckoutLink(id)
+      .then(() => {
+        setCheckoutLinks((prev) => prev.filter((l) => l.id !== id));
+        toast.success('Checkout link deleted.');
+      })
+      .catch((e: unknown) => { toast.error(e instanceof Error ? e.message : 'Could not delete link.'); });
+  }
+
+  function handleViewDonation(donationId: string) {
+    getTenantDonation(donationId)
+      .then((data) => {
+        setDonationDetail(data as Record<string, unknown>);
+        setDonationDetailOpen(true);
+      })
+      .catch(() => { toast.error('Could not load donation details.'); });
   }
 
   function handleExport() {
@@ -320,6 +389,84 @@ export default function MinistryFinancePage() {
 
       <TransactionsTable rows={txns} />
 
+      {/* Document Lookup */}
+      <div className="rounded-[14px] bg-white p-6">
+        <p className="text-[16px] font-bold mb-3">Document Lookup</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            className="h-[36px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue w-[220px]"
+            placeholder="Enter document ID…"
+            value={docIdInput}
+            onChange={(e) => setDocIdInput(e.target.value)}
+          />
+          <button type="button" onClick={() => void handleFetchDocument(docIdInput)} className="h-[36px] rounded-[8px] border border-[#ddd] px-3 text-[13px] text-[#333] hover:bg-[#f5f5f5]">View</button>
+          <button type="button" onClick={() => void handleDownloadDocument(docIdInput)} className="flex h-[36px] items-center gap-1.5 rounded-[8px] border border-[#ddd] px-3 text-[13px] text-[#333] hover:bg-[#f5f5f5]">
+            <Download className="size-3.5" /> Download
+          </button>
+        </div>
+        {docDetail && (
+          <div className="mt-4 rounded-[10px] bg-[#f6f8fc] p-4 text-[12px]">
+            {Object.entries(docDetail)
+              .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+              .map(([k, v]) => (
+                <div key={k} className="flex gap-2 py-0.5">
+                  <span className="text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                  <span className="font-medium">{String(v)}</span>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* Checkout Links */}
+      <div className="rounded-[14px] bg-white p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-[16px] font-bold">Checkout Links</p>
+            <p className="mt-0.5 text-[13px] text-brand-gray-500">Shareable giving links</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLinkModalOpen(true)}
+            className="flex h-[36px] items-center gap-1.5 rounded-[8px] bg-brand-blue px-4 text-[13px] font-medium text-white hover:bg-brand-blue/90"
+          >
+            <Plus className="size-4" />
+            New Link
+          </button>
+        </div>
+        {checkoutLinks.length === 0 ? (
+          <p className="py-4 text-center text-[13px] text-brand-gray-500">No checkout links yet. Create one to share a giving page.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[500px] border-collapse text-[12px]">
+              <thead>
+                <tr className="border-b border-[#f2f2f2] text-left text-[13px]">
+                  {['Label', 'Fund', 'Amount', 'Currency', 'Token', 'Action'].map((h) => (
+                    <th key={h} className="pb-3 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {checkoutLinks.map((l, i) => (
+                  <tr key={l.id ?? i} className="border-t border-[#f2f2f2]">
+                    <td className="py-3 font-medium">{l.label ?? '—'}</td>
+                    <td className="py-3 text-brand-gray-500">{l.fundId ?? '—'}</td>
+                    <td className="py-3">{l.amount != null ? l.amount : '—'}</td>
+                    <td className="py-3">{l.currency ?? '—'}</td>
+                    <td className="py-3 font-mono text-[11px] text-brand-gray-500">{l.opaqueToken ?? '—'}</td>
+                    <td className="py-3">
+                      {l.id && (
+                        <button type="button" onClick={() => handleDeleteCheckoutLink(l.id!)} className="text-[12px] font-medium text-[#eb0000] hover:opacity-70">Delete</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Create / Edit Fund Modal */}
       <Dialog.Root open={fundModalOpen} onOpenChange={(v) => { if (!v) setFundModalOpen(false); }}>
         <Dialog.Portal>
@@ -377,6 +524,77 @@ export default function MinistryFinancePage() {
                 </button>
               </Dialog.Close>
             </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Create Checkout Link Modal */}
+      <Dialog.Root open={linkModalOpen} onOpenChange={(v) => { if (!v) setLinkModalOpen(false); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+            <div className="flex items-center justify-between mb-5">
+              <Dialog.Title className="text-[18px] font-bold">New Checkout Link</Dialog.Title>
+              <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+            </div>
+            <div className="flex flex-col gap-4">
+              {([
+                { key: 'label' as const, label: 'Label', placeholder: 'e.g. Sunday Offering' },
+                { key: 'fundId' as const, label: 'Fund ID', placeholder: 'Optional fund ID' },
+                { key: 'amount' as const, label: 'Amount', placeholder: 'Optional fixed amount' },
+                { key: 'currency' as const, label: 'Currency', placeholder: 'USD' },
+              ]).map(({ key, label, placeholder }) => (
+                <div key={key} className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium">{label}</label>
+                  <input
+                    className="rounded-[6px] border border-[#e5e5e5] px-3 py-2.5 text-[13px] outline-none focus:border-brand-blue"
+                    placeholder={placeholder}
+                    value={checkoutLinkForm[key]}
+                    onChange={(e) => setCheckoutLinkForm((f) => ({ ...f, [key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={handleCreateCheckoutLink}
+                disabled={creatingLink}
+                className="flex h-[44px] flex-1 items-center justify-center rounded-[8px] bg-brand-blue text-[14px] font-medium text-white disabled:opacity-50 hover:bg-brand-blue/90"
+              >
+                {creatingLink ? 'Creating…' : 'Create Link'}
+              </button>
+              <Dialog.Close asChild>
+                <button type="button" className="flex h-[44px] flex-1 items-center justify-center rounded-[8px] border border-[#ddd] text-[14px] text-[#333] hover:bg-[#f5f5f5]">Cancel</button>
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Donation Detail Modal */}
+      <Dialog.Root open={donationDetailOpen} onOpenChange={(v) => { if (!v) { setDonationDetailOpen(false); setDonationDetail(null); } }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[460px] max-h-[80vh] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+            <div className="flex items-center justify-between mb-5">
+              <Dialog.Title className="text-[18px] font-bold">Donation Details</Dialog.Title>
+              <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+            </div>
+            {donationDetail ? (
+              <div className="grid grid-cols-2 gap-3 text-[13px]">
+                {Object.entries(donationDetail)
+                  .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+                  .map(([k, v]) => (
+                    <div key={k} className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                      <span className="font-medium break-all">{String(v)}</span>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="py-6 text-center text-[13px] text-brand-gray-500">No detail available.</p>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

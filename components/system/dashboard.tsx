@@ -5,7 +5,7 @@ import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 import { useCallback, useEffect, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, XAxis, YAxis } from 'recharts';
-import { type SystemStats, getSystemAuditEventsRecent, getSystemBillingPlans } from '@/lib/api/system';
+import { type SystemStats, getSystemStats, getSystemAuditEventsRecent, getSystemBillingPlans } from '@/lib/api/system';
 import { getUnifiedDashboard, type DashboardSection } from '@/lib/api/dashboard';
 
 /* Family codes from the API map to human-readable tab labels. */
@@ -145,6 +145,21 @@ export function SystemDashboard() {
   useEffect(() => {
 
     loadFamily('PLATFORM');
+
+    getSystemStats()
+      .then((s) => {
+        if (!s) return;
+        setStats((prev) => ({
+          ...prev,
+          totalTenants: s.totalTenants ?? prev.totalTenants,
+          activeTenants: s.activeTenants ?? prev.activeTenants,
+          totalUsers: s.totalUsers ?? prev.totalUsers,
+          givingVolume: s.givingVolume ?? prev.givingVolume,
+          trialTenants: s.trialTenants ?? prev.trialTenants,
+          overduePayments: s.overduePayments ?? prev.overduePayments,
+        }));
+      })
+      .catch(() => {});
 
     getSystemAuditEventsRecent()
       .then((arr) => {

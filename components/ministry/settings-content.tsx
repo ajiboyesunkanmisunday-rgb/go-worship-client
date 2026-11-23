@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import * as Dialog from '@radix-ui/react-dialog';
 import { TwoFactorModal } from '@/components/ministry/two-factor-modal';
 import { PencilLine, Upload, Trash2, CheckCircle2, Loader2, Plus, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -10,6 +11,7 @@ import {
   getTenantBranding,
   updateTenantBranding,
   activateTenantBranding,
+  deleteTenantBranding,
   getTenantBrandingAssets,
   uploadBrandingAsset,
   deleteBrandingAsset,
@@ -39,6 +41,15 @@ import {
   tenantSubscriptionCheckout,
   getTenantMerchantAccount,
   startTenantMerchantAccountOnboarding,
+  submitTenantMerchantAccount,
+  getTenantOrganizationReadiness,
+  getTenantNotificationMessages,
+  getTenantNotificationMessage,
+  submitPaymentToken,
+  getSharedAuthCapabilities,
+  getSharedLookups,
+  getSharedLookupRoles,
+  type NotificationMessage,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
@@ -170,11 +181,17 @@ function SecurityTab() {
   const [twoFactor, setTwoFactor] = useState(false);
   const [settings, setSettings] = useState<TenantSecuritySettings | null>(null);
   const [posture, setPosture] = useState<Record<string, unknown> | null>(null);
+  const [authCapabilities, setAuthCapabilities] = useState<Record<string, unknown> | null>(null);
+  const [lookups, setLookups] = useState<Record<string, unknown> | null>(null);
+  const [lookupRoles, setLookupRoles] = useState<Record<string, unknown> | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getTenantSecuritySettings().then(setSettings).catch(() => {});
     getTenantSecurityPosture().then(setPosture).catch(() => {});
+    getSharedAuthCapabilities().then((r) => setAuthCapabilities(r as Record<string, unknown>)).catch(() => {});
+    getSharedLookups().then((r) => setLookups(r as Record<string, unknown>)).catch(() => {});
+    getSharedLookupRoles().then((r) => setLookupRoles(r as Record<string, unknown>)).catch(() => {});
   }, []);
 
   const toggle = (key: keyof TenantSecuritySettings) => {
@@ -242,6 +259,60 @@ function SecurityTab() {
 
       <TwoFactorModal open={twoFactor} onOpenChange={setTwoFactor} />
 
+      {authCapabilities && Object.keys(authCapabilities).length > 0 && (
+        <div className="mt-5 rounded-[12px] border border-[#f0f0f0] p-4">
+          <p className="mb-3 text-[13px] font-semibold">Auth Capabilities</p>
+          <div className="grid grid-cols-2 gap-2 text-[12px]">
+            {Object.entries(authCapabilities)
+              .filter(([, v]) => v != null && typeof v !== 'object')
+              .map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between rounded-[8px] bg-[#f6f8fc] px-3 py-1.5">
+                  <span className="capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                  <span className="font-medium">{String(v)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {(lookups || lookupRoles) && (
+        <div className="mt-5 rounded-[12px] border border-[#f0f0f0] p-4">
+          <p className="mb-3 text-[13px] font-semibold">System Lookups</p>
+          {lookups && Object.keys(lookups).length > 0 && (
+            <div className="mb-3">
+              <p className="text-[11px] font-medium text-brand-gray-500 mb-2">Lookups</p>
+              <div className="grid grid-cols-2 gap-2 text-[12px]">
+                {Object.entries(lookups)
+                  .filter(([, v]) => v != null && !Array.isArray(v) && typeof v !== 'object')
+                  .slice(0, 6)
+                  .map(([k, v]) => (
+                    <div key={k} className="flex items-center justify-between rounded-[8px] bg-[#f6f8fc] px-3 py-1.5">
+                      <span className="capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                      <span className="font-medium">{String(v)}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          {lookupRoles && Object.keys(lookupRoles).length > 0 && (
+            <div>
+              <p className="text-[11px] font-medium text-brand-gray-500 mb-2">Lookup Roles</p>
+              <div className="grid grid-cols-2 gap-2 text-[12px]">
+                {Object.entries(lookupRoles)
+                  .filter(([, v]) => v != null && !Array.isArray(v) && typeof v !== 'object')
+                  .slice(0, 6)
+                  .map(([k, v]) => (
+                    <div key={k} className="flex items-center justify-between rounded-[8px] bg-[#f6f8fc] px-3 py-1.5">
+                      <span className="capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                      <span className="font-medium">{String(v)}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {posture && Object.keys(posture).length > 0 && (
         <div className="mt-5 rounded-[12px] border border-[#f0f0f0] p-4">
           <p className="mb-3 text-[13px] font-semibold">Security Posture</p>
@@ -272,6 +343,7 @@ function BrandingTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadCategory, setUploadCategory] = useState('LOGO');
 
@@ -454,6 +526,24 @@ function BrandingTab() {
         <Button variant="outline" onClick={handleActivate} disabled={activating}>
           {activating ? 'Activating…' : 'Activate Branding'}
         </Button>
+        <Button
+          variant="outline"
+          className="text-[#eb0000] border-[#eb0000] hover:bg-[#fde8e8]"
+          disabled={deleting}
+          onClick={async () => {
+            setDeleting(true);
+            try {
+              await deleteTenantBranding();
+              toast.success('Branding deleted.');
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : 'Could not delete branding.');
+            } finally {
+              setDeleting(false);
+            }
+          }}
+        >
+          {deleting ? 'Deleting…' : 'Delete Branding'}
+        </Button>
       </div>
     </div>
   );
@@ -465,9 +555,11 @@ function OrganizationTab() {
   const [org, setOrg] = useState<TenantOrganization>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [readiness, setReadiness] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     getTenantOrganization().then(setOrg).catch(() => {}).finally(() => setLoading(false));
+    getTenantOrganizationReadiness().then((r) => setReadiness(r as Record<string, unknown>)).catch(() => {});
   }, []);
 
   const handleSave = async () => {
@@ -540,6 +632,24 @@ function OrganizationTab() {
           Save Organization
         </Button>
       </div>
+      {readiness && (
+        <div className="mt-6 rounded-[12px] border border-[#f2f2f2] p-4">
+          <p className="mb-3 text-[14px] font-semibold">Organization Readiness</p>
+          <div className="grid gap-2 sm:grid-cols-2 text-[12px]">
+            {Object.entries(readiness)
+              .filter(([, v]) => v != null && typeof v !== 'object')
+              .map(([k, v]) => {
+                const isOk = v === true || String(v).toLowerCase() === 'complete' || String(v).toLowerCase() === 'ready';
+                return (
+                  <div key={k} className={cn('flex items-center justify-between rounded-[8px] px-3 py-2', isOk ? 'bg-[#eafaf0]' : 'bg-[#fff4e5]')}>
+                    <span className="capitalize text-[#333]">{k.replace(/([A-Z])/g, ' $1')}</span>
+                    <span className={cn('font-medium', isOk ? 'text-[#22a45d]' : 'text-[#ff8d28]')}>{String(v)}</span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -788,13 +898,22 @@ function NotificationsTab() {
   const [settings, setSettings] = useState<TenantNotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [messages, setMessages] = useState<NotificationMessage[]>([]);
+  const [selectedMsg, setSelectedMsg] = useState<NotificationMessage | null>(null);
 
   useEffect(() => {
     getTenantNotificationSettings()
       .then(setSettings)
       .catch(() => {})
       .finally(() => setLoading(false));
+    getTenantNotificationMessages().then(setMessages).catch(() => {});
   }, []);
+
+  const handleViewMessage = (id: string) => {
+    getTenantNotificationMessage(id)
+      .then((msg) => setSelectedMsg(msg))
+      .catch(() => { toast.error('Could not load notification details.'); });
+  };
 
   const toggle = (key: 'subscriptionExpiryRemindersEnabled' | 'inactiveTenantRemindersEnabled') => {
     setSettings((prev) => prev ? { ...prev, [key]: !prev[key] } : prev);
@@ -844,6 +963,64 @@ function NotificationsTab() {
           </Button>
         </div>
       )}
+
+      {messages.length > 0 && (
+        <div className="mt-5 rounded-[12px] border border-[#f2f2f2] p-4">
+          <p className="mb-3 text-[14px] font-semibold">Notification History</p>
+          <div className="flex flex-col divide-y divide-[#f2f2f2]">
+            {messages.slice(0, 10).map((msg, i) => (
+              <div key={msg.id ?? i} className="flex items-center justify-between py-2 text-[12px]">
+                <div>
+                  <p className="font-medium">{msg.subject ?? msg.ruleType ?? '—'}</p>
+                  <p className="text-brand-gray-500">{msg.channel ?? ''} {msg.sentAt ? `· ${new Date(msg.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', msg.status?.toLowerCase() === 'sent' ? 'bg-[#eafaf0] text-[#22a45d]' : 'bg-[#fff4e5] text-[#ff8d28]')}>{msg.status ?? '—'}</span>
+                  {msg.id && <button type="button" onClick={() => handleViewMessage(msg.id!)} className="text-brand-blue hover:underline">View</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedMsg && (
+        <Dialog.Root open onOpenChange={(v) => { if (!v) setSelectedMsg(null); }}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+            <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[460px] max-h-[80vh] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+              <div className="flex items-center justify-between mb-5">
+                <Dialog.Title className="text-[18px] font-bold">Notification Detail</Dialog.Title>
+                <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+              </div>
+              <div className="flex flex-col gap-3 text-[13px]">
+                {(['subject', 'channel', 'ruleType', 'status', 'scheduledAt', 'sentAt'] as const).map((k) => selectedMsg[k] ? (
+                  <div key={k} className="flex flex-col gap-0.5">
+                    <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                    <span className="font-medium">{String(selectedMsg[k])}</span>
+                  </div>
+                ) : null)}
+                {selectedMsg.body && (
+                  <div>
+                    <span className="text-[11px] text-brand-gray-500">Body</span>
+                    <p className="mt-1 rounded-[8px] bg-[#f6f8fc] p-3 text-[12px]">{selectedMsg.body}</p>
+                  </div>
+                )}
+                {selectedMsg.recipients && selectedMsg.recipients.length > 0 && (
+                  <div>
+                    <span className="text-[11px] text-brand-gray-500">Recipients ({selectedMsg.recipients.length})</span>
+                    <div className="mt-1 flex flex-col gap-1 text-[11px]">
+                      {selectedMsg.recipients.slice(0, 5).map((r, i) => (
+                        <div key={i} className="rounded-[6px] bg-[#f6f8fc] px-3 py-1.5">{r.targetEmail ?? r.targetPhone ?? r.channel ?? '—'} · {r.deliveryStatus ?? '—'}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
     </div>
   );
 }
@@ -853,6 +1030,9 @@ function PaymentBillingTab() {
   const [merchantAccount, setMerchantAccount] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboarding, setOnboarding] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitForm, setSubmitForm] = useState<Record<string, string>>({});
+  const [submitFormOpen, setSubmitFormOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -884,6 +1064,21 @@ function PaymentBillingTab() {
     }
   };
 
+  const handleSubmitMerchant = async () => {
+    setSubmitting(true);
+    try {
+      const res = await submitTenantMerchantAccount(submitForm as Record<string, unknown>);
+      const r = res as Record<string, unknown>;
+      toast.success('Merchant account submitted.');
+      setMerchantAccount((prev) => ({ ...(prev ?? {}), ...r }));
+      setSubmitFormOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not submit merchant account.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const fmtDate = (iso: string) => {
     if (!iso) return '';
     try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }); }
@@ -904,10 +1099,13 @@ function PaymentBillingTab() {
       <div className="rounded-[14px] bg-white p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[15px] font-semibold">Merchant Account</h3>
-          <Button size="sm" variant="outline" onClick={() => void handleStartOnboarding()} disabled={onboarding} className="gap-1.5">
-            {onboarding ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            {merchantAccount ? 'Re-onboard' : 'Start Onboarding'}
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => void handleStartOnboarding()} disabled={onboarding} className="gap-1.5">
+              {onboarding ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              {merchantAccount ? 'Re-onboard' : 'Start Onboarding'}
+            </Button>
+            <Button size="sm" onClick={() => setSubmitFormOpen(true)} className="gap-1.5">Submit</Button>
+          </div>
         </div>
         {merchantAccount ? (
           <div className="grid gap-3 sm:grid-cols-2 text-[13px]">
@@ -971,6 +1169,20 @@ function PaymentBillingTab() {
                             }}
                           >Receipt</button>
                         )}
+                        {!isPaid && p.paymentReference && (
+                          <button
+                            type="button"
+                            className="ml-2 text-[11px] font-medium text-[#ff8d28] hover:underline"
+                            onClick={async () => {
+                              const token = window.prompt('Enter payment token:');
+                              if (!token) return;
+                              try {
+                                await submitPaymentToken(p.paymentReference!, token);
+                                toast.success('Payment token submitted.');
+                              } catch (e) { toast.error(e instanceof Error ? e.message : 'Token submission failed.'); }
+                            }}
+                          >Submit Token</button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -980,6 +1192,43 @@ function PaymentBillingTab() {
           </div>
         )}
       </div>
+
+      {/* Submit Merchant Account Modal */}
+      {submitFormOpen && (
+        <Dialog.Root open onOpenChange={(v) => { if (!v) setSubmitFormOpen(false); }}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+            <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+              <div className="flex items-center justify-between mb-5">
+                <Dialog.Title className="text-[18px] font-bold">Submit Merchant Account</Dialog.Title>
+                <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+              </div>
+              <p className="mb-4 text-[13px] text-brand-gray-500">Complete the merchant account submission with any required details.</p>
+              <div className="flex flex-col gap-3">
+                {(['businessName', 'businessType', 'taxId', 'contactEmail'] as const).map((field) => (
+                  <div key={field} className="flex flex-col gap-1">
+                    <label className="text-[12px] font-medium capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
+                    <input
+                      className="h-[38px] rounded-[6px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue"
+                      value={submitForm[field] ?? ''}
+                      onChange={(e) => setSubmitForm((f) => ({ ...f, [field]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex gap-3">
+                <Button onClick={() => void handleSubmitMerchant()} disabled={submitting} className="flex-1 gap-1.5">
+                  {submitting ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                  Submit
+                </Button>
+                <Dialog.Close asChild>
+                  <Button variant="outline" className="flex-1">Cancel</Button>
+                </Dialog.Close>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
     </div>
   );
 }

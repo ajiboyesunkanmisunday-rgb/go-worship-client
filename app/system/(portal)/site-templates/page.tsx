@@ -5,6 +5,7 @@ import { Plus, X, Globe, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getSystemSiteTemplates,
+  getResolvedSystemSiteTemplate,
   createSystemSiteTemplate,
   updateSystemSiteTemplate,
   deleteSystemSiteTemplate,
@@ -128,6 +129,7 @@ function ContentModal({ template, onClose }: { template: SiteTemplate; onClose: 
 
 export default function SystemSiteTemplatesPage() {
   const [templates, setTemplates] = useState<SiteTemplate[]>([]);
+  const [resolved, setResolved] = useState<Record<string, unknown> | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editTemplate, setEditTemplate] = useState<SiteTemplate | null>(null);
   const [viewContent, setViewContent] = useState<SiteTemplate | null>(null);
@@ -138,7 +140,10 @@ export default function SystemSiteTemplatesPage() {
       .catch(() => {});
   };
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => {
+    reload();
+    getResolvedSystemSiteTemplate().then((r) => setResolved(r as Record<string, unknown>)).catch(() => {});
+  }, []);
 
   const handleCreate = async (payload: Record<string, unknown>) => {
     await createSystemSiteTemplate(payload);
@@ -188,6 +193,23 @@ export default function SystemSiteTemplatesPage() {
           <Plus className="size-4" /> New Template
         </button>
       </div>
+
+      {resolved && (
+        <div className="rounded-[14px] bg-white p-5">
+          <p className="text-[13px] font-semibold mb-2">Resolved Active Template</p>
+          <div className="flex flex-wrap gap-4 text-[12px]">
+            {Object.entries(resolved)
+              .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+              .slice(0, 6)
+              .map(([k, v]) => (
+                <div key={k} className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                  <span className="font-medium">{String(v)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-[14px] bg-white p-6">
         {templates.length === 0 ? (

@@ -14,6 +14,8 @@ import {
   updateSystemRolePermissions,
   deleteSystemRole,
   getSystemPermissionById,
+  getSystemPermissionByCode,
+  getSystemPermissionsByType,
   createSystemRole,
   createSystemPermission,
   updateSystemPermission,
@@ -591,6 +593,9 @@ export default function SystemRolesPage() {
   const [createPermOpen, setCreatePermOpen] = useState(false);
   const [editPermOpen, setEditPermOpen] = useState(false);
   const [editingPerm, setEditingPerm] = useState<Permission | null>(null);
+  const [permTypeFilter, setPermTypeFilter] = useState('');
+  const [permCodeSearch, setPermCodeSearch] = useState('');
+  const [permCodeResult, setPermCodeResult] = useState<SystemPermission | null>(null);
 
   const loadAll = useCallback(() => {
     getSystemRoles()
@@ -655,6 +660,30 @@ export default function SystemRolesPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed.');
     }
+  };
+
+  const handleFilterByType = async (type: string) => {
+    if (!type) { loadAll(); return; }
+    try {
+      const arr = await getSystemPermissionsByType(type);
+      const mapped: Permission[] = (arr as SystemPermission[]).map((p) => ({
+        id: String(p.id ?? p.code ?? ''),
+        name: String(p.name ?? p.code ?? ''),
+        category: String(p.type ?? type),
+        scope: 'System',
+        description: String(p.description ?? ''),
+        status: 'Active',
+      })).filter((p) => p.name);
+      setPermissions(mapped);
+    } catch { toast.error('Could not filter permissions.'); }
+  };
+
+  const handleSearchByCode = async () => {
+    if (!permCodeSearch.trim()) return;
+    try {
+      const p = await getSystemPermissionByCode(permCodeSearch.trim());
+      setPermCodeResult(p);
+    } catch { toast.error('Permission not found.'); }
   };
 
   const roleRows: SmartRow[] = roles.map((r) => ({
@@ -789,11 +818,43 @@ export default function SystemRolesPage() {
           />
         )
       ) : (
-        <SmartTable
-          headers={['Permission', 'Category', 'Scope', 'Description', 'Status', 'Action']}
-          rows={permRows}
-          filterAll="All categories"
-        />
+        <>
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <input
+                className="h-[36px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue w-[160px]"
+                placeholder="Filter by type…"
+                value={permTypeFilter}
+                onChange={(e) => { setPermTypeFilter(e.target.value); void handleFilterByType(e.target.value); }}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                className="h-[36px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue w-[160px]"
+                placeholder="Lookup by code…"
+                value={permCodeSearch}
+                onChange={(e) => setPermCodeSearch(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void handleSearchByCode(); }}
+              />
+              <button type="button" onClick={() => void handleSearchByCode()} className="h-[36px] rounded-[8px] bg-brand-blue px-3 text-[12px] font-medium text-white hover:opacity-90">Search</button>
+            </div>
+          </div>
+          {permCodeResult && (
+            <div className="mb-3 rounded-[10px] border border-[#ddd] bg-white p-3 text-[12px] flex items-center justify-between">
+              <div>
+                <span className="font-semibold">{permCodeResult.name ?? permCodeResult.code}</span>
+                {permCodeResult.type && <span className="ml-2 text-brand-gray-500">({permCodeResult.type})</span>}
+                {permCodeResult.description && <p className="text-brand-gray-500 mt-0.5">{permCodeResult.description}</p>}
+              </div>
+              <button type="button" onClick={() => setPermCodeResult(null)} className="text-brand-gray-400 hover:text-[#333]"><X className="size-4" /></button>
+            </div>
+          )}
+          <SmartTable
+            headers={['Permission', 'Category', 'Scope', 'Description', 'Status', 'Action']}
+            rows={permRows}
+            filterAll="All categories"
+          />
+        </>
       )}
 
       <RoleDetailDrawer
