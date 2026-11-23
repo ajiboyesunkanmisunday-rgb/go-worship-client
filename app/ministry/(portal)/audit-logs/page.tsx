@@ -5,7 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Download, MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
-import { getTenantAuditEventsRecent } from '@/lib/api/tenant';
+import { getTenantAuditEventsRecent, getTenantAuditSecurityEvents, getTenantAuditEventById, tenantAuditExportUrl } from '@/lib/api/tenant';
 import { toast } from 'sonner';
 
 type AuditTab = 'All activity' | 'Security events';
@@ -20,6 +20,9 @@ type LogRow = {
   outcome: string;
   summary: string;
   time: string;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: string;
 };
 
 const ACTION_BADGE: Record<string, string> = {
@@ -117,19 +120,36 @@ export default function MinistryAuditLogsPage() {
   const [allLogs, setAllLogs] = useState<LogRow[]>([]);
   const [securityLogs, setSecurityLogs] = useState<LogRow[]>([]);
   const [selected, setSelected] = useState<LogRow | null>(null);
+  const [detailExtra, setDetailExtra] = useState<Partial<LogRow>>({});
 
   useEffect(() => {
-    const SECURITY_KW = new Set(['login', 'logout', 'mfa', 'password', 'token', 'session', 'auth', 'lock', 'unlock']);
+    if (!selected?.id) { setDetailExtra({}); return; }
+    getTenantAuditEventById(selected.id)
+      .then((e) => {
+        if (!e || typeof e !== 'object') return;
+        const r = e as Record<string, unknown>;
+        setDetailExtra({
+          ipAddress: String(r['ipAddress'] ?? r['ip'] ?? ''),
+          userAgent: String(r['userAgent'] ?? r['agent'] ?? ''),
+          metadata: r['metadata'] ? JSON.stringify(r['metadata']).slice(0, 200) : '',
+        });
+      })
+      .catch(() => {});
+  }, [selected?.id]);
+
+  useEffect(() => {
     getTenantAuditEventsRecent()
       .then((arr) => {
         const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
-        if (rows.length > 0) {
-          setAllLogs(rows);
-          const sec = rows.filter((r) => [...SECURITY_KW].some((kw) => r.action.toLowerCase().includes(kw)));
-          setSecurityLogs(sec);
-        }
+        if (rows.length > 0) setAllLogs(rows);
       })
       .catch(() => { toast.error('Could not load audit logs.'); });
+    getTenantAuditSecurityEvents()
+      .then((arr) => {
+        const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
+        if (rows.length > 0) setSecurityLogs(rows);
+      })
+      .catch(() => {});
   }, []);
 
   const logs = activeTab === 'All activity' ? allLogs : securityLogs;
@@ -169,7 +189,7 @@ export default function MinistryAuditLogsPage() {
         </div>
         {(
           <a
-            href="/bff/gw/tenant/audit/export/recent.csv"
+            href={tenantAuditExportUrl()}
             download="audit-logs.csv"
             className="flex h-[40px] items-center gap-2 rounded-[8px] border border-[#ddd] px-4 text-[13px] text-[#333] transition-colors hover:bg-[#f5f5f5]"
           >
@@ -227,6 +247,17 @@ export default function MinistryAuditLogsPage() {
                 <LogField label="Outcome"><OutcomeBadge outcome={selected.outcome} /></LogField>
                 <LogField label="Timestamp">{selected.time}</LogField>
                 <LogField label="Summary">{selected.summary}</LogField>
+                {detailExtra.ipAddress && (
+                  <LogField label="IP Address"><span className="font-mono text-[13px]">{detailExtra.ipAddress}</span></LogField>
+                )}
+                {detailExtra.userAgent && (
+                  <LogField label="User Agent"><span className="break-all text-[12px] text-brand-gray-500">{detailExtra.userAgent}</span></LogField>
+                )}
+                {detailExtra.metadata && (
+                  <div className="col-span-2">
+                    <LogField label="Metadata"><span className="break-all font-mono text-[12px] text-brand-gray-500">{detailExtra.metadata}</span></LogField>
+                  </div>
+                )}
               </div>
             )}
           </Dialog.Content>

@@ -5,33 +5,110 @@ import { ReceiptButton } from '@/components/ministry/receipt-button';
 import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
-import { Bell, Mail, Plus } from 'lucide-react';
-import { getTenantCampaigns } from '@/lib/api/tenant';
+import { Bell, Mail, Plus, X } from 'lucide-react';
+import {
+  getTenantCampaigns,
+  cancelCampaign,
+  getTenantCommunicationsSent,
+  getTenantCommunicationRecipients,
+} from '@/lib/api/tenant';
 import { toast } from 'sonner';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import * as Dialog from '@radix-ui/react-dialog';
 
-type Message = { title: string; recipients: string; status: string; rate: number; date?: string; recipientCount?: number; channels?: string[] };
+type Message = {
+  id: string;
+  title: string;
+  recipients: string;
+  status: string;
+  rate: number;
+  date?: string;
+  recipientCount?: number;
+  channels?: string[];
+  batchId?: string;
+};
+
+type Recipient = { name?: string; email?: string; phone?: string; status?: string };
 
 export default function MinistryCommunicationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [activeRecipients, setActiveRecipients] = useState('0');
+  const [recipientsModal, setRecipientsModal] = useState<{ batchId: string; title: string } | null>(null);
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [loadingRecipients, setLoadingRecipients] = useState(false);
 
   useEffect(() => {
+    // Load campaigns (notification-based)
     getTenantCampaigns()
       .then((arr) => {
         if (arr.length === 0) return;
         const mapped: Message[] = arr.map((m) => ({
+          id: String(m.id ?? ''),
           title: String(m.subject ?? m.name ?? ''),
           recipients: String(m.audienceType ?? ''),
           status: String(m.status ?? 'Sent'),
           rate: 0,
           date: String(m.sentAt ?? m.scheduledAt ?? m.createdAt ?? ''),
+          batchId: undefined,
         })).filter((m) => m.title);
         if (mapped.length > 0) setMessages(mapped);
       })
       .catch(() => { toast.error('Could not load messages.'); });
-    // /tenant/admin/members/count not in backend API — disabled.
+
+    // Also load sent communications
+    getTenantCommunicationsSent()
+      .then((page) => {
+        type R = Record<string, unknown>;
+        const items: R[] = Array.isArray(page) ? (page as R[]) : (Array.isArray((page as R)?.['content']) ? (page as R)['content'] as R[] : []);
+        if (items.length === 0) return;
+        const mapped: Message[] = items.map((m) => ({
+          id: String(m['id'] ?? ''),
+          title: String(m['subject'] ?? m['name'] ?? ''),
+          recipients: String(m['audienceType'] ?? m['targetGroup'] ?? ''),
+          status: 'Sent',
+          rate: 0,
+          date: String(m['sentAt'] ?? m['createdAt'] ?? ''),
+          batchId: String(m['batchId'] ?? m['id'] ?? ''),
+        })).filter((m) => m.title);
+        if (mapped.length > 0) {
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const newOnes = mapped.filter((m) => !existingIds.has(m.id));
+            return [...prev, ...newOnes];
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  function openRecipients(msg: Message) {
+    if (!msg.batchId) return;
+    setRecipientsModal({ batchId: msg.batchId, title: msg.title });
+    setRecipients([]);
+    setLoadingRecipients(true);
+    getTenantCommunicationRecipients(msg.batchId)
+      .then((data) => {
+        type R = Record<string, unknown>;
+        const arr: R[] = Array.isArray(data) ? (data as R[]) : [];
+        setRecipients(arr.map((r) => ({
+          name: String(r['name'] ?? r['fullName'] ?? r['username'] ?? ''),
+          email: String(r['email'] ?? ''),
+          phone: String(r['phone'] ?? r['phoneNumber'] ?? ''),
+          status: String(r['status'] ?? r['deliveryStatus'] ?? ''),
+        })));
+      })
+      .catch(() => { toast.error('Could not load recipients.'); })
+      .finally(() => setLoadingRecipients(false));
+  }
+
+  function handleCancel(msg: Message) {
+    if (!msg.id) return;
+    cancelCampaign(msg.id)
+      .then(() => {
+        setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: 'Cancelled' } : m));
+        toast.success('Campaign cancelled.');
+      })
+      .catch((e: unknown) => { toast.error(e instanceof Error ? e.message : 'Could not cancel campaign.'); });
+  }
 
   const unreadCount = messages.filter((m) => !m.title.includes('READ') && (m.rate === 0 || m.rate == null)).length;
   const scheduledCount = messages.filter((m) => m.status === 'Scheduled' || m.status === 'SCHEDULED').length;
@@ -50,7 +127,7 @@ export default function MinistryCommunicationPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard title="Total Messages" value={String(messages.length)} variant="white" trend={[1,2,2,3,3,4,messages.length]} />
-        <StatCard title="Active Recipients" value={activeRecipients} variant="green" />
+        <StatCard title="Total Sent" value={String(sentCount)} variant="green" />
         <StatCard title="Unread Messages" value={String(unreadCount)} variant="white" />
         <StatCard title="Scheduled" value={String(scheduledCount)} variant="white" />
         <ActionCard
@@ -99,11 +176,20 @@ export default function MinistryCommunicationPage() {
             </thead>
             <tbody>
               {messages.map((m, i) => (
-                <tr key={i} className="border-t border-[#f2f2f2] text-[12px]">
+                <tr key={m.id || i} className="border-t border-[#f2f2f2] text-[12px]">
                   <td className="py-4">{m.title}</td>
                   <td className="py-4">
                     <p>{m.recipients}</p>
                     <p className="text-brand-gray-500">{m.recipientCount != null ? `${m.recipientCount} recipients` : ''}</p>
+                    {m.batchId && (
+                      <button
+                        type="button"
+                        onClick={() => openRecipients(m)}
+                        className="text-[11px] text-brand-blue underline hover:no-underline"
+                      >
+                        View recipients
+                      </button>
+                    )}
                   </td>
                   <td className="py-4">
                     <span className="flex items-center gap-2 text-brand-blue">
@@ -115,8 +201,10 @@ export default function MinistryCommunicationPage() {
                     <span
                       className={cn(
                         'rounded-full px-2.5 py-1 text-[11px] font-medium',
-                        m.status === 'Sent'
+                        m.status === 'Sent' || m.status === 'SENT'
                           ? 'bg-[#e7f7ee] text-[#34a853]'
+                          : m.status === 'Cancelled' || m.status === 'CANCELLED'
+                          ? 'bg-[#fde8e8] text-[#eb0000]'
                           : 'bg-[#fff4e5] text-[#ff8d28]'
                       )}
                     >
@@ -139,13 +227,70 @@ export default function MinistryCommunicationPage() {
                     </span>
                   </td>
                   <td className="py-4">
-                    <ReceiptButton highlighted={i === 0} name={m.recipients} date={m.date} />
+                    <span className="flex items-center gap-2">
+                      <ReceiptButton highlighted={i === 0} name={m.recipients} date={m.date} />
+                      {(m.status === 'Scheduled' || m.status === 'SCHEDULED' || m.status === 'Pending') && m.id && (
+                        <button
+                          type="button"
+                          onClick={() => handleCancel(m)}
+                          className="text-[11px] font-medium text-[#eb0000] hover:underline"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
       </TableCard>
+
+      {/* Recipients Modal */}
+      <Dialog.Root open={!!recipientsModal} onOpenChange={(v) => { if (!v) setRecipientsModal(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[500px] max-h-[80vh] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[16px] bg-white data-[state=open]:animate-in data-[state=open]:zoom-in-95 flex flex-col">
+            <div className="flex items-start justify-between p-6 pb-4">
+              <div>
+                <Dialog.Title className="text-[18px] font-bold">Recipients</Dialog.Title>
+                <p className="text-[12px] text-brand-gray-500 mt-0.5">{recipientsModal?.title}</p>
+              </div>
+              <Dialog.Close aria-label="Close">
+                <span className="flex size-8 items-center justify-center rounded-full border border-[#ddd]">
+                  <X className="size-4" />
+                </span>
+              </Dialog.Close>
+            </div>
+            <div className="overflow-y-auto px-6 pb-6">
+              {loadingRecipients ? (
+                <p className="py-8 text-center text-[13px] text-brand-gray-500">Loading…</p>
+              ) : recipients.length === 0 ? (
+                <p className="py-8 text-center text-[13px] text-brand-gray-500">No recipients found</p>
+              ) : (
+                <table className="w-full border-collapse text-[12px]">
+                  <thead>
+                    <tr className="text-left text-[11px] text-brand-gray-500">
+                      {['Name', 'Email', 'Status'].map((h) => (
+                        <th key={h} className="py-2 font-medium">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recipients.map((r, i) => (
+                      <tr key={i} className="border-t border-[#f2f2f2]">
+                        <td className="py-2.5">{r.name || '—'}</td>
+                        <td className="py-2.5 text-brand-gray-500">{r.email || '—'}</td>
+                        <td className="py-2.5">{r.status || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

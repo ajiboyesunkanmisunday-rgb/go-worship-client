@@ -6,12 +6,28 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api/client';
-import { getSystemBranding, updateSystemBranding, type SystemBrandingUpdatePayload } from '@/lib/api/system';
+import {
+  getSystemBranding,
+  updateSystemBranding,
+  activateSystemBranding,
+  getSystemBrandingAssets,
+  uploadSystemBrandingAsset,
+  deleteSystemBrandingAsset,
+  getSystemPaymentGateways,
+  createSystemPaymentGateway,
+  updateSystemPaymentGateway,
+  setSystemPaymentGatewayActive,
+  setSystemPlatformDefaultGateway,
+  type SystemBrandingUpdatePayload,
+  type SystemPaymentGateway,
+  type SystemBrandingAsset,
+  type CreatePaymentGatewayPayload,
+} from '@/lib/api/system';
 import { changePassword as apiChangePassword, isStepUpChallenge } from '@/lib/api/auth';
 import type { StepUpMfaChallengeResponse } from '@/lib/api/auth';
 import { StepUpMfaDialog } from '@/components/shared/step-up-mfa-dialog';
 import { MfaManager } from '@/components/shared/mfa-manager';
-import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, XCircle, Clock, KeyRound, Plus, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TABS = [
@@ -313,6 +329,289 @@ function SystemHealthPanel() {
   );
 }
 
+// ── Payments Panel ────────────────────────────────────────────────────────
+
+type GatewayForm = {
+  gatewayType: string;
+  environment: string;
+  displayName: string;
+  publicKey: string;
+  secretKey: string;
+  webhookSecret: string;
+};
+
+const EMPTY_GW: GatewayForm = { gatewayType: '', environment: 'live', displayName: '', publicKey: '', secretKey: '', webhookSecret: '' };
+
+function PaymentsPanel() {
+  const [gateways, setGateways] = useState<SystemPaymentGateway[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<SystemPaymentGateway | null>(null);
+  const [form, setForm] = useState<GatewayForm>(EMPTY_GW);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getSystemPaymentGateways()
+      .then((arr) => { if (arr.length > 0) setGateways(arr); })
+      .catch(() => {});
+  }, []);
+
+  function openAdd() { setEditing(null); setForm(EMPTY_GW); setModalOpen(true); }
+  function openEdit(gw: SystemPaymentGateway) {
+    setEditing(gw);
+    setForm({
+      gatewayType: gw.gatewayType ?? '',
+      environment: gw.environment ?? 'live',
+      displayName: gw.displayName ?? '',
+      publicKey: gw.publicKey ?? '',
+      secretKey: gw.secretKey ?? '',
+      webhookSecret: gw.webhookSecret ?? '',
+    });
+    setModalOpen(true);
+  }
+
+  function saveGateway() {
+    setSaving(true);
+    const payload: CreatePaymentGatewayPayload = {
+      gatewayType: form.gatewayType,
+      environment: form.environment || undefined,
+      displayName: form.displayName || undefined,
+      publicKey: form.publicKey || undefined,
+      secretKey: form.secretKey || undefined,
+      webhookSecret: form.webhookSecret || undefined,
+    };
+    const promise = editing?.id
+      ? updateSystemPaymentGateway(editing.id, payload)
+      : createSystemPaymentGateway(payload);
+    promise
+      .then((saved) => {
+        setModalOpen(false);
+        if (editing?.id) {
+          setGateways((prev) => prev.map((g) => g.id === editing.id ? { ...g, ...saved } : g));
+          toast.success('Gateway updated.');
+        } else {
+          setGateways((prev) => [...prev, saved]);
+          toast.success('Gateway added.');
+        }
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not save gateway.'))
+      .finally(() => setSaving(false));
+  }
+
+  function toggleActive(gw: SystemPaymentGateway) {
+    if (!gw.id) return;
+    const next = !gw.active;
+    setSystemPaymentGatewayActive(gw.id, next)
+      .then(() => {
+        setGateways((prev) => prev.map((g) => g.id === gw.id ? { ...g, active: next } : g));
+        toast.success(next ? 'Gateway activated.' : 'Gateway deactivated.');
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not update gateway.'));
+  }
+
+  function setPlatformDefault(gw: SystemPaymentGateway) {
+    if (!gw.id) return;
+    setSystemPlatformDefaultGateway(gw.id, gw.environment)
+      .then(() => {
+        setGateways((prev) => prev.map((g) => ({ ...g, platformDefault: g.id === gw.id })));
+        toast.success('Platform default updated.');
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not set default.'));
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between rounded-[14px] border border-[#eee] p-6">
+        <div>
+          <h2 className="text-[16px] font-bold">Payment Gateways</h2>
+          <p className="mt-0.5 text-[13px] text-brand-gray-500">Manage payment providers</p>
+        </div>
+        <Button type="button" onClick={openAdd} className="gap-1.5">
+          <Plus className="size-4" />
+          Add Gateway
+        </Button>
+      </div>
+
+      {gateways.length === 0 ? (
+        <div className="rounded-[14px] border border-[#eee] p-8 text-center text-[13px] text-brand-gray-500">No payment gateways configured</div>
+      ) : (
+        <div className="overflow-x-auto rounded-[14px] border border-[#eee]">
+          <table className="w-full min-w-[640px] border-collapse">
+            <thead>
+              <tr className="bg-brand-blue text-left text-[13px] text-white">
+                {['Gateway', 'Environment', 'Display Name', 'Active', 'Default', 'Actions'].map((h) => (
+                  <th key={h} className="px-4 py-3 font-medium first:rounded-l-[8px] last:rounded-r-[8px]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {gateways.map((gw, i) => (
+                <tr key={gw.id ?? i} className="border-b border-[#f2f2f2] text-[12px]">
+                  <td className="px-4 py-3 font-medium">{gw.gatewayType}</td>
+                  <td className="px-4 py-3 capitalize">{gw.environment ?? '—'}</td>
+                  <td className="px-4 py-3">{gw.displayName ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleActive(gw)}
+                      className={cn('rounded-full px-3 py-1 text-[11px] font-medium', gw.active ? 'bg-[#eafaf0] text-[#22a45d]' : 'bg-[#fde8e8] text-[#eb0000]')}
+                    >
+                      {gw.active ? 'Active' : 'Inactive'}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    {gw.platformDefault ? (
+                      <span className="text-[11px] font-medium text-brand-blue">Default</span>
+                    ) : (
+                      <button type="button" onClick={() => setPlatformDefault(gw)} className="text-[11px] text-brand-gray-500 underline hover:no-underline">Set default</button>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button type="button" onClick={() => openEdit(gw)} className="text-[11px] font-medium text-brand-blue hover:underline">Edit</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-[92%] max-w-[460px] rounded-[16px] bg-white p-7">
+            <h2 className="text-[18px] font-bold">{editing ? 'Edit Gateway' : 'Add Payment Gateway'}</h2>
+            <div className="mt-5 flex flex-col gap-4">
+              {([
+                { key: 'gatewayType', label: 'Gateway Type *', placeholder: 'e.g. PAYSTACK, STRIPE' },
+                { key: 'environment', label: 'Environment', placeholder: 'live or test' },
+                { key: 'displayName', label: 'Display Name', placeholder: 'Optional label' },
+                { key: 'publicKey', label: 'Public Key', placeholder: 'pk_...' },
+                { key: 'secretKey', label: 'Secret Key', placeholder: 'sk_...' },
+                { key: 'webhookSecret', label: 'Webhook Secret', placeholder: 'whsec_...' },
+              ] as const).map(({ key, label, placeholder }) => (
+                <div key={key} className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium">{label}</label>
+                  <input
+                    className="rounded-[6px] border border-[#e5e5e5] px-3 py-2.5 text-[13px] outline-none focus:border-brand-blue"
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button type="button" onClick={saveGateway} disabled={!form.gatewayType || saving} className="flex h-[44px] flex-1 items-center justify-center rounded-[8px] bg-brand-blue text-[14px] font-medium text-white disabled:opacity-50">
+                {saving ? 'Saving…' : editing ? 'Save Changes' : 'Add Gateway'}
+              </button>
+              <button type="button" onClick={() => setModalOpen(false)} className="flex h-[44px] flex-1 items-center justify-center rounded-[8px] border border-[#ddd] text-[14px]">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Branding Assets Panel ─────────────────────────────────────────────────
+
+function BrandingAssetsPanel() {
+  const [assets, setAssets] = useState<SystemBrandingAsset[]>([]);
+  const [activating, setActivating] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadCategory, setUploadCategory] = useState('logo');
+
+  useEffect(() => {
+    getSystemBrandingAssets()
+      .then((arr) => { if (arr.length > 0) setAssets(arr); })
+      .catch(() => {});
+  }, []);
+
+  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadSystemBrandingAsset(uploadCategory, file)
+      .then((asset) => {
+        setAssets((prev) => [...prev, asset]);
+        toast.success('Asset uploaded.');
+      })
+      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : 'Upload failed.'))
+      .finally(() => { if (fileRef.current) fileRef.current.value = ''; });
+  }
+
+  function removeAsset(id: string) {
+    deleteSystemBrandingAsset(id)
+      .then(() => { setAssets((prev) => prev.filter((a) => a.id !== id)); toast.success('Asset deleted.'); })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Delete failed.'));
+  }
+
+  function activateBranding() {
+    setActivating(true);
+    activateSystemBranding()
+      .then(() => toast.success('Branding activated.'))
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Activate failed.'))
+      .finally(() => setActivating(false));
+  }
+
+  return (
+    <div className="rounded-[14px] border border-[#eee] p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[16px] font-bold">Branding Assets</h2>
+          <p className="mt-0.5 text-[13px] text-brand-gray-500">Logos, favicons, and imagery</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={uploadCategory}
+            onChange={(e) => setUploadCategory(e.target.value)}
+            className="h-[36px] rounded-[6px] border border-[#e5e5e5] px-2 text-[12px] text-[#333]"
+          >
+            {['logo', 'favicon', 'banner', 'icon'].map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex h-[36px] items-center gap-1.5 rounded-[8px] border border-[#ddd] px-3 text-[13px] text-[#333] hover:bg-[#f5f5f5]"
+          >
+            <Upload className="size-4" />
+            Upload
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+          <Button type="button" size="sm" onClick={activateBranding} disabled={activating}>
+            {activating ? 'Activating…' : 'Activate'}
+          </Button>
+        </div>
+      </div>
+      {assets.length > 0 && (
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {assets.map((a) => (
+            <div key={a.id} className="relative flex flex-col items-center gap-2 rounded-[8px] border border-[#eee] p-3">
+              {a.url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={a.url} alt={a.category} className="h-[48px] w-auto object-contain" />
+              )}
+              <p className="max-w-full truncate text-[11px] text-brand-gray-500">{a.category ?? a.fileName ?? '—'}</p>
+              {a.id && (
+                <button
+                  type="button"
+                  onClick={() => removeAsset(a.id!)}
+                  className="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full text-[#eb0000] hover:bg-[#fde8e8]"
+                  aria-label="Delete asset"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SystemSettings() {
   const [tab, setTab] = useState<Tab>('General');
   const [config, setConfig] = useState<ConfigMap>({});
@@ -363,7 +662,7 @@ export function SystemSettings() {
             Configure platform settings and integrations
           </p>
         </div>
-        {tab !== 'System Health' && tab !== 'Security' && (
+        {tab !== 'System Health' && tab !== 'Security' && tab !== 'Payments' && (
           <Button size="lg" className="h-[44px] px-6" onClick={onSave}>
             Save Changes
           </Button>
@@ -398,13 +697,7 @@ export function SystemSettings() {
         </Section>
       )}
 
-      {tab === 'Payments' && (
-        <Section title="Payment Provider (Paystack)">
-          <Field name="paystackPublicKey" label="Publishable Key" placeholder="pk_live_..." defaultValue={config['paystackPublicKey'] ?? config['payments.publishableKey']} />
-          <Field name="paystackSecretKey" label="Secret Key" placeholder="sk_live_..." defaultValue={config['paystackSecretKey'] ?? config['payments.secretKey']} />
-          <Field name="paystackWebhookSecret" label="Webhook Secret" placeholder="whsec_..." defaultValue={config['paystackWebhookSecret'] ?? config['payments.webhookSecret']} />
-        </Section>
-      )}
+      {tab === 'Payments' && <PaymentsPanel />}
 
       {tab === 'Email' && (
         <Section title="Email Provider">
@@ -423,12 +716,15 @@ export function SystemSettings() {
       )}
 
       {tab === 'Branding' && (
-        <Section title="Platform Branding">
-          <Field name="logoUrl" label="Logo URL" placeholder="https://cdn.example.com/logo.png" defaultValue={config['logoUrl'] ?? config['branding.logoUrl']} />
-          <Field name="faviconUrl" label="Favicon URL" placeholder="https://cdn.example.com/favicon.ico" defaultValue={config['faviconUrl'] ?? config['branding.faviconUrl']} />
-          <Field name="primaryColor" label="Primary Color" placeholder="#1a56db" defaultValue={config['primaryColor'] ?? config['branding.primaryColor']} />
-          <Field name="secondaryColor" label="Secondary Color" placeholder="#ffffff" defaultValue={config['secondaryColor'] ?? config['branding.secondaryColor']} />
-        </Section>
+        <div className="flex flex-col gap-5">
+          <Section title="Platform Branding">
+            <Field name="logoUrl" label="Logo URL" placeholder="https://cdn.example.com/logo.png" defaultValue={config['logoUrl'] ?? config['branding.logoUrl']} />
+            <Field name="faviconUrl" label="Favicon URL" placeholder="https://cdn.example.com/favicon.ico" defaultValue={config['faviconUrl'] ?? config['branding.faviconUrl']} />
+            <Field name="primaryColor" label="Primary Color" placeholder="#1a56db" defaultValue={config['primaryColor'] ?? config['branding.primaryColor']} />
+            <Field name="secondaryColor" label="Secondary Color" placeholder="#ffffff" defaultValue={config['secondaryColor'] ?? config['branding.secondaryColor']} />
+          </Section>
+          <BrandingAssetsPanel />
+        </div>
       )}
       </form>
 
