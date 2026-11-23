@@ -37,6 +37,7 @@ export async function apiFetch<T = unknown>(
   const res = await fetch(apiUrl(path), {
     ...rest,
     credentials: 'same-origin',
+    signal: rest.signal ?? AbortSignal.timeout(30000),
     headers: {
       Accept: 'application/json',
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),

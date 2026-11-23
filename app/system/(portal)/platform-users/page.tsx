@@ -28,7 +28,7 @@ export default function SystemPlatformUsersPage() {
   useEffect(() => {
     getSystemUsers()
       .then((data) => {
-        if (data.length > 0) setUsers(data);
+        setUsers(data);
       })
       .catch(() => { toast.error('Could not load platform users.'); })
       .finally(() => setLoading(false));
@@ -74,7 +74,7 @@ export default function SystemPlatformUsersPage() {
         onRefresh={() => {
           setLoading(true);
           getSystemUsers()
-            .then((data) => { if (data.length > 0) setUsers(data); })
+            .then((data) => { setUsers(data); })
             .catch(() => { toast.error('Could not refresh platform users.'); })
             .finally(() => setLoading(false));
         }}

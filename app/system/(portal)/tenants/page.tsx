@@ -78,11 +78,11 @@ export default function SystemTenantsPage() {
         return getSystemTenants();
       })
       .then((data) => {
-        if (data && data.length > 0) setTenants(data as SystemTenant[]);
+        if (data) setTenants(data as SystemTenant[]);
       })
       .catch(() => {
         getSystemTenants()
-          .then((data) => { if (data.length > 0) setTenants(data); })
+          .then((data) => { setTenants(data); })
           .catch(() => {});
       })
       .finally(() => setLoading(false));

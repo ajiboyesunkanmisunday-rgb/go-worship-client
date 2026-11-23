@@ -63,7 +63,7 @@ export function ViewAccount({ id }: { id?: string } = {}) {
           } catch { setCreatedAt(String(ts)); }
         }
       }
-      if (perms.length > 0) {
+      {
         const rows: PermRow[] = perms.map((p) => ({
           module: String((p as Record<string, unknown>)['name'] ?? (p as Record<string, unknown>)['code'] ?? ''),
           flags: PERMS.map(() => false),
