@@ -10,6 +10,7 @@ import {
   getSystemBranding,
   updateSystemBranding,
   activateSystemBranding,
+  deleteSystemBranding,
   getSystemBrandingAssets,
   uploadSystemBrandingAsset,
   deleteSystemBrandingAsset,
@@ -519,6 +520,7 @@ function PaymentsPanel() {
 function BrandingAssetsPanel() {
   const [assets, setAssets] = useState<SystemBrandingAsset[]>([]);
   const [activating, setActivating] = useState(false);
+  const [deletingBranding, setDeletingBranding] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadCategory, setUploadCategory] = useState('logo');
 
@@ -554,6 +556,15 @@ function BrandingAssetsPanel() {
       .finally(() => setActivating(false));
   }
 
+  function handleDeleteBranding() {
+    if (!confirm('Delete all branding? This cannot be undone.')) return;
+    setDeletingBranding(true);
+    deleteSystemBranding()
+      .then(() => { setAssets([]); toast.success('Branding deleted.'); })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : 'Delete failed.'))
+      .finally(() => setDeletingBranding(false));
+  }
+
   return (
     <div className="rounded-[14px] border border-[#eee] p-6">
       <div className="flex items-center justify-between">
@@ -582,6 +593,9 @@ function BrandingAssetsPanel() {
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
           <Button type="button" size="sm" onClick={activateBranding} disabled={activating}>
             {activating ? 'Activating…' : 'Activate'}
+          </Button>
+          <Button type="button" size="sm" variant="destructive" onClick={handleDeleteBranding} disabled={deletingBranding}>
+            {deletingBranding ? 'Deleting…' : 'Reset Branding'}
           </Button>
         </div>
       </div>

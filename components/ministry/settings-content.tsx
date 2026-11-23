@@ -17,6 +17,7 @@ import {
   deleteBrandingAsset,
   getTenantSubscription,
   getTenantInvoices,
+  getTenantInvoice,
   getTenantNotificationSettings,
   updateTenantNotificationSettings,
   getTenantSecuritySettings,
@@ -657,6 +658,8 @@ function OrganizationTab() {
 function SubscriptionTab() {
   const [sub, setSub] = useState<TenantSubscription | null>(null);
   const [invoices, setInvoices] = useState<TenantInvoice[]>([]);
+  const [expandedInvId, setExpandedInvId] = useState<string | null>(null);
+  const [expandedInvDetail, setExpandedInvDetail] = useState<TenantInvoice | null>(null);
   const [lifecycle, setLifecycle] = useState<SubscriptionLifecycle | null>(null);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -803,44 +806,72 @@ function SubscriptionTab() {
               <tbody>
                 {invoices.map((inv) => {
                   const isPaid = /paid|success/i.test(inv.status ?? '');
+                  const isExpanded = expandedInvId === inv.id;
                   return (
-                    <tr key={inv.id} className="border-b border-[#f2f2f2]">
-                      <td className="py-3 font-mono">{inv.reference || inv.id}</td>
-                      <td className="py-3">{inv.currency} {inv.amount}</td>
-                      <td className={cn('py-3 font-medium', statusColor(inv.status))}>{inv.status}</td>
-                      <td className="py-3">{inv.createdAt}</td>
-                      <td className="py-3">{inv.paidAt || '—'}</td>
-                      <td className="py-3">
-                        <span className="flex items-center gap-2">
-                          {!isPaid && inv.id && (
-                            <button
-                              type="button"
-                              className="text-[11px] font-medium text-brand-blue hover:underline"
-                              onClick={async () => {
-                                try {
-                                  const res = await checkoutTenantInvoice(inv.id!);
-                                  const url = res?.checkoutUrl as string | undefined;
-                                  if (url) window.open(url, '_blank');
-                                  else toast.success('Invoice checkout initiated.');
-                                } catch (e) { toast.error(e instanceof Error ? e.message : 'Checkout failed.'); }
-                              }}
-                            >Pay</button>
-                          )}
-                          {inv.id && (
-                            <button
-                              type="button"
-                              className="text-[11px] font-medium text-brand-gray-500 hover:underline"
-                              onClick={async () => {
-                                try {
-                                  await generateTenantInvoiceDocument(inv.id!);
-                                  toast.success('Invoice document generated.');
-                                } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not generate document.'); }
-                              }}
-                            >Download</button>
-                          )}
-                        </span>
-                      </td>
-                    </tr>
+                    <>
+                      <tr key={inv.id} className="border-b border-[#f2f2f2]">
+                        <td className="py-3 font-mono">{inv.reference || inv.id}</td>
+                        <td className="py-3">{inv.currency} {inv.amount}</td>
+                        <td className={cn('py-3 font-medium', statusColor(inv.status))}>{inv.status}</td>
+                        <td className="py-3">{inv.createdAt}</td>
+                        <td className="py-3">{inv.paidAt || '—'}</td>
+                        <td className="py-3">
+                          <span className="flex items-center gap-2">
+                            {!isPaid && inv.id && (
+                              <button
+                                type="button"
+                                className="text-[11px] font-medium text-brand-blue hover:underline"
+                                onClick={async () => {
+                                  try {
+                                    const res = await checkoutTenantInvoice(inv.id!);
+                                    const url = res?.checkoutUrl as string | undefined;
+                                    if (url) window.open(url, '_blank');
+                                    else toast.success('Invoice checkout initiated.');
+                                  } catch (e) { toast.error(e instanceof Error ? e.message : 'Checkout failed.'); }
+                                }}
+                              >Pay</button>
+                            )}
+                            {inv.id && (
+                              <button
+                                type="button"
+                                className="text-[11px] font-medium text-brand-gray-500 hover:underline"
+                                onClick={async () => {
+                                  try {
+                                    await generateTenantInvoiceDocument(inv.id!);
+                                    toast.success('Invoice document generated.');
+                                  } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not generate document.'); }
+                                }}
+                              >Download</button>
+                            )}
+                            {inv.id && (
+                              <button
+                                type="button"
+                                className="text-[11px] font-medium text-brand-gray-500 hover:underline"
+                                onClick={() => {
+                                  if (isExpanded) {
+                                    setExpandedInvId(null);
+                                    setExpandedInvDetail(null);
+                                  } else {
+                                    setExpandedInvId(inv.id!);
+                                    setExpandedInvDetail(null);
+                                    getTenantInvoice(inv.id!).then((d) => setExpandedInvDetail(d)).catch(() => {});
+                                  }
+                                }}
+                              >{isExpanded ? 'Hide' : 'View'}</button>
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr key={`${inv.id}-detail`} className="bg-[#f9fafb]">
+                          <td colSpan={6} className="px-2 py-2 text-[11px] text-brand-gray-500">
+                            {expandedInvDetail === null
+                              ? 'Loading…'
+                              : `Ref: ${expandedInvDetail.reference || '—'} | ${expandedInvDetail.currency} ${expandedInvDetail.amount} | Status: ${expandedInvDetail.status || '—'} | Created: ${expandedInvDetail.createdAt || '—'} | Paid: ${expandedInvDetail.paidAt || '—'}`}
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   );
                 })}
               </tbody>

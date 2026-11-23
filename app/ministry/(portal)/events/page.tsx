@@ -14,6 +14,7 @@ import {
   recordEventAttendance,
   getEventAttendance,
   getEventRegistrations,
+  getEventRegistration,
   cancelEventRegistration,
   type TenantEvent,
   type EventRegistration,
@@ -114,6 +115,8 @@ export default function MinistryEventsPage() {
   const [modal, setModal] = useState<EventModal | null>(null);
   const [modalData, setModalData] = useState<EventRegistration[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [expandedRegId, setExpandedRegId] = useState<string | null>(null);
+  const [expandedRegDetail, setExpandedRegDetail] = useState<EventRegistration | null>(null);
   const [editForm, setEditForm] = useState<Partial<CreateEventPayload>>({});
   const [editSaving, setEditSaving] = useState(false);
   const [attendeeId, setAttendeeId] = useState('');
@@ -183,6 +186,19 @@ export default function MinistryEventsPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not record attendance.');
     }
+  }
+
+  function handleExpandRegistration(regId: string) {
+    if (expandedRegId === regId) {
+      setExpandedRegId(null);
+      setExpandedRegDetail(null);
+      return;
+    }
+    setExpandedRegId(regId);
+    setExpandedRegDetail(null);
+    getEventRegistration(regId).then((d) => {
+      setExpandedRegDetail(d);
+    }).catch(() => {});
   }
 
   async function handleCancelRegistration(regId: string) {
@@ -390,24 +406,43 @@ export default function MinistryEventsPage() {
                   </thead>
                   <tbody>
                     {modalData.map((r, i) => (
-                      <tr key={r.id ?? i} className="border-t border-[#f2f2f2]">
-                        <td className="py-2.5">{r.fullName || '—'}</td>
-                        <td className="py-2.5 text-brand-gray-500">{r.email || '—'}</td>
-                        <td className="py-2.5">{r.status || '—'}</td>
-                        {modal?.type === 'registrations' && (
+                      <>
+                        <tr key={r.id ?? i} className="border-t border-[#f2f2f2]">
                           <td className="py-2.5">
-                            {r.id && r.status !== 'CANCELLED' && (
-                              <button
-                                type="button"
-                                onClick={() => void handleCancelRegistration(r.id!)}
-                                className="text-[11px] font-medium text-[#eb0000] hover:underline"
-                              >
-                                Cancel
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => r.id && handleExpandRegistration(r.id)}
+                              className="text-left hover:underline"
+                            >
+                              {r.fullName || '—'}
+                            </button>
                           </td>
+                          <td className="py-2.5 text-brand-gray-500">{r.email || '—'}</td>
+                          <td className="py-2.5">{r.status || '—'}</td>
+                          {modal?.type === 'registrations' && (
+                            <td className="py-2.5">
+                              {r.id && r.status !== 'CANCELLED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleCancelRegistration(r.id!)}
+                                  className="text-[11px] font-medium text-[#eb0000] hover:underline"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                        {expandedRegId === r.id && (
+                          <tr key={`${r.id ?? i}-detail`} className="bg-[#f9fafb]">
+                            <td colSpan={modal?.type === 'registrations' ? 4 : 3} className="px-2 py-2 text-[11px] text-brand-gray-500">
+                              {expandedRegDetail === null
+                                ? 'Loading…'
+                                : `Phone: ${expandedRegDetail.phone || '—'} | Registered: ${expandedRegDetail.registeredAt || '—'} | Checked in: ${expandedRegDetail.checkedInAt || '—'}`}
+                            </td>
+                          </tr>
                         )}
-                      </tr>
+                      </>
                     ))}
                   </tbody>
                 </table>

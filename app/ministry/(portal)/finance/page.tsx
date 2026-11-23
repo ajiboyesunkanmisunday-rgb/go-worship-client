@@ -14,6 +14,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   getDonationFunds,
+  getDonationFund,
   createDonationFund,
   updateDonationFund,
   deactivateDonationFund,
@@ -165,6 +166,17 @@ export default function MinistryFinancePage() {
       defaultForOnline: fund.defaultForOnline ?? false,
     });
     setFundModalOpen(true);
+    if (fund.id) {
+      getDonationFund(fund.id).then((fresh) => {
+        setFundForm({
+          name: fresh.name ?? fund.name ?? '',
+          code: fresh.code ?? fund.code ?? '',
+          fundType: fresh.fundType ?? fund.fundType ?? '',
+          description: fresh.description ?? fund.description ?? '',
+          defaultForOnline: fresh.defaultForOnline ?? fund.defaultForOnline ?? false,
+        });
+      }).catch(() => {});
+    }
   }
 
   function saveFund() {
