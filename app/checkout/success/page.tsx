@@ -2,17 +2,32 @@
 
 import { CheckoutShell } from '@/components/checkout/checkout-shell';
 import { PaymentSuccess } from '@/components/checkout/payment-success';
+import { getCheckoutSessionStatus } from '@/lib/api/checkout';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 function CheckoutSuccessContent() {
   const router = useRouter();
   const params = useSearchParams();
   const amount = params.get('amount') ?? '0';
-  const display = amount && Number(amount) > 0
-    ? `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const checkoutToken = params.get('token') ?? params.get('checkoutToken') ?? params.get('checkout_token');
+  const [sessionStatus, setSessionStatus] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (checkoutToken) {
+      getCheckoutSessionStatus(checkoutToken)
+        .then((s) => setSessionStatus(s as Record<string, unknown>))
+        .catch(() => {});
+    }
+  }, [checkoutToken]);
+
+  const resolvedAmount = sessionStatus?.['amount']
+    ? Number(sessionStatus['amount'])
+    : Number(amount);
+  const display = resolvedAmount > 0
+    ? `$${resolvedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '$3,000';
 
   return (

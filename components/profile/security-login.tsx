@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActionButton } from './action-button';
 import { ProfileInfoItem } from './profile-info-item';
 import z from 'zod';
@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { PasswordInput } from '../ui/password-input';
-import { changePassword } from '@/lib/api/auth';
+import { changePassword, getSelfPasswordStatus, getSelfSecuritySummary } from '@/lib/api/auth';
 import { toast } from 'sonner';
 
 export function SecurityLogin() {
@@ -68,9 +68,28 @@ export function SecurityLogin() {
 }
 
 function SecurityInfo() {
+  const [pwStatus, setPwStatus] = useState<Record<string, unknown>>({});
+  const [summary, setSummary] = useState<Record<string, unknown>>({});
+
+  useEffect(() => {
+    getSelfPasswordStatus().then(setPwStatus).catch(() => {});
+    getSelfSecuritySummary().then(setSummary).catch(() => {});
+  }, []);
+
+  const lastChanged = pwStatus['lastChangedAt']
+    ? new Date(String(pwStatus['lastChangedAt'])).toLocaleDateString()
+    : '—';
+  const strength = String(summary['passwordStrength'] ?? summary['securityScore'] ?? '—');
+  const mfaEnabled = summary['mfaEnabled'] != null
+    ? (summary['mfaEnabled'] ? 'Enabled' : 'Disabled')
+    : '—';
+
   return (
-    <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6  md:gap-6">
+    <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6 md:gap-6">
       <ProfileInfoItem label="Password" content="********" />
+      <ProfileInfoItem label="Last changed" content={lastChanged} />
+      <ProfileInfoItem label="Password strength" content={strength} />
+      <ProfileInfoItem label="MFA" content={mfaEnabled} />
       <ProfileInfoItem label="Notification" content="Email" />
     </div>
   );

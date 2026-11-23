@@ -16,6 +16,8 @@ import {
   createDonation,
   getCheckoutConfig,
   chooseIntegration,
+  startCollectJs,
+  exchangeCollectJsToken,
 } from '@/lib/api/checkout';
 
 function Field({
@@ -90,11 +92,25 @@ export default function CheckoutGivingPage() {
         donorEmail,
       });
 
-      if (!session.redirectUrl) {
-        throw new Error('Checkout session did not return a redirect URL. Please try again.');
+      if (integrationType === 'COLLECT_JS') {
+        if (!session.paymentReference) {
+          throw new Error('Payment reference missing. Please try again.');
+        }
+        if (!config.publicKey) {
+          throw new Error('Payment configuration missing. Please contact support.');
+        }
+        const paymentToken = await startCollectJs(config.publicKey);
+        const tokenSession = await exchangeCollectJsToken(session.paymentReference, paymentToken);
+        if (!tokenSession.redirectUrl) {
+          throw new Error('Checkout session did not return a redirect URL. Please try again.');
+        }
+        window.location.href = tokenSession.redirectUrl;
+      } else {
+        if (!session.redirectUrl) {
+          throw new Error('Checkout session did not return a redirect URL. Please try again.');
+        }
+        window.location.href = session.redirectUrl;
       }
-
-      window.location.href = session.redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment could not be completed. Please try again.');
     } finally {

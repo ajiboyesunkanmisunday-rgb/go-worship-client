@@ -16,7 +16,7 @@
  * the header promotion (same pattern as /bff/auth/register).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -27,10 +27,11 @@ import { ApiError } from '@/lib/api/client';
 import { FormAlert } from '@/components/ui/form-alert';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { getPublicCountries, getPublicCurrencies, getPublicStates, type CountryOption, type CurrencyOption } from '@/lib/api/public';
 
 type Step = 1 | 2;
 
-const COUNTRIES = [
+const FALLBACK_COUNTRIES: CountryOption[] = [
   { code: 'NG', name: 'Nigeria' },
   { code: 'US', name: 'United States' },
   { code: 'GB', name: 'United Kingdom' },
@@ -38,17 +39,17 @@ const COUNTRIES = [
   { code: 'KE', name: 'Kenya' },
   { code: 'ZA', name: 'South Africa' },
   { code: 'CA', name: 'Canada' },
-] as const;
+];
 
-const CURRENCIES = [
-  { code: 'NGN', label: 'NGN — Naira' },
-  { code: 'USD', label: 'USD — US Dollar' },
-  { code: 'GBP', label: 'GBP — Pound Sterling' },
-  { code: 'GHS', label: 'GHS — Ghana Cedi' },
-  { code: 'KES', label: 'KES — Kenyan Shilling' },
-  { code: 'ZAR', label: 'ZAR — South African Rand' },
-  { code: 'CAD', label: 'CAD — Canadian Dollar' },
-] as const;
+const FALLBACK_CURRENCIES: CurrencyOption[] = [
+  { code: 'NGN', name: 'NGN — Naira' },
+  { code: 'USD', name: 'USD — US Dollar' },
+  { code: 'GBP', name: 'GBP — Pound Sterling' },
+  { code: 'GHS', name: 'GHS — Ghana Cedi' },
+  { code: 'KES', name: 'KES — Kenyan Shilling' },
+  { code: 'ZAR', name: 'ZAR — South African Rand' },
+  { code: 'CAD', name: 'CAD — Canadian Dollar' },
+];
 
 function Field({
   label,
@@ -78,6 +79,12 @@ export function RegisterChurchForm() {
   const [step, setStep] = useState<Step>(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [countries, setCountries] = useState<CountryOption[]>(FALLBACK_COUNTRIES);
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>(FALLBACK_CURRENCIES);
+  useEffect(() => {
+    getPublicCountries().then((data) => { if (data.length > 0) setCountries(data); }).catch(() => {});
+    getPublicCurrencies().then((data) => { if (data.length > 0) setCurrencies(data); }).catch(() => {});
+  }, []);
 
   // Step 1 fields
   const [churchName, setChurchName] = useState('');
@@ -85,6 +92,22 @@ export function RegisterChurchForm() {
   const [billingEmail, setBillingEmail] = useState('');
   const [countryCode, setCountryCode] = useState('NG');
   const [currency, setCurrency] = useState('NGN');
+
+  const [states, setStates] = useState<{ id?: number; name?: string }[]>([]);
+  const [stateId, setStateId] = useState('');
+
+  useEffect(() => {
+    if (!countryCode) return;
+    setStateId('');
+    getPublicStates(countryCode)
+      .then((page) => {
+        const items = Array.isArray((page as { items?: unknown[] })?.items)
+          ? ((page as { items: { id?: number; name?: string }[] }).items)
+          : [];
+        setStates(items);
+      })
+      .catch(() => setStates([]));
+  }, [countryCode]);
 
   // Step 2 fields
   const [displayName, setDisplayName] = useState('');
@@ -238,9 +261,9 @@ export function RegisterChurchForm() {
                   onChange={(e) => setCountryCode(e.target.value)}
                   className="h-[46px]"
                 >
-                  {COUNTRIES.map((c) => (
-                    <NativeSelectOption key={c.code} value={c.code}>
-                      {c.name}
+                  {countries.map((c) => (
+                    <NativeSelectOption key={c.code ?? ''} value={c.code ?? ''}>
+                      {c.name ?? c.code}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>
@@ -251,14 +274,31 @@ export function RegisterChurchForm() {
                   onChange={(e) => setCurrency(e.target.value)}
                   className="h-[46px]"
                 >
-                  {CURRENCIES.map((c) => (
-                    <NativeSelectOption key={c.code} value={c.code}>
-                      {c.label}
+                  {currencies.map((c) => (
+                    <NativeSelectOption key={c.code ?? ''} value={c.code ?? ''}>
+                      {c.name ?? c.code}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>
               </Field>
             </div>
+
+            {states.length > 0 && (
+              <Field label="State / Province">
+                <NativeSelect
+                  value={stateId}
+                  onChange={(e) => setStateId(e.target.value)}
+                  className="h-[46px]"
+                >
+                  <NativeSelectOption value="">Select a state</NativeSelectOption>
+                  {states.map((s) => (
+                    <NativeSelectOption key={String(s.id ?? '')} value={String(s.id ?? '')}>
+                      {s.name ?? ''}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
 
             {error && <FormAlert variant="error">{error}</FormAlert>}
 

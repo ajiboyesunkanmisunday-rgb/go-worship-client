@@ -6,6 +6,8 @@ import { CameraIcon } from '@/icons/media';
 import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { UserProfile } from '@/types/user';
+import { uploadSelfAvatar } from '@/lib/api/auth';
+import { toast } from 'sonner';
 
 type Props = {
   user: UserProfile;
@@ -15,6 +17,21 @@ export function ProfileImageSection({ user }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setUploading(true);
+    try {
+      await uploadSelfAvatar(selectedFile);
+      toast.success('Profile photo updated.');
+      setSelectedFile(null);
+    } catch {
+      toast.error('Could not upload photo.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const getuserImgSrc = () => {
     if (selectedFile) {
@@ -96,6 +113,16 @@ export function ProfileImageSection({ user }: Props) {
         <p className="text-[#333333] text-[14px] leading-[100%] tracking-[0%]">
           {user.location}
         </p>
+        {selectedFile && (
+          <Button
+            size="sm"
+            disabled={uploading}
+            onClick={() => void handleUpload()}
+            className="mt-1 h-[34px] px-4 text-[13px]"
+          >
+            {uploading ? 'Saving…' : 'Save photo'}
+          </Button>
+        )}
       </div>
     </div>
   );

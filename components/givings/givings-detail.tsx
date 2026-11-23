@@ -5,7 +5,7 @@ import { SheetPage } from '../ui/sheet-page';
 import Image from 'next/image';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { getCustomerPaymentById, type PaymentStatusResponse } from '@/lib/api/customer';
+import { getCustomerPaymentById, receiptUrl, type PaymentStatusResponse } from '@/lib/api/customer';
 import { getTenantBranding } from '@/lib/api/tenant';
 
 type Props = {
@@ -179,6 +179,11 @@ export function GivingsDetail({ isIntercepted = false, id }: Props) {
             <Button
               className="w-full h-[41.5px] md:h-[60px] font-bold text-[16px]! md:text-[18px]!"
               size="lg"
+              disabled={!payment}
+              onClick={() => {
+                const rid = payment?.id ?? payment?.paymentReference;
+                if (rid) window.open(receiptUrl(rid), '_blank');
+              }}
             >
               Download Receipt
             </Button>
