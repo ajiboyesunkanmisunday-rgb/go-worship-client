@@ -82,8 +82,8 @@ export function RegisterChurchForm() {
   const [countries, setCountries] = useState<CountryOption[]>(FALLBACK_COUNTRIES);
   const [currencies, setCurrencies] = useState<CurrencyOption[]>(FALLBACK_CURRENCIES);
   useEffect(() => {
-    getPublicCountries().then((data) => { if (data.length > 0) setCountries(data); }).catch(() => {});
-    getPublicCurrencies().then((data) => { if (data.length > 0) setCurrencies(data); }).catch(() => {});
+    getPublicCountries().then((data) => { setCountries(data); }).catch(() => {});
+    getPublicCurrencies().then((data) => { setCurrencies(data); }).catch(() => {});
   }, []);
 
   // Step 1 fields

@@ -84,13 +84,13 @@ export default function SystemPlansPage() {
   const [overdue, setOverdue] = useState('$0');
   const [pendingPayments, setPendingPayments] = useState('$0');
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // /system/billing/stats not in backend API — disabled.
 
     getSystemBillingPlans()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: Plan[] = arr.map((p, i) => {
           const featureRaw = p.features;
           const features: string[] = Array.isArray(featureRaw) ? featureRaw : [];
@@ -110,9 +110,10 @@ export default function SystemPlansPage() {
             highlight: i === 1,
           };
         }).filter((p) => p.name);
-        if (mapped.length > 0) setPlans(mapped);
+        setPlans(mapped);
       })
-      .catch(() => { toast.error('Could not load plans.'); });
+      .catch(() => { toast.error('Could not load plans.'); })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -171,7 +172,11 @@ export default function SystemPlansPage() {
 
         {tab === 0 ? (
           <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
-            {plans.map((p) => (
+            {loading ? (
+              <p className="col-span-3 py-8 text-center text-[13px] text-brand-gray-400">Loading plans…</p>
+            ) : plans.length === 0 ? (
+              <p className="col-span-3 py-8 text-center text-[13px] text-brand-gray-400">No subscription plans found.</p>
+            ) : plans.map((p) => (
               <PlanCard key={p.id} plan={p} />
             ))}
           </div>

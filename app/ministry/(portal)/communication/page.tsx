@@ -94,7 +94,6 @@ export default function MinistryCommunicationPage() {
     // Load campaigns (notification-based)
     getTenantCampaigns()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: Message[] = arr.map((m) => ({
           id: String(m.id ?? ''),
           title: String(m.subject ?? m.name ?? ''),
@@ -104,7 +103,7 @@ export default function MinistryCommunicationPage() {
           date: String(m.sentAt ?? m.scheduledAt ?? m.createdAt ?? ''),
           batchId: undefined,
         })).filter((m) => m.title);
-        if (mapped.length > 0) setMessages(mapped);
+        setMessages(mapped);
       })
       .catch(() => { toast.error('Could not load messages.'); });
 

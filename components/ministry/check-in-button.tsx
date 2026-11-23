@@ -31,7 +31,7 @@ export function CheckInButton({
   useEffect(() => {
     getTenantMembers().then((members) => {
       const names = members.map((m) => m.name).filter(Boolean);
-      if (names.length > 0) setAttendees(names);
+      setAttendees(names);
     }).catch(() => {});
   }, []);
 

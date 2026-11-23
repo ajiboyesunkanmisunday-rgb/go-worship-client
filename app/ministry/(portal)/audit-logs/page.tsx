@@ -119,6 +119,7 @@ export default function MinistryAuditLogsPage() {
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
   const [allLogs, setAllLogs] = useState<LogRow[]>([]);
   const [securityLogs, setSecurityLogs] = useState<LogRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<LogRow | null>(null);
   const [detailExtra, setDetailExtra] = useState<Partial<LogRow>>({});
 
@@ -140,14 +141,13 @@ export default function MinistryAuditLogsPage() {
   useEffect(() => {
     getTenantAuditEventsRecent()
       .then((arr) => {
-        const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
-        if (rows.length > 0) setAllLogs(rows);
+        setAllLogs(arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action));
       })
-      .catch(() => { toast.error('Could not load audit logs.'); });
+      .catch(() => { toast.error('Could not load audit logs.'); })
+      .finally(() => setLoading(false));
     getTenantAuditSecurityEvents()
       .then((arr) => {
-        const rows = arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action);
-        if (rows.length > 0) setSecurityLogs(rows);
+        setSecurityLogs(arr.map((e) => mapRow(e as unknown as Record<string, unknown>)).filter((r) => r.action));
       })
       .catch(() => {});
   }, []);
@@ -217,12 +217,18 @@ export default function MinistryAuditLogsPage() {
         ))}
       </div>
 
-      <SmartTable
-        headers={['Action', 'Resource', 'User', 'Outcome', 'Summary', 'Timestamp', '']}
-        rows={tableRows}
-        filterOptions={filterOptions.length > 0 ? filterOptions : ['Created', 'Updated', 'Deleted', 'Login']}
-        filterAll="All actions"
-      />
+      {loading ? (
+        <div className="rounded-[14px] bg-white p-8 text-center text-[14px] text-brand-gray-400">
+          Loading audit logs…
+        </div>
+      ) : (
+        <SmartTable
+          headers={['Action', 'Resource', 'User', 'Outcome', 'Summary', 'Timestamp', '']}
+          rows={tableRows}
+          filterOptions={filterOptions.length > 0 ? filterOptions : ['Created', 'Updated', 'Deleted', 'Login']}
+          filterAll="All actions"
+        />
+      )}
 
       <Dialog.Root open={!!selected} onOpenChange={(v) => { if (!v) setSelected(null); }}>
         <Dialog.Portal>

@@ -37,7 +37,7 @@ export function AttendanceContent() {
         registrations: String(e.registrations),
         status: e.status.charAt(0).toUpperCase() + e.status.slice(1).toLowerCase(),
       }));
-      if (mapped.length > 0) setEvents(mapped);
+      setEvents(mapped);
     }).catch(() => {});
 
     getUnifiedDashboard().then((s) => {

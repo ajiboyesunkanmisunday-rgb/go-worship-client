@@ -1,0 +1,10 @@
+The following backend endpoints are not yet implemented and throw errors when called.
+They are listed here per project standards (section 5.2).
+
+lib/api/tenant.ts — createTenantGroup (POST /tenant/admin/groups)
+lib/api/tenant.ts — editTenantGroup (PUT /tenant/admin/groups/:id)
+lib/api/tenant.ts — provisionAdminUser (POST /tenant/admin/users/provision)
+lib/api/auth.ts   — upgradeGuestToCustomer (POST /tenant/admin/users/guests/upgrade-to-customer)
+
+These are backend-side gaps. The frontend functions throw descriptive errors; callers
+display the message to the user. No silent failures.

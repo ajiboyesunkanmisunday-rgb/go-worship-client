@@ -56,13 +56,17 @@ export function GroupLeaderDashboard() {
   const [members, setMembers] = useState<TenantMember[]>([]);
   const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
   const [rawSections, setRawSections] = useState<DashboardSection[]>([]);
+  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
-    getTenantMembers().then(setMembers).catch(() => {});
+    getTenantMembers()
+      .then(setMembers)
+      .catch(() => {})
+      .finally(() => setLoading(false));
     getUnifiedDashboard('LAST_30_DAYS', 'USD', 'TENANT_OPERATIONS').then((s) => {
-      if (s) { setStats(s); if (s.rawSections.length > 0) setRawSections(s.rawSections); }
+      if (s) { setStats(s); setRawSections(s.rawSections); }
     }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
@@ -109,11 +113,17 @@ export function GroupLeaderDashboard() {
         </div>
       )}
 
-      <DataPanel
-        title="Member List"
-        columns={['Name', 'Phone', 'Email', 'Join Date']}
-        rows={rows}
-      />
+      {loading ? (
+        <div className="rounded-[14px] bg-white p-8 text-center text-[14px] text-brand-gray-400">
+          Loading members…
+        </div>
+      ) : (
+        <DataPanel
+          title="Member List"
+          columns={['Name', 'Phone', 'Email', 'Join Date']}
+          rows={rows}
+        />
+      )}
     </div>
   );
 }

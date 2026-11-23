@@ -122,7 +122,7 @@ export default function MinistryFinancePage() {
       .then((s) => {
         if (!s) return;
         setTotalGiving(s.totalGiving);
-        if (s.rawSections.length > 0) setRawSections(s.rawSections);
+        setRawSections(s.rawSections);
         const financeSection = s.rawSections.find((sec) =>
           sec.type?.toLowerCase().includes('financ') || sec.type?.toLowerCase().includes('giving')
         );
@@ -137,7 +137,7 @@ export default function MinistryFinancePage() {
       .catch(() => { toast.error('Could not load dashboard stats.'); });
 
     getDonationFunds()
-      .then((arr) => { if (arr.length > 0) setFunds(arr); })
+      .then((arr) => { setFunds(arr); })
       .catch(() => {});
   }, []);
 

@@ -23,12 +23,13 @@ export function SermonAdminDashboard() {
   const [stats, setStats] = useState<UnifiedDashboardStats | null>(null);
   const [rawSections, setRawSections] = useState<DashboardSection[]>([]);
   const [series, setSeries] = useState<SeriesItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [orgName, setOrgName] = useState('');
 
   useEffect(() => {
     getUnifiedDashboard('LAST_30_DAYS', 'USD', 'CONTENT').then((s) => {
-      if (s) { setStats(s); if (s.rawSections.length > 0) setRawSections(s.rawSections); }
+      if (s) { setStats(s); setRawSections(s.rawSections); }
     }).catch(() => {});
     getProfile().then((p) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
@@ -40,7 +41,6 @@ export function SermonAdminDashboard() {
 
     fetchTenantSeries()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: SeriesItem[] = arr.map((s) => {
           const rawDate = String(s.createdAt ?? s.publishedAt ?? '');
           const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
@@ -57,9 +57,10 @@ export function SermonAdminDashboard() {
             status, date,
           };
         }).filter((s) => s.name);
-        if (mapped.length > 0) setSeries(mapped);
+        setSeries(mapped);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const publishedCount = series.filter((s) => s.status === 'Published').length;
@@ -111,13 +112,19 @@ export function SermonAdminDashboard() {
         </div>
       )}
 
-      <DataCard
-        title="Recent Activity"
-        headers={['Series Name', 'Description', 'No. of Sermons', 'Status', 'Created On', '']}
-        rows={liveRows}
-        filterOptions={SERIES_STATUSES}
-        filterAll="All status"
-      />
+      {loading ? (
+        <div className="rounded-[14px] bg-white p-8 text-center text-[14px] text-brand-gray-400">
+          Loading series…
+        </div>
+      ) : (
+        <DataCard
+          title="Recent Activity"
+          headers={['Series Name', 'Description', 'No. of Sermons', 'Status', 'Created On', '']}
+          rows={liveRows}
+          filterOptions={SERIES_STATUSES}
+          filterAll="All status"
+        />
+      )}
     </div>
   );
 }

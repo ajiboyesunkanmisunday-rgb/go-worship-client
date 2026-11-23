@@ -585,6 +585,7 @@ export default function SystemRolesPage() {
   const [activeTab, setActiveTab] = useState<'Roles' | 'Permissions'>('Roles');
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [selectedPermId, setSelectedPermId] = useState<string | null>(null);
   const [roleDrawerOpen, setRoleDrawerOpen] = useState(false);
@@ -598,31 +599,31 @@ export default function SystemRolesPage() {
   const [permCodeResult, setPermCodeResult] = useState<SystemPermission | null>(null);
 
   const loadAll = useCallback(() => {
+    setLoading(true);
     getSystemRoles()
       .then((arr) => {
-        const mapped: Role[] = arr.map((r) => ({
+        setRoles(arr.map((r) => ({
           id: String(r.id ?? r.code ?? ''),
           name: String(r.name ?? r.code ?? ''),
           type: String(r.type ?? 'System'),
           scope: 'Platform',
           permissionCount: 0,
           status: r.active === false ? 'Inactive' : 'Active',
-        })).filter((r) => r.name);
-        if (mapped.length > 0) setRoles(mapped);
+        })).filter((r) => r.name));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
 
     getSystemPermissions()
       .then((arr) => {
-        const mapped: Permission[] = arr.map((p) => ({
+        setPermissions(arr.map((p) => ({
           id: String(p.id ?? p.code ?? ''),
           name: String(p.name ?? p.code ?? ''),
           category: String(p.type ?? ''),
           scope: 'System',
           description: String(p.description ?? ''),
           status: 'Active',
-        })).filter((p) => p.name);
-        if (mapped.length > 0) setPermissions(mapped);
+        })).filter((p) => p.name));
       })
       .catch(() => {});
   }, []);
@@ -807,7 +808,9 @@ export default function SystemRolesPage() {
       </div>
 
       {activeTab === 'Roles' ? (
-        roles.length === 0 ? (
+        loading ? (
+          <div className="rounded-[14px] bg-white p-8 text-center text-[14px] text-brand-gray-400">Loading roles…</div>
+        ) : roles.length === 0 ? (
           <div className="rounded-[14px] bg-white p-6"><EmptyState label="roles" /></div>
         ) : (
           <SmartTable

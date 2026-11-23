@@ -99,7 +99,7 @@ export function MemberOverview({ id }: { id?: string }) {
     getTenantUserRoles(id)
       .then((arr) => {
         const names = arr.map((r) => String(r['name'] ?? r['roleName'] ?? '')).filter(Boolean);
-        if (names.length > 0) setRoles(names);
+        setRoles(names);
       })
       .catch(() => {});
   }, [id]);

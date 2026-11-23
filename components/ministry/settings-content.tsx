@@ -673,7 +673,7 @@ function SubscriptionTab() {
         setSub(s);
         setInvoices(inv);
         if (lc) setLifecycle(lc as SubscriptionLifecycle);
-        if ((pl as SubscriptionPlan[]).length > 0) setPlans(pl as SubscriptionPlan[]);
+        setPlans(pl as SubscriptionPlan[]);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -1041,7 +1041,7 @@ function PaymentBillingTab() {
     ])
       .then(([data, merchant]) => {
         const arr = (data as { content?: BillingPayment[] })?.content ?? [];
-        if (arr.length > 0) setPayments(arr);
+        setPayments(arr);
         if (merchant) setMerchantAccount(merchant as Record<string, unknown>);
       })
       .catch(() => {})
@@ -1256,7 +1256,7 @@ function CampusesTab() {
             active: c.active !== false,
           }))
           .filter((c) => c.id || c.name);
-        if (mapped.length > 0) setCampuses(mapped);
+        setCampuses(mapped);
       })
       .catch(() => {})
       .finally(() => setLoading(false));

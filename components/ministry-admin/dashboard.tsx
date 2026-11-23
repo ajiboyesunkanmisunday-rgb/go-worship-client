@@ -37,7 +37,7 @@ export function GroupLeaderDashboard() {
       if (name) setUserName(name);
     }).catch(() => {});
     getUnifiedDashboard('LAST_30_DAYS', 'USD', 'ENGAGEMENT').then((s) => {
-      if (s) { setStats(s); if (s.rawSections.length > 0) setRawSections(s.rawSections); }
+      if (s) { setStats(s); setRawSections(s.rawSections); }
     }).catch(() => {});
     getTenantEvents().then((events) => {
       const mapped: EventRow[] = events.slice(0, 5).map((e: TenantEvent) => ({

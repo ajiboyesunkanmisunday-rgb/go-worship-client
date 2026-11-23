@@ -38,6 +38,7 @@ const folderIcon = (
 
 export default function MinistryMediaPage() {
   const [series, setSeries] = useState<Series[]>([]);
+  const [loading, setLoading] = useState(true);
 
   async function handleDeleteSeries(id: string) {
     try {
@@ -52,7 +53,6 @@ export default function MinistryMediaPage() {
   useEffect(() => {
     getTenantSeries()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: Series[] = arr.map((s) => {
           const rawDate = String(s.createdAt ?? s.publishedAt ?? '');
           const date = rawDate
@@ -67,9 +67,10 @@ export default function MinistryMediaPage() {
             date,
           };
         }).filter((s) => s.name);
-        if (mapped.length > 0) setSeries(mapped);
+        setSeries(mapped);
       })
-      .catch(() => { toast.error('Could not load media series.'); });
+      .catch(() => { toast.error('Could not load media series.'); })
+      .finally(() => setLoading(false));
   }, []);
 
   const draftCount = series.filter((s) => s.status === 'Draft').length;
@@ -131,7 +132,11 @@ export default function MinistryMediaPage() {
               </tr>
             </thead>
             <tbody>
-              {series.map((s, i) => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-8 text-center text-[13px] text-brand-gray-400">Loading series…</td></tr>
+              ) : series.length === 0 ? (
+                <tr><td colSpan={6} className="py-8 text-center text-[13px] text-brand-gray-400">No series found.</td></tr>
+              ) : series.map((s, i) => (
                 <tr key={i} className="border-t border-[#f2f2f2] text-[12px]">
                   <td className="py-4">{s.name}</td>
                   <td className="py-4">{s.desc}</td>

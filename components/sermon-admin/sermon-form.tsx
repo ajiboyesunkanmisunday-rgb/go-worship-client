@@ -91,7 +91,7 @@ export function SermonForm({
             label: String(s.title ?? ''),
           }))
           .filter((o) => o.label);
-        if (opts.length > 0) setSeriesOpts(opts);
+        setSeriesOpts(opts);
       })
       .catch(() => {});
 

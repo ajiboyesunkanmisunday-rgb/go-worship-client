@@ -25,6 +25,7 @@ type Role = {
 export default function MinistryAdminManagementPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<TenantPermission[]>([]);
+  const [loading, setLoading] = useState(true);
   const [roleCodeSearch, setRoleCodeSearch] = useState('');
   const [permCodeSearch, setPermCodeSearch] = useState('');
   const [permDetail, setPermDetail] = useState<TenantPermission | null>(null);
@@ -44,7 +45,6 @@ export default function MinistryAdminManagementPage() {
   useEffect(() => {
     getTenantRoles()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: Role[] = arr.map((r) => {
           const apiId = String(r.id ?? '');
           return {
@@ -58,9 +58,10 @@ export default function MinistryAdminManagementPage() {
             updated: '',
           };
         }).filter((r) => r.role);
-        if (mapped.length > 0) setRoles(mapped);
+        setRoles(mapped);
       })
-      .catch(() => { toast.error('Could not load roles.'); });
+      .catch(() => { toast.error('Could not load roles.'); })
+      .finally(() => setLoading(false));
     getTenantPermissions().then(setPermissions).catch(() => {});
   }, []);
 
@@ -148,7 +149,11 @@ export default function MinistryAdminManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {roles.map((r, i) => (
+              {loading ? (
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-[13px] text-brand-gray-400">Loading roles…</td></tr>
+              ) : roles.length === 0 ? (
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-[13px] text-brand-gray-400">No roles found.</td></tr>
+              ) : roles.map((r, i) => (
                 <tr key={i} className="border-b border-[#f2f2f2] text-[12px]">
                   <td className="px-4 py-4">{r.id}</td>
                   <td className="px-4 py-4">{r.role}</td>

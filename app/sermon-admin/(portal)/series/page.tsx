@@ -11,11 +11,11 @@ type Series = { id: string; name: string; desc: string; count: string; status: s
 
 export default function SermonAdminSeriesPage() {
   const [series, setSeries] = useState<Series[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getTenantSeries()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: Series[] = arr.map((s) => {
           const rawDate = String(s.createdAt ?? s.publishedAt ?? '');
           const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
@@ -34,9 +34,10 @@ export default function SermonAdminSeriesPage() {
             date,
           };
         }).filter((s) => s.name);
-        if (mapped.length > 0) setSeries(mapped);
+        setSeries(mapped);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const draftCount = series.filter((s) => s.status === 'Draft').length;
@@ -95,13 +96,19 @@ export default function SermonAdminSeriesPage() {
         <QuickAccess />
       </div>
 
-      <DataCard
-        title="Recent Activity"
-        headers={['Series Name', 'Description', 'No. of Sermons', 'Status', 'Created On', '']}
-        rows={rows}
-        filterOptions={SERIES_STATUSES}
-        filterAll="All status"
-      />
+      {loading ? (
+        <div className="rounded-[14px] bg-white p-8 text-center text-[14px] text-brand-gray-400">
+          Loading series…
+        </div>
+      ) : (
+        <DataCard
+          title="Recent Activity"
+          headers={['Series Name', 'Description', 'No. of Sermons', 'Status', 'Created On', '']}
+          rows={rows}
+          filterOptions={SERIES_STATUSES}
+          filterAll="All status"
+        />
+      )}
     </div>
   );
 }

@@ -69,7 +69,7 @@ export function NewMessageForm() {
   useEffect(() => {
     getTenantCommunicationTargets()
       .then((arr) => {
-        if (arr.length > 0) setTargets(arr as CommunicationTarget[]);
+        setTargets(arr as CommunicationTarget[]);
       })
       .catch(() => {});
   }, []);

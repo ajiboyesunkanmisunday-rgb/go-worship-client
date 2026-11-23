@@ -351,7 +351,7 @@ function PaymentsPanel() {
 
   useEffect(() => {
     getSystemPaymentGateways()
-      .then((arr) => { if (arr.length > 0) setGateways(arr); })
+      .then((arr) => { setGateways(arr); })
       .catch(() => {});
   }, []);
 
@@ -524,7 +524,7 @@ function BrandingAssetsPanel() {
 
   useEffect(() => {
     getSystemBrandingAssets()
-      .then((arr) => { if (arr.length > 0) setAssets(arr); })
+      .then((arr) => { setAssets(arr); })
       .catch(() => {});
   }, []);
 

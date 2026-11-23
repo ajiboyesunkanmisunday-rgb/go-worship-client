@@ -82,7 +82,7 @@ export function CreateGroupForm({
   useEffect(() => {
     getTenantMembers().then((members: TenantMember[]) => {
       const mapped = members.filter((m) => m.name).map((m) => ({ id: m.id, name: m.name }));
-      if (mapped.length > 0) setLeaders(mapped);
+      setLeaders(mapped);
     }).catch(() => {});
   }, []);
 

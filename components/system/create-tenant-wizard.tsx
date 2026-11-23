@@ -144,7 +144,6 @@ export function CreateTenantWizard() {
   useEffect(() => {
     getSystemBillingPlans()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: Plan[] = arr.map((p) => {
           const rawPrice = Number(p.price ?? 0);
           const price = rawPrice ? `$${rawPrice.toLocaleString()}` : '$0';
@@ -154,7 +153,7 @@ export function CreateTenantWizard() {
             price,
           };
         }).filter((p) => p.key && p.tier);
-        if (mapped.length > 0) setPlans(mapped);
+        setPlans(mapped);
       })
       .catch(() => {});
   }, []);

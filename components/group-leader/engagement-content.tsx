@@ -110,7 +110,7 @@ export function EngagementContent() {
   useEffect(() => {
     getTenantGroups().then((groups) => {
       const mapped = groups.map(toRow);
-      if (mapped.length > 0) setRows(mapped);
+      setRows(mapped);
     }).catch(() => {});
   }, []);
 

@@ -193,18 +193,17 @@ export function SystemDashboard() {
           const title = resource ? `${action}: ${resource}` : action;
           return { title, meta };
         });
-        if (mapped.length > 0) setActivity(mapped);
+        setActivity(mapped);
       })
       .catch(() => {});
 
     // Plan distribution
     getSystemBillingPlans()
       .then((arr) => {
-        if (arr.length === 0) return;
         const mapped: [string, string][] = arr
           .map((p) => [String(p.name ?? ''), '0'] as [string, string])
           .filter(([name]) => name);
-        if (mapped.length > 0) setPlans(mapped);
+        setPlans(mapped);
       })
       .catch(() => {});
   }, [loadFamily]);

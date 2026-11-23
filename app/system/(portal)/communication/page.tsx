@@ -61,10 +61,10 @@ export default function SystemCommunicationPage() {
 
   useEffect(() => {
     getSystemCommunicationsSent(0, 50)
-      .then((data) => { const parsed = parseSent(data); if (parsed.length > 0) setSent(parsed); })
+      .then((data) => { setSent(parseSent(data)); })
       .catch(() => {});
     getSystemCommunicationTargets()
-      .then((arr) => { if (arr.length > 0) setTargets(arr as Target[]); })
+      .then((arr) => { setTargets(arr as Target[]); })
       .catch(() => {});
   }, []);
 
@@ -88,7 +88,7 @@ export default function SystemCommunicationPage() {
       toast.success('Communication sent.');
       setSubject(''); setBody(''); setAudienceType(''); setChannels(['push', 'email']);
       getSystemCommunicationsSent(0, 50)
-        .then((data) => { const parsed = parseSent(data); if (parsed.length > 0) setSent(parsed); })
+        .then((data) => { setSent(parseSent(data)); })
         .catch(() => {});
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send.');

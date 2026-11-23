@@ -17,12 +17,13 @@ function toRow(g: TenantGroup): TableRow {
 export default function GroupLeaderGroupsPage() {
   const [rows, setRows] = useState<TableRow[]>([]);
   const [stats, setStats] = useState<TenantStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getTenantGroups().then((groups) => {
-      const mapped = groups.map(toRow);
-      if (mapped.length > 0) setRows(mapped);
-    }).catch(() => {});
+    getTenantGroups()
+      .then((groups) => { setRows(groups.map(toRow)); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
     getTenantStats().then((s) => { if (s) setStats(s); }).catch(() => {});
   }, []);
 
@@ -39,11 +40,17 @@ export default function GroupLeaderGroupsPage() {
         <QuickAccess />
       </div>
 
-      <DataPanel
-        title="All Groups"
-        columns={['Group Name', 'Category', 'Leader', 'Meeting Day & Time', 'Members']}
-        rows={rows}
-      />
+      {loading ? (
+        <div className="rounded-[14px] bg-white p-8 text-center text-[14px] text-brand-gray-400">
+          Loading groups…
+        </div>
+      ) : (
+        <DataPanel
+          title="All Groups"
+          columns={['Group Name', 'Category', 'Leader', 'Meeting Day & Time', 'Members']}
+          rows={rows}
+        />
+      )}
     </div>
   );
 }

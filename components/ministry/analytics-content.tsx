@@ -39,7 +39,7 @@ export function AnalyticsContent() {
       .catch(() => {});
 
     getTenantOrganizationAnalytics()
-      .then((data) => { if (data && Object.keys(data).length > 0) setOrgAnalytics(data); })
+      .then((data) => { if (data) setOrgAnalytics(data); })
       .catch(() => {});
   }, []);
 

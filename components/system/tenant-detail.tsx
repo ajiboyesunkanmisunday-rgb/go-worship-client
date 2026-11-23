@@ -187,7 +187,7 @@ export function TenantDetail({ id }: { id: string }) {
           allowCustomerCheckout:  Boolean(g.allowCustomerCheckout),
           allowSubscriptionBilling: Boolean(g.allowSubscriptionBilling),
         }));
-        if (mapped.length > 0) setGateways(mapped);
+        setGateways(mapped);
       })
       .catch(() => {});
   }, [id]);
@@ -801,7 +801,7 @@ function MembersTab({ id }: { id: string }) {
             : Array.isArray((data as R)?.['data'])
               ? ((data as R)['data'] as R[])
               : [];
-        if (arr.length === 0) return;
+        
         const mapped: MemberRow[] = arr.map((m) => {
           const rawStatus = String(m['status'] ?? 'Active');
           const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
@@ -817,7 +817,7 @@ function MembersTab({ id }: { id: string }) {
             status,
           };
         }).filter((m) => m.name);
-        if (mapped.length > 0) setMembers(mapped);
+        setMembers(mapped);
       })
       .catch(() => {});
   }, [id]);
@@ -1028,7 +1028,7 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
             : Array.isArray((data as R)?.['data'])
               ? ((data as R)['data'] as R[])
               : [];
-        if (arr.length === 0) return;
+        
         const mapped: TxnRow[] = arr.map((t) => {
           const rawStatus = String(t['status'] ?? 'Pending');
           const s = rawStatus.toUpperCase();
@@ -1048,7 +1048,7 @@ function GivingTab({ id, tenantName }: { id: string; tenantName: string }) {
             id: String(t['transactionId'] ?? t['paymentReference'] ?? t['reference'] ?? t['id'] ?? ''),
           };
         });
-        if (mapped.length > 0) setTransactions(mapped);
+        setTransactions(mapped);
       })
       .catch(() => {});
   }, [id]);
@@ -1269,7 +1269,7 @@ function GroupsTab({ id }: { id: string }) {
             : Array.isArray((data as R)?.['data'])
               ? ((data as R)['data'] as R[])
               : [];
-        if (arr.length === 0) return;
+        
         const mapped: GroupRow[] = arr.map((g) => {
           const rawStatus = String(g['status'] ?? 'Active');
           const status = rawStatus.toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active';
@@ -1291,7 +1291,7 @@ function GroupsTab({ id }: { id: string }) {
             meetingDays: days,
           };
         }).filter((g) => g.name);
-        if (mapped.length > 0) setGroups(mapped);
+        setGroups(mapped);
       })
       .catch(() => {});
   }, [id]);
@@ -1479,7 +1479,7 @@ function EventsTab({ id }: { id: string }) {
             : Array.isArray((data as R)?.['data'])
               ? ((data as R)['data'] as R[])
               : [];
-        if (arr.length === 0) return;
+        
         const mapped: EventRow[] = arr.map((e) => {
           const rawDate = String(e['startDate'] ?? e['eventDate'] ?? e['date'] ?? '');
           const date = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
@@ -1497,7 +1497,7 @@ function EventsTab({ id }: { id: string }) {
             status,
           };
         }).filter((e) => e.name);
-        if (mapped.length > 0) setEvents(mapped);
+        setEvents(mapped);
       })
       .catch(() => {});
   }, [id]);
@@ -1644,7 +1644,7 @@ function BillingTab({ id }: { id: string }) {
             : Array.isArray((data as R)?.['data'])
               ? ((data as R)['data'] as R[])
               : [];
-        if (arr.length === 0) return;
+        
         const mapped: InvoiceRow[] = arr.map((inv) => {
           const rawStatus = String(inv['status'] ?? 'Paid');
           const s = rawStatus.toUpperCase();
@@ -1664,7 +1664,7 @@ function BillingTab({ id }: { id: string }) {
             end: fmtDate(String(inv['endDate'] ?? inv['billingEnd'] ?? '')),
           };
         });
-        if (mapped.length > 0) setInvoices(mapped);
+        setInvoices(mapped);
       })
       .catch(() => {});
   }, [id]);
