@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   AlignLeft,
   Bold,
@@ -16,6 +16,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  getSystemSupportTickets,
+  getSystemSupportTicket,
+  replySystemSupportTicket,
+  type SupportTicket,
+} from '@/lib/api/system';
+import { toast } from 'sonner';
 
 /**
  * System → Support Management (778:38441). A 3-column support desk:
@@ -38,25 +45,90 @@ const TONE = {
   priority: 'bg-[#fff4e5] text-[#ff8d28]',
 };
 
+function parseTickets(data: unknown): Ticket[] {
+  type R = Record<string, unknown>;
+  let arr: R[] = [];
+  if (Array.isArray(data)) arr = data as R[];
+  else if (data && typeof data === 'object') {
+    const d = data as R;
+    for (const k of ['content', 'data', 'items', 'tickets', 'results']) {
+      if (Array.isArray(d[k])) { arr = d[k] as R[]; break; }
+    }
+  }
+  return arr.map((t) => {
+    const id = String(t['id'] ?? t['ticketNumber'] ?? '');
+    const name = String(t['requesterName'] ?? t['subject'] ?? t['name'] ?? 'Support');
+    const preview = String(t['description'] ?? t['subject'] ?? '').slice(0, 60);
+    const status = String(t['status'] ?? 'OPEN').toUpperCase();
+    const priority = String(t['priority'] ?? 'NORMAL').toUpperCase();
+    const badges: Ticket['badges'] = [];
+    if (status === 'OPEN' || status === 'NEW') badges.push({ label: 'Open', tone: 'open' });
+    if (priority === 'HIGH' || priority === 'URGENT') badges.push({ label: 'Priority', tone: 'priority' });
+    return { id, name, preview, badges };
+  }).filter((t) => t.id);
+}
+
+function fmtTicketDate(iso?: string): string {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }); }
+  catch { return iso; }
+}
+
 export default function SystemSupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [active, setActive] = useState('');
   const current = tickets.find((t) => t.id === active) ?? tickets[0];
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [detail, setDetail] = useState<SupportTicket | null>(null);
 
-  const [ticketTitle, setTicketTitle] = useState('');
-  const [ticketBody, setTicketBody] = useState('');
-  const [ticketDate, setTicketDate] = useState('');
-  const [ticketFiles, setTicketFiles] = useState<string[]>([]);
-  const [visitorEmail, setVisitorEmail] = useState('');
-  const [visitorPhone, setVisitorPhone] = useState('');
-  const [visitorLocation, setVisitorLocation] = useState('');
-  const [visitorLocalTime, setVisitorLocalTime] = useState('');
-  const [visitorLanguage, setVisitorLanguage] = useState('');
-  const [visitorIp, setVisitorIp] = useState('');
-  const [visitorOs, setVisitorOs] = useState('');
-  const [visitorBrowser, setVisitorBrowser] = useState('');
+  const ticketTitle = detail?.subject ?? current?.name ?? '';
+  const ticketBody = detail?.description ?? current?.preview ?? '';
+  const ticketDate = fmtTicketDate(detail?.createdAt ?? '');
+  const ticketFiles: string[] = [];
+  const visitorEmail = detail?.requesterEmail ?? '';
+  const visitorPhone = '';
+  const visitorLocation = '';
+  const visitorLocalTime = '';
+  const visitorLanguage = '';
+  const visitorIp = (detail?.deviceInfo?.['ipAddress'] ?? '') as string;
+  const visitorOs = (detail?.deviceInfo?.['os'] ?? '') as string;
+  const visitorBrowser = (detail?.deviceInfo?.['browser'] ?? '') as string;
+
+  useEffect(() => {
+    getSystemSupportTickets(0, 50)
+      .then((data) => {
+        const parsed = parseTickets(data);
+        setTickets(parsed);
+        if (parsed.length > 0) setActive(parsed[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  const loadDetail = useCallback((id: string) => {
+    getSystemSupportTicket(id)
+      .then((t) => setDetail(t))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (active) loadDetail(active);
+  }, [active, loadDetail]);
+
+  const handleSend = async () => {
+    if (!active || !reply.trim()) return;
+    setSending(true);
+    try {
+      await replySystemSupportTicket(active, { content: reply.trim() });
+      setReply('');
+      loadDetail(active);
+      toast.success('Reply sent.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not send reply.');
+    } finally {
+      setSending(false);
+    }
+  };
 
 
   return (
@@ -173,9 +245,7 @@ export default function SystemSupportPage() {
                 size="lg"
                 className="h-[40px] px-6"
                 disabled={!reply.trim() || sending}
-                onClick={() => {
-                  setReply('');
-                }}
+                onClick={() => void handleSend()}
               >
                 {sending ? 'Sending…' : 'Send'}
               </Button>

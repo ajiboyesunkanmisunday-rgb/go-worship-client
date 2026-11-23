@@ -290,10 +290,9 @@ export type UpdateTenantPayload = {
   [key: string]: unknown;
 };
 
-/** PUT /system/tenants/:id — not implemented in backend; listed in KNOWN_LIMITATIONS. */
-export const updateSystemTenant = (_id: string, _payload: UpdateTenantPayload): Promise<unknown> => {
-  throw new Error('Tenant editing is not available — this endpoint does not exist in the current backend version.');
-};
+/** PUT /system/tenants/{id} */
+export const updateSystemTenant = (id: string, payload: UpdateTenantPayload) =>
+  api.put<unknown>(`/system/tenants/${encodeURIComponent(id)}`, payload);
 
 /* -------- Platform user provisioning -------- */
 
@@ -870,3 +869,45 @@ export const getSystemCommunicationRecipients = (batchId: string) =>
 /** GET /system/communications/targets/tenants */
 export const getSystemCommunicationTargets = () =>
   api.get<unknown[]>('/system/communications/targets/tenants');
+
+
+/* -------- System Support Tickets (/system/support/tickets) ------------- */
+
+export type SupportTicket = {
+  id?: string;
+  ticketNumber?: string;
+  subject?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  requesterName?: string;
+  requesterEmail?: string;
+  assignedTo?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  messages?: SupportTicketMessage[];
+  deviceInfo?: Record<string, string>;
+};
+
+export type SupportTicketMessage = {
+  id?: string;
+  sender?: string;
+  content?: string;
+  createdAt?: string;
+};
+
+/** GET /system/support/tickets */
+export const getSystemSupportTickets = (page = 0, size = 20) =>
+  api.get<unknown>(`/system/support/tickets?page=${page}&size=${size}`);
+
+/** GET /system/support/tickets/open */
+export const getSystemSupportTicketsOpen = (page = 0, size = 20) =>
+  api.get<unknown>(`/system/support/tickets/open?page=${page}&size=${size}`);
+
+/** GET /system/support/ticket/{id} */
+export const getSystemSupportTicket = (id: string) =>
+  api.get<SupportTicket>(`/system/support/ticket/${encodeURIComponent(id)}`);
+
+/** POST /system/support/tickets/{id}/reply */
+export const replySystemSupportTicket = (id: string, payload: { content: string }) =>
+  api.post<unknown>(`/system/support/tickets/${encodeURIComponent(id)}/reply`, payload);

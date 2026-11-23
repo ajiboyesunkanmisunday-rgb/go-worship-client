@@ -24,6 +24,9 @@ import {
   updateTenantCampus,
   deleteTenantCampus,
   getTenantBillingPayments,
+  getTenantCustomDomainStatus,
+  prepareTenantCustomDomain,
+  verifyTenantCustomDomain,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
@@ -32,6 +35,7 @@ import {
   type TenantSecuritySettings,
   type TenantCampus,
   type BillingPayment,
+  type CustomDomainStatusResponse,
 } from '@/lib/api/tenant';
 import { getProfile, updateProfile, type Profile } from '@/lib/api/auth';
 import { toast } from 'sonner';
@@ -44,6 +48,7 @@ const TABS = [
   'Subscription',
   'Security',
   'Campuses',
+  'Custom Domain',
 ];
 
 function Field({
@@ -860,6 +865,137 @@ function CampusesTab() {
   );
 }
 
+function CustomDomainTab() {
+  const [status, setStatus] = useState<CustomDomainStatusResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [domain, setDomain] = useState('');
+  const [preparing, setPreparing] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  useEffect(() => {
+    getTenantCustomDomainStatus()
+      .then((s) => { setStatus(s); setDomain(s.customDomain ?? ''); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handlePrepare = async () => {
+    if (!domain.trim()) return;
+    setPreparing(true);
+    try {
+      const res = await prepareTenantCustomDomain({ customDomain: domain.trim() });
+      setStatus(res);
+      toast.success('Domain prepared. Add the DNS record shown below.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not prepare domain.');
+    } finally {
+      setPreparing(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!status?.claimId) return;
+    setVerifying(true);
+    try {
+      const res = await verifyTenantCustomDomain(status.claimId);
+      setStatus(res);
+      toast.success('Domain verified.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Verification failed — check DNS and try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-brand-blue" /></div>;
+  }
+
+  const isVerified = status?.status === 'VERIFIED' || status?.status === 'ACTIVE';
+  const isPending = status?.claimId && !isVerified;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-[18px] font-bold">Custom Domain</h2>
+        <p className="mt-1 text-[13px] text-brand-gray-500">
+          Point your own domain to your ministry portal.
+        </p>
+      </div>
+
+      {isVerified && (
+        <div className="flex items-center gap-3 rounded-[12px] bg-[#e7f7ee] px-5 py-4">
+          <CheckCircle2 className="size-5 shrink-0 text-[#34a853]" />
+          <div>
+            <p className="text-[14px] font-semibold text-[#22a45d]">Domain active</p>
+            <p className="text-[13px] text-[#555]">{status?.customDomain}</p>
+          </div>
+        </div>
+      )}
+
+      {!isVerified && (
+        <div className="flex flex-col gap-3">
+          <label className="text-[13px] font-medium text-[#333]">Your domain</label>
+          <div className="flex gap-2">
+            <Input
+              className="h-[46px] flex-1"
+              placeholder="e.g. church.example.com"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              disabled={!!isPending}
+            />
+            {!isPending && (
+              <Button
+                size="lg"
+                className="h-[46px] shrink-0"
+                disabled={preparing || !domain.trim()}
+                onClick={() => void handlePrepare()}
+              >
+                {preparing ? <Loader2 className="size-4 animate-spin" /> : 'Configure'}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isPending && (
+        <div className="flex flex-col gap-4 rounded-[12px] border border-[#dde3f0] p-5">
+          <p className="text-[13px] font-semibold text-[#333]">Add this DNS record at your domain registrar</p>
+          <div className="overflow-x-auto rounded-[8px] bg-[#f4f7ff] p-4">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-brand-gray-500">
+                  <th className="pb-2 pr-6 font-medium">Type</th>
+                  <th className="pb-2 pr-6 font-medium">Name</th>
+                  <th className="pb-2 font-medium">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="pr-6 font-mono font-semibold text-brand-blue">CNAME</td>
+                  <td className="pr-6 font-mono">{status?.customDomain ?? domain}</td>
+                  <td className="font-mono text-[#333]">{status?.dnsTarget ?? '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[12px] text-brand-gray-500">
+            DNS changes can take up to 48 hours to propagate. Click Verify once the record is in place.
+          </p>
+          <Button
+            size="lg"
+            className="h-[46px] w-full"
+            disabled={verifying}
+            onClick={() => void handleVerify()}
+          >
+            {verifying ? <><Loader2 className="mr-2 size-4 animate-spin" />Checking…</> : 'Verify Domain'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabContent({ tab }: { tab: string }) {
   if (tab === 'Profile') {
     return <ProfileTab />;
@@ -874,6 +1010,9 @@ function TabContent({ tab }: { tab: string }) {
   }
   if (tab === 'Payment & Billing') {
     return <PaymentBillingTab />;
+  }
+  if (tab === 'Custom Domain') {
+    return <CustomDomainTab />;
   }
   return <CampusesTab />;
 }

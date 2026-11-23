@@ -1194,6 +1194,10 @@ export const getTenantRoleById = (roleId: string) =>
 export const getTenantRoleByCode = (code: string) =>
   api.get<TenantRole>(`/tenant/admin/roles/code/${encodeURIComponent(code)}`);
 
+/** DELETE /tenant/admin/roles/{roleId} */
+export const deleteTenantRole = (roleId: string) =>
+  api.delete<void>(`/tenant/admin/roles/${encodeURIComponent(roleId)}`);
+
 /* -------- Tenant Audit (/tenant/audit) ------------------------------------ */
 
 export type TenantAuditEvent = {

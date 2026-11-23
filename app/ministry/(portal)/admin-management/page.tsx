@@ -6,7 +6,7 @@ import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
-import { getTenantRoles } from '@/lib/api/tenant';
+import { getTenantRoles, deleteTenantRole } from '@/lib/api/tenant';
 import { toast } from 'sonner';
 
 type Role = {
@@ -26,8 +26,14 @@ export default function MinistryAdminManagementPage() {
 
   const deleteRole = (apiId: string) => {
     if (!apiId) return;
-    // DELETE /tenant/admin/roles/:id not in backend API — only GET endpoints exist for tenant roles.
-    setRoles((prev) => prev.filter((r) => r.apiId !== apiId));
+    deleteTenantRole(apiId)
+      .then(() => {
+        setRoles((prev) => prev.filter((r) => r.apiId !== apiId));
+        toast.success('Role deleted.');
+      })
+      .catch((e: unknown) => {
+        toast.error(e instanceof Error ? e.message : 'Could not delete role.');
+      });
   };
 
   useEffect(() => {

@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { MoreHorizontal, X } from 'lucide-react';
+import { Download, MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
-import { getSystemAuditEventsRecent } from '@/lib/api/system';
+import {
+  getSystemAuditEventsRecent,
+  getSystemAuditSensitiveActions,
+  getSystemAuditRolePermissionChanges,
+  getSystemAuditPaymentGatewayChanges,
+  systemAuditExportUrl,
+} from '@/lib/api/system';
 import { toast } from 'sonner';
 
 /**
@@ -144,13 +150,16 @@ export default function SystemAuditLogsPage() {
   const [activeTab, setActiveTab] = useState<AuditTab>('All activity');
 
   const loadLogs = (tab: AuditTab) => {
-    // Only /system/audit/events/recent confirmed in spec — other tab-specific paths
-    // are absent; load the full list once and filter client-side via matchesTab.
-    if (tab !== 'All activity') return;
-    getSystemAuditEventsRecent()
+    const fetchers: Record<AuditTab, () => Promise<unknown[]>> = {
+      'All activity':        () => getSystemAuditEventsRecent(),
+      'Sensitive actions':   () => getSystemAuditSensitiveActions(),
+      'Roles & permissions': () => getSystemAuditRolePermissionChanges(),
+      'Payment gateways':    () => getSystemAuditPaymentGatewayChanges(),
+    };
+    fetchers[tab]()
       .then((arr) => {
-        const rows = arr.map((e) => mapLogRow(e as unknown as Record<string, unknown>)).filter((l) => l.action || l.resource);
-        if (rows.length > 0) setLogs(rows);
+        const rows = arr.map((e) => mapLogRow(e as Record<string, unknown>)).filter((l) => l.action || l.resource);
+        setLogs(rows);
       })
       .catch(() => { toast.error('Could not load audit logs.'); });
   };
@@ -162,6 +171,7 @@ export default function SystemAuditLogsPage() {
 
   const handleTab = (tab: AuditTab) => {
     setActiveTab(tab);
+    loadLogs(tab);
   };
 
   const visibleLogs = logs.filter((l) => matchesTab(l, activeTab));
@@ -192,11 +202,21 @@ export default function SystemAuditLogsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-[26px] font-bold lg:text-[32px]">Audit Logs</h1>
-        <p className="text-[14px] text-brand-gray-500">
-          Track all platform activities and changes
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-[26px] font-bold lg:text-[32px]">Audit Logs</h1>
+          <p className="text-[14px] text-brand-gray-500">
+            Track all platform activities and changes
+          </p>
+        </div>
+        <a
+          href={systemAuditExportUrl()}
+          download="audit-logs.csv"
+          className="flex h-[40px] items-center gap-2 rounded-[8px] border border-[#ddd] px-4 text-[13px] text-[#333] transition-colors hover:bg-[#f5f5f5] no-underline"
+        >
+          <Download className="size-4" />
+          Export CSV
+        </a>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-[13px]">
