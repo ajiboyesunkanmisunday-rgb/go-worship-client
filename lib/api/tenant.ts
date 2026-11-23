@@ -1494,6 +1494,15 @@ export type TenantCheckoutLink = {
   createdAt?: string;
 };
 
+/** GET /tenant/checkout-links */
+export async function getTenantCheckoutLinks(): Promise<TenantCheckoutLink[]> {
+  const data = await api.get<unknown>('/tenant/checkout-links');
+  if (Array.isArray(data)) return data as TenantCheckoutLink[];
+  const page = data as Record<string, unknown>;
+  if (Array.isArray(page?.['content'])) return page['content'] as TenantCheckoutLink[];
+  return [];
+}
+
 /** POST /tenant/checkout-links */
 export const createTenantCheckoutLink = (payload: Partial<TenantCheckoutLink>) =>
   api.post<TenantCheckoutLink>('/tenant/checkout-links', payload);

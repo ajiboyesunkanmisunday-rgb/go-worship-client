@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import { TransactionsTable, type Transaction } from './shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
-import { getTenantOrganizationAnalytics } from '@/lib/api/tenant';
+import { getTenantOrganizationAnalytics, getTenantBillingPayments } from '@/lib/api/tenant';
 
 /**
  * Tabs per the Church Admin "Analytics Dashboard" frame (494:22178). The frame's
@@ -40,6 +40,32 @@ export function AnalyticsContent() {
 
     getTenantOrganizationAnalytics()
       .then((data) => { if (data) setOrgAnalytics(data); })
+      .catch(() => {});
+
+    getTenantBillingPayments(0, 50)
+      .then((page) => {
+        type R = Record<string, unknown>;
+        const items = Array.isArray(page) ? (page as R[]) :
+          Array.isArray((page as R)?.['content']) ? ((page as R)['content'] as R[]) : [];
+        const normalizeStatus = (s: string): 'Success' | 'Pending' | 'Failed' => {
+          const u = s.toUpperCase();
+          if (['SUCCESS', 'PAID', 'COMPLETED', 'APPROVED'].some((v) => u.includes(v))) return 'Success';
+          if (['FAILED', 'DECLINED', 'REJECTED', 'CANCELLED'].some((v) => u.includes(v))) return 'Failed';
+          return 'Pending';
+        };
+        const mapped: Transaction[] = items.map((p) => {
+          const payer = (p['payer'] as R) ?? {};
+          return {
+            status: normalizeStatus(String(p['status'] ?? 'PENDING')),
+            type: String(p['type'] ?? 'Payment'),
+            name: String(payer['name'] ?? payer['email'] ?? p['paymentReference'] ?? ''),
+            date: p['createdAt'] ? new Date(String(p['createdAt'])).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined,
+            amount: p['amount'] != null ? `${p['currency'] ?? 'USD'} ${p['amount']}` : undefined,
+            method: String(p['paymentMethodId'] ?? ''),
+          };
+        });
+        setTxns(mapped);
+      })
       .catch(() => {});
   }, []);
 

@@ -25,6 +25,8 @@ import {
   downloadTenantDocument,
   createTenantCheckoutLink,
   deleteTenantCheckoutLink,
+  getTenantCheckoutLinks,
+  getTenantBillingPayments,
   type DonationFund,
   type CreateDonationFundPayload,
   type TenantCheckoutLink,
@@ -124,6 +126,23 @@ export default function MinistryFinancePage() {
         if (!s) return;
         setTotalGiving(s.totalGiving);
         setRawSections(s.rawSections);
+
+        // Extract additional stat-card values from whatever metrics the backend sends.
+        const allMetrics = s.rawSections.flatMap((sec) => sec.metrics);
+        const findMetric = (...candidates: string[]) => {
+          for (const c of candidates) {
+            const m = allMetrics.find((m) => m.code.toUpperCase().includes(c.toUpperCase()));
+            if (m) return m.formattedValue || String(m.value);
+          }
+          return null;
+        };
+        const offline = findMetric('OFFLINE_GIVING', 'OFFLINE_REVENUE', 'CASH_GIVING', 'OFFLINE');
+        if (offline) setOfflineGiving(offline);
+        const recurring = findMetric('RECURRING_GIVERS', 'RECURRING_DONORS', 'RECURRING');
+        if (recurring) setRecurringGivers(recurring);
+        const failed = findMetric('FAILED_TRANSACTIONS', 'FAILED_PAYMENTS', 'FAILED_GIVING', 'FAILED');
+        if (failed) setFailedTransactions(failed);
+
         const financeSection = s.rawSections.find((sec) =>
           sec.type?.toLowerCase().includes('financ') || sec.type?.toLowerCase().includes('giving')
         );
@@ -139,6 +158,36 @@ export default function MinistryFinancePage() {
 
     getDonationFunds()
       .then((arr) => { setFunds(arr); })
+      .catch(() => {});
+
+    getTenantCheckoutLinks()
+      .then((arr) => { setCheckoutLinks(arr); })
+      .catch(() => {});
+
+    getTenantBillingPayments(0, 50)
+      .then((page) => {
+        type R = Record<string, unknown>;
+        const items = Array.isArray(page) ? (page as R[]) :
+          Array.isArray((page as R)?.['content']) ? ((page as R)['content'] as R[]) : [];
+        const normalizeStatus = (s: string): 'Success' | 'Pending' | 'Failed' => {
+          const u = s.toUpperCase();
+          if (['SUCCESS', 'PAID', 'COMPLETED', 'APPROVED'].some((v) => u.includes(v))) return 'Success';
+          if (['FAILED', 'DECLINED', 'REJECTED', 'CANCELLED'].some((v) => u.includes(v))) return 'Failed';
+          return 'Pending';
+        };
+        const mapped: Transaction[] = items.map((p) => {
+          const payer = (p['payer'] as R) ?? {};
+          return {
+            status: normalizeStatus(String(p['status'] ?? 'PENDING')),
+            type: String(p['type'] ?? 'Payment'),
+            name: String(payer['name'] ?? payer['email'] ?? p['paymentReference'] ?? ''),
+            date: p['createdAt'] ? new Date(String(p['createdAt'])).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined,
+            amount: p['amount'] != null ? `${p['currency'] ?? 'USD'} ${p['amount']}` : undefined,
+            method: String(p['paymentMethodId'] ?? ''),
+          };
+        });
+        setTxns(mapped);
+      })
       .catch(() => {});
   }, []);
 
