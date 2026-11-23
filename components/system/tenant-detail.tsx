@@ -2,7 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSystemTenant, getSystemTenantPaymentGateways, suspendSystemTenant, softDeleteSystemTenant, type SystemTenant, type TenantPaymentGatewayAssignment } from '@/lib/api/system';
+import {
+  getSystemTenant,
+  getSystemTenantPaymentGateways,
+  suspendSystemTenant,
+  softDeleteSystemTenant,
+  getSystemTenantManagement,
+  reissueSystemTenantInvitation,
+  activateSystemTenant,
+  getSystemTenantSubscription,
+  getSystemTenantSubscriptionLifecycle,
+  getSystemTenantDomainReactivation,
+  approveSystemTenantDomainReactivation,
+  getSystemTenantMerchantAccount,
+  type SystemTenant,
+  type TenantPaymentGatewayAssignment,
+  type SystemTenantManagementResponse,
+} from '@/lib/api/system';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   ArrowLeft,
@@ -42,11 +58,14 @@ import { toast } from 'sonner';
 
 const TABS = [
   'Overview',
+  'Management',
   'Members',
   'Giving',
   'Groups',
   'Events',
   'Billing',
+  'Subscription',
+  'Domain',
   'Media',
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -299,6 +318,8 @@ export function TenantDetail({ id }: { id: string }) {
             </div>
           )}
         </div>
+      ) : tab === 'Management' ? (
+        <ManagementTab id={id} />
       ) : tab === 'Members' ? (
         <MembersTab id={id} />
       ) : tab === 'Giving' ? (
@@ -309,6 +330,10 @@ export function TenantDetail({ id }: { id: string }) {
         <EventsTab id={id} />
       ) : tab === 'Billing' ? (
         <BillingTab id={id} />
+      ) : tab === 'Subscription' ? (
+        <SystemSubscriptionTab id={id} />
+      ) : tab === 'Domain' ? (
+        <DomainTab id={id} />
       ) : (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-[14px] border border-dashed border-[#ddd] py-16 text-center">
           <Slash className="size-6 text-brand-gray-400" />
@@ -339,9 +364,223 @@ type MemberRow = { name: string; phone: string; email: string; joined: string; s
 
 
 async function tryGetTenantResource(_id: string, _sub: string): Promise<unknown> {
-  // No GET /system/tenants/:id endpoint in backend API spec.
-  // Available tenant paths: GET /system/tenants/:id/payment-gateways, PATCH suspend/activate, DELETE soft-delete.
   return null;
+}
+
+function ManagementTab({ id }: { id: string }) {
+  const [data, setData] = useState<SystemTenantManagementResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reissuing, setReissuing] = useState(false);
+  const [activating, setActivating] = useState(false);
+
+  useEffect(() => {
+    getSystemTenantManagement(id).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [id]);
+
+  const handleReissue = async () => {
+    setReissuing(true);
+    try {
+      await reissueSystemTenantInvitation(id);
+      toast.success('Invitation reissued.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not reissue invitation.');
+    } finally {
+      setReissuing(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    setActivating(true);
+    try {
+      await activateSystemTenant(id);
+      toast.success('Tenant activated.');
+      if (data) setData({ ...data, tenant: { ...data.tenant, status: 'ACTIVE', active: true } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not activate tenant.');
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="mt-6 flex justify-center py-10 text-[13px] text-brand-gray-400">Loading…</div>;
+  }
+
+  if (!data) {
+    return <div className="mt-6 rounded-[14px] border border-[#eee] p-6 text-[13px] text-brand-gray-400">No management data available.</div>;
+  }
+
+  const { tenant: t, administrator: admin } = data;
+
+  return (
+    <div className="mt-6 flex flex-col gap-5">
+      <div className="rounded-[14px] border border-[#eee] p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[18px] font-bold">Tenant Details</h2>
+          <div className="flex gap-2">
+            {!t.active && (
+              <Button size="sm" onClick={() => void handleActivate()} disabled={activating} className="gap-1.5">
+                {activating ? 'Activating…' : 'Activate Tenant'}
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            { label: 'Name', value: t.name },
+            { label: 'Short Name', value: t.shortName ?? '—' },
+            { label: 'Legal Name', value: t.legalName ?? '—' },
+            { label: 'Slug', value: t.slug },
+            { label: 'Status', value: t.status },
+            { label: 'Billing Email', value: t.billingEmail ?? '—' },
+            { label: 'Country', value: t.countryCode ?? '—' },
+            { label: 'Currency', value: t.currency ?? '—' },
+            { label: 'Custom Domain', value: t.customDomain ?? '—' },
+            { label: 'Domain Verified', value: t.customDomainVerified ? 'Yes' : 'No' },
+            { label: 'Last Activity', value: t.lastActivityAt ? new Date(t.lastActivityAt).toLocaleDateString() : '—' },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex flex-col gap-0.5">
+              <span className="text-[11px] text-brand-gray-500">{label}</span>
+              <span className="text-[13px] font-medium">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-[14px] border border-[#eee] p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[18px] font-bold">Administrator</h2>
+          {data.canReissueInvitation && (
+            <Button size="sm" variant="outline" onClick={() => void handleReissue()} disabled={reissuing} className="gap-1.5">
+              {reissuing ? 'Sending…' : 'Reissue Invitation'}
+            </Button>
+          )}
+        </div>
+        {admin ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              { label: 'Display Name', value: admin.displayName ?? '—' },
+              { label: 'Email', value: admin.email },
+              { label: 'Status', value: admin.status },
+              { label: 'First Login Required', value: admin.firstLoginRequired ? 'Yes' : 'No' },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex flex-col gap-0.5">
+                <span className="text-[11px] text-brand-gray-500">{label}</span>
+                <span className="text-[13px] font-medium">{value}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] text-brand-gray-400">No administrator assigned.</p>
+        )}
+        {!data.canReissueInvitation && data.reissueUnavailableReason && (
+          <p className="mt-3 text-[12px] text-brand-gray-400">{data.reissueUnavailableReason}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SystemSubscriptionTab({ id }: { id: string }) {
+  const [sub, setSub] = useState<Record<string, unknown> | null>(null);
+  const [lifecycle, setLifecycle] = useState<Record<string, unknown> | null>(null);
+  const [merchant, setMerchant] = useState<Record<string, unknown> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      getSystemTenantSubscription(id).catch(() => null),
+      getSystemTenantSubscriptionLifecycle(id).catch(() => null),
+      getSystemTenantMerchantAccount(id).catch(() => null),
+    ])
+      .then(([s, lc, m]) => {
+        if (s) setSub(s as Record<string, unknown>);
+        if (lc) setLifecycle(lc);
+        if (m) setMerchant(m);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <div className="mt-6 flex justify-center py-10 text-[13px] text-brand-gray-400">Loading…</div>;
+
+  const renderKV = (data: Record<string, unknown>, title: string) => (
+    <div className="rounded-[14px] border border-[#eee] p-6">
+      <h2 className="mb-4 text-[18px] font-bold">{title}</h2>
+      <div className="grid gap-3 sm:grid-cols-2 text-[13px]">
+        {Object.entries(data)
+          .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+          .map(([k, v]) => (
+            <div key={k} className="flex flex-col gap-0.5">
+              <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+              <span className="font-medium">{String(v)}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mt-6 flex flex-col gap-5">
+      {sub ? renderKV(sub, 'Subscription') : <p className="text-[13px] text-brand-gray-400">No subscription data.</p>}
+      {lifecycle && renderKV(lifecycle, 'Subscription Lifecycle')}
+      {merchant && renderKV(merchant, 'Merchant Account')}
+    </div>
+  );
+}
+
+function DomainTab({ id }: { id: string }) {
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
+
+  useEffect(() => {
+    getSystemTenantDomainReactivation(id).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [id]);
+
+  const handleApprove = async () => {
+    setApproving(true);
+    try {
+      await approveSystemTenantDomainReactivation(id);
+      toast.success('Domain reactivation approved.');
+      const updated = await getSystemTenantDomainReactivation(id);
+      setData(updated);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not approve reactivation.');
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  if (loading) return <div className="mt-6 flex justify-center py-10 text-[13px] text-brand-gray-400">Loading…</div>;
+
+  if (!data || Object.keys(data).length === 0) {
+    return (
+      <div className="mt-6 rounded-[14px] border border-[#eee] p-6">
+        <p className="text-[13px] text-brand-gray-400">No domain reactivation request pending.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 rounded-[14px] border border-[#eee] p-6">
+      <div className="mb-5 flex items-center justify-between">
+        <h2 className="text-[18px] font-bold">Domain Reactivation</h2>
+        <Button size="sm" onClick={() => void handleApprove()} disabled={approving}>
+          {approving ? 'Approving…' : 'Approve Reactivation'}
+        </Button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 text-[13px]">
+        {Object.entries(data)
+          .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+          .map(([k, v]) => (
+            <div key={k} className="flex flex-col gap-0.5">
+              <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+              <span className="font-medium">{String(v)}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
 }
 
 function MembersTab({ id }: { id: string }) {

@@ -11,8 +11,14 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Bell, Mail, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
-import { sendCampaign, createTenantCampaign, type CreateCampaignPayload } from '@/lib/api/tenant';
+import { FormEvent, useState, useEffect } from 'react';
+import {
+  sendCampaign,
+  createTenantCampaign,
+  sendTenantCommunication,
+  getTenantCommunicationTargets,
+  type CreateCampaignPayload,
+} from '@/lib/api/tenant';
 import { toast } from 'sonner';
 
 function Field({
@@ -49,12 +55,24 @@ const CHANNELS = [
  * (Title, Recipients, Channels, Message) plus a schedule option; the design
  * has not been confirmed. Flagged in docs/design-audit.md for the designer.
  */
+type CommunicationTarget = { id?: string; name?: string; type?: string; label?: string };
+
 export function NewMessageForm() {
   const router = useRouter();
   const back = '/ministry/communication';
   const [channels, setChannels] = useState<string[]>(['push', 'email']);
   const [schedule, setSchedule] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [targets, setTargets] = useState<CommunicationTarget[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    getTenantCommunicationTargets()
+      .then((arr) => {
+        if (arr.length > 0) setTargets(arr as CommunicationTarget[]);
+      })
+      .catch(() => {});
+  }, []);
 
   const toggle = (k: string) =>
     setChannels((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]));
@@ -71,21 +89,41 @@ export function NewMessageForm() {
       return;
     }
     setFieldErrors({});
-    const payload: CreateCampaignPayload = {
-      name: String(fd.get('title') ?? ''),
-      body: String(fd.get('body') ?? ''),
-      audienceType: String(fd.get('recipients') ?? '') || undefined,
-      scheduledAt: schedule ? String(fd.get('scheduledAt') ?? '') : undefined,
-    };
+    setSubmitting(true);
+    const title = String(fd.get('title') ?? '');
+    const body = String(fd.get('body') ?? '');
+    const audienceType = String(fd.get('recipients') ?? '');
+    const scheduledAt = schedule ? String(fd.get('scheduledAt') ?? '') : undefined;
     try {
-      const created = await createTenantCampaign(payload);
-      const campaignId = String(created?.id ?? created?.campaignId ?? '');
-      if (campaignId && !schedule) {
-        await sendCampaign(campaignId);
-      }
+      await sendTenantCommunication({
+        subject: title,
+        body,
+        audienceType: audienceType || undefined,
+        channels,
+        scheduledAt: scheduledAt || undefined,
+      });
+      toast.success(schedule ? 'Message scheduled.' : 'Message sent.');
       router.push(back);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
+    } catch {
+      try {
+        const campaignPayload: CreateCampaignPayload = {
+          name: title,
+          body,
+          audienceType: audienceType || undefined,
+          scheduledAt,
+        };
+        const created = await createTenantCampaign(campaignPayload);
+        const campaignId = String(created?.id ?? created?.campaignId ?? '');
+        if (campaignId && !schedule) {
+          await sendCampaign(campaignId);
+        }
+        toast.success(schedule ? 'Campaign scheduled.' : 'Message sent.');
+        router.push(back);
+      } catch (err2) {
+        toast.error(err2 instanceof Error ? err2.message : 'Failed to send message.');
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -120,10 +158,19 @@ export function NewMessageForm() {
           <Field label={<>Recipients&#42;</>} error={fieldErrors.recipients}>
             <NativeSelect name="recipients" className="h-[48px]" defaultValue="">
               <NativeSelectOption value="">Select recipients</NativeSelectOption>
-              <NativeSelectOption value="all">All Sub Accounts</NativeSelectOption>
-              <NativeSelectOption value="members">All Members</NativeSelectOption>
-              <NativeSelectOption value="leaders">Group Leaders</NativeSelectOption>
-              <NativeSelectOption value="staff">Staff / Volunteers</NativeSelectOption>
+              {targets.length > 0 ? (
+                targets.map((t, i) => (
+                  <NativeSelectOption key={t.id ?? i} value={String(t.id ?? t.type ?? t.name ?? '')}>
+                    {t.label ?? t.name ?? t.type ?? String(t.id ?? '')}
+                  </NativeSelectOption>
+                ))
+              ) : (
+                <>
+                  <NativeSelectOption value="ALL">All Members</NativeSelectOption>
+                  <NativeSelectOption value="LEADERS">Group Leaders</NativeSelectOption>
+                  <NativeSelectOption value="STAFF">Staff / Volunteers</NativeSelectOption>
+                </>
+              )}
             </NativeSelect>
           </Field>
 
@@ -175,8 +222,8 @@ export function NewMessageForm() {
             </Field>
           )}
 
-          <Button size="lg" type="submit" className="mt-1 h-[52px] w-full">
-            {schedule ? 'Schedule Message' : 'Send Message'}
+          <Button size="lg" type="submit" className="mt-1 h-[52px] w-full" disabled={submitting}>
+            {submitting ? 'Sending…' : schedule ? 'Schedule Message' : 'Send Message'}
           </Button>
           <Button asChild size="lg" variant="outline" className="h-[52px] w-full">
             <button type="button" onClick={() => router.push(back)}>

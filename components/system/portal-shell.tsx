@@ -6,6 +6,7 @@ import {
   Building2,
   UsersRound,
   ChartNoAxesColumn,
+  MessageSquare,
   ReceiptText,
   LayoutGrid,
   ScrollText,
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { href: '/system/roles', label: 'Roles & Permissions', icon: ShieldCheck },
   { href: '/system/analytics', label: 'Analytics', icon: ChartNoAxesColumn },
   { href: '/system/audit-logs', label: 'Audit Logs', icon: ScrollText },
+  { href: '/system/communication', label: 'Communications', icon: MessageSquare },
   { href: '/system/support', label: 'Support management', icon: LifeBuoy },
   { href: '/system/settings', label: 'Settings', icon: Settings },
 ];

@@ -7,7 +7,8 @@ import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
-import { getTenantMember, type TenantMember } from '@/lib/api/tenant';
+import { getTenantMember, updateTenantUser, type TenantMember } from '@/lib/api/tenant';
+import { toast } from 'sonner';
 import { use } from 'react';
 
 const back = '/ministry/members';
@@ -36,14 +37,14 @@ export default function MinistryEditMemberPage({
     };
     try {
       setSubmitting(true);
-      // PUT/PATCH /tenant/admin/users/:id not in backend API — no user-update endpoint in spec.
-      void payload;
-    } catch {
-      // fall through to navigate
+      await updateTenantUser(id, payload);
+      toast.success('Member updated.');
+      router.push(`${back}/${id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update member.');
     } finally {
       setSubmitting(false);
     }
-    router.push(back);
   };
 
   return (

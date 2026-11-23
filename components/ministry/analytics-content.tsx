@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 import { TransactionsTable, type Transaction } from './shared';
 import { getUnifiedDashboard } from '@/lib/api/dashboard';
+import { getTenantOrganizationAnalytics } from '@/lib/api/tenant';
 
 /**
  * Tabs per the Church Admin "Analytics Dashboard" frame (494:22178). The frame's
@@ -26,6 +27,7 @@ export function AnalyticsContent() {
   const [financeTrend, setFinanceTrend] = useState<{ month: string; value: number }[]>([]);
   const [tabTrend, setTabTrend] = useState<{ month: string; value: number }[]>([]);
   const [txns, setTxns] = useState<Transaction[] | undefined>(undefined);
+  const [orgAnalytics, setOrgAnalytics] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     getUnifiedDashboard()
@@ -34,6 +36,10 @@ export function AnalyticsContent() {
           setFinanceTrend(s.trend.map((p) => ({ month: p.label, value: p.value })));
         }
       })
+      .catch(() => {});
+
+    getTenantOrganizationAnalytics()
+      .then((data) => { if (data && Object.keys(data).length > 0) setOrgAnalytics(data); })
       .catch(() => {});
   }, []);
 
@@ -141,6 +147,24 @@ export function AnalyticsContent() {
       )}
 
       <TransactionsTable rows={txns} />
+
+      {orgAnalytics && Object.keys(orgAnalytics).length > 0 && (
+        <div className="rounded-[14px] bg-white p-6">
+          <p className="text-[16px] font-bold mb-4">Organisation Overview</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Object.entries(orgAnalytics).map(([key, val]) => {
+              if (val === null || val === undefined || typeof val === 'object') return null;
+              const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+              return (
+                <div key={key} className="rounded-[10px] border border-[#f0f0f0] p-4">
+                  <p className="text-[11px] text-brand-gray-500 uppercase tracking-wide">{label}</p>
+                  <p className="mt-1 text-[22px] font-bold text-[#333]">{String(val)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

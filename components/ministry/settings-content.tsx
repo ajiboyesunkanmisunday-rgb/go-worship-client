@@ -27,6 +27,14 @@ import {
   getTenantCustomDomainStatus,
   prepareTenantCustomDomain,
   verifyTenantCustomDomain,
+  getTenantOrganization,
+  updateTenantOrganization,
+  reactivateTenantCustomDomain,
+  getTenantSubscriptionLifecycle,
+  getTenantSubscriptionPlans,
+  tenantSubscriptionCheckout,
+  getTenantMerchantAccount,
+  startTenantMerchantAccountOnboarding,
   type TenantBranding,
   type BrandingAsset,
   type TenantSubscription,
@@ -36,12 +44,17 @@ import {
   type TenantCampus,
   type BillingPayment,
   type CustomDomainStatusResponse,
+  type TenantOrganization,
+  type TenantOrganizationUpdatePayload,
+  type SubscriptionPlan,
+  type SubscriptionLifecycle,
 } from '@/lib/api/tenant';
 import { getProfile, updateProfile, type Profile } from '@/lib/api/auth';
 import { toast } from 'sonner';
 
 const TABS = [
   'Profile',
+  'Organization',
   'Church branding',
   'Payment & Billing',
   'Notifications',
@@ -424,14 +437,110 @@ function BrandingTab() {
 
 /* ---- Subscription Tab ---- */
 
+function OrganizationTab() {
+  const [org, setOrg] = useState<TenantOrganization>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getTenantOrganization().then(setOrg).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload: TenantOrganizationUpdatePayload = {
+        name: org.name,
+        shortName: org.shortName,
+        legalName: org.legalName,
+        billingEmail: org.billingEmail,
+        countryCode: org.countryCode,
+        currency: org.currency,
+        subDomain: org.subDomain,
+      };
+      const updated = await updateTenantOrganization(payload);
+      setOrg(updated);
+      toast.success('Organization saved');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save organization');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-16"><Loader2 className="size-6 animate-spin text-brand-blue" /></div>;
+  }
+
+  const fields: { key: keyof TenantOrganization; label: string; placeholder?: string }[] = [
+    { key: 'name', label: 'Organization Name', placeholder: 'Grace Community Church' },
+    { key: 'shortName', label: 'Short Name', placeholder: 'GCC' },
+    { key: 'legalName', label: 'Legal Name', placeholder: 'Grace Community Church Inc.' },
+    { key: 'billingEmail', label: 'Billing Email', placeholder: 'billing@church.org' },
+    { key: 'countryCode', label: 'Country Code', placeholder: 'US' },
+    { key: 'currency', label: 'Currency', placeholder: 'USD' },
+    { key: 'subDomain', label: 'Subdomain', placeholder: 'grace' },
+  ];
+
+  return (
+    <div className="rounded-[14px] bg-white p-6">
+      <h3 className="mb-4 text-[15px] font-semibold">Organization Details</h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {fields.map(({ key, label, placeholder }) => (
+          <div key={key} className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-medium text-brand-gray-500">{label}</label>
+            <Input
+              value={(org[key] as string) ?? ''}
+              onChange={(e) => setOrg((o) => ({ ...o, [key]: e.target.value }))}
+              className="h-[44px]"
+              placeholder={placeholder}
+            />
+          </div>
+        ))}
+        {org.slug && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-medium text-brand-gray-500">Slug</label>
+            <div className="flex h-[44px] items-center rounded-[8px] border border-[#e2e2e2] px-3 text-[13px] text-brand-gray-500">{org.slug}</div>
+          </div>
+        )}
+        {org.status && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-medium text-brand-gray-500">Status</label>
+            <div className="flex h-[44px] items-center rounded-[8px] border border-[#e2e2e2] px-3 text-[13px] text-brand-gray-500">{org.status}</div>
+          </div>
+        )}
+      </div>
+      <div className="mt-6 flex justify-end">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+          Save Organization
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function SubscriptionTab() {
   const [sub, setSub] = useState<TenantSubscription | null>(null);
   const [invoices, setInvoices] = useState<TenantInvoice[]>([]);
+  const [lifecycle, setLifecycle] = useState<SubscriptionLifecycle | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getTenantSubscription(), getTenantInvoices()])
-      .then(([s, inv]) => { setSub(s); setInvoices(inv); })
+    Promise.all([
+      getTenantSubscription(),
+      getTenantInvoices(),
+      getTenantSubscriptionLifecycle().catch(() => null),
+      getTenantSubscriptionPlans().catch(() => [] as SubscriptionPlan[]),
+    ])
+      .then(([s, inv, lc, pl]) => {
+        setSub(s);
+        setInvoices(inv);
+        if (lc) setLifecycle(lc as SubscriptionLifecycle);
+        if ((pl as SubscriptionPlan[]).length > 0) setPlans(pl as SubscriptionPlan[]);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -447,6 +556,20 @@ function SubscriptionTab() {
   const statusColor = (s: string) =>
     s.toLowerCase() === 'active' ? 'text-[#34a853]' :
     s.toLowerCase() === 'pending' ? 'text-[#ff8d28]' : 'text-[#eb0000]';
+
+  const handleCheckout = async (planId: string) => {
+    setCheckingOut(planId);
+    try {
+      const res = await tenantSubscriptionCheckout({ planId });
+      const url = res?.checkoutUrl;
+      if (url) window.open(url, '_blank');
+      else toast.success('Checkout initiated');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not start checkout');
+    } finally {
+      setCheckingOut(null);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -475,6 +598,58 @@ function SubscriptionTab() {
           <p className="text-[14px] text-brand-gray-500">No subscription data available.</p>
         )}
       </div>
+
+      {/* Lifecycle */}
+      {lifecycle && (
+        <div className="rounded-[14px] bg-white p-6">
+          <h3 className="mb-4 text-[15px] font-semibold">Subscription Lifecycle</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { label: 'Current Status', value: lifecycle.currentStatus || '—', colored: true },
+              { label: 'Previous Status', value: lifecycle.previousStatus || '—' },
+              { label: 'Reason', value: lifecycle.reason || '—' },
+              { label: 'Effective', value: lifecycle.effectiveAt ? new Date(lifecycle.effectiveAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
+            ].map(({ label, value, colored }) => (
+              <div key={label} className="flex flex-col gap-0.5">
+                <span className="text-[12px] text-brand-gray-500">{label}</span>
+                <span className={cn('text-[14px] font-medium', colored ? statusColor(value) : '')}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Available Plans */}
+      {plans.length > 0 && (
+        <div className="rounded-[14px] bg-white p-6">
+          <h3 className="mb-4 text-[15px] font-semibold">Available Plans</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {plans.map((plan) => (
+              <div key={plan.id} className="flex flex-col gap-2 rounded-[10px] border border-[#e5e7eb] p-4">
+                <p className="text-[14px] font-semibold">{plan.name || plan.code}</p>
+                {plan.description && <p className="text-[12px] text-brand-gray-500">{plan.description}</p>}
+                <p className="text-[16px] font-bold text-brand-blue">
+                  {plan.currency} {plan.price != null ? plan.price : '—'}
+                  {plan.billingCycle && <span className="text-[11px] font-normal text-brand-gray-400"> / {plan.billingCycle}</span>}
+                </p>
+                {plan.maxUsers != null && <p className="text-[11px] text-brand-gray-400">Up to {plan.maxUsers} users</p>}
+                {plan.id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-1"
+                    disabled={checkingOut === plan.id}
+                    onClick={() => void handleCheckout(plan.id!)}
+                  >
+                    {checkingOut === plan.id ? <Loader2 className="mr-2 size-3.5 animate-spin" /> : null}
+                    Select Plan
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Invoices */}
       <div className="rounded-[14px] bg-white p-6">
@@ -618,17 +793,39 @@ function NotificationsTab() {
 
 function PaymentBillingTab() {
   const [payments, setPayments] = useState<BillingPayment[]>([]);
+  const [merchantAccount, setMerchantAccount] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [onboarding, setOnboarding] = useState(false);
 
   useEffect(() => {
-    getTenantBillingPayments()
-      .then((data) => {
-        const arr = data?.content ?? [];
+    Promise.all([
+      getTenantBillingPayments(),
+      getTenantMerchantAccount().catch(() => null),
+    ])
+      .then(([data, merchant]) => {
+        const arr = (data as { content?: BillingPayment[] })?.content ?? [];
         if (arr.length > 0) setPayments(arr);
+        if (merchant) setMerchantAccount(merchant as Record<string, unknown>);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleStartOnboarding = async () => {
+    setOnboarding(true);
+    try {
+      const res = await startTenantMerchantAccountOnboarding();
+      const r = res as Record<string, unknown>;
+      const url = r?.onboardingUrl as string | undefined;
+      if (url) window.open(url, '_blank');
+      else toast.success('Merchant account onboarding started');
+      setMerchantAccount(r);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not start onboarding');
+    } finally {
+      setOnboarding(false);
+    }
+  };
 
   const fmtDate = (iso: string) => {
     if (!iso) return '';
@@ -644,47 +841,72 @@ function PaymentBillingTab() {
     );
   }
 
-  if (payments.length === 0) {
-    return (
-      <div className="rounded-[14px] bg-white p-6">
-        <p className="text-[14px] text-brand-gray-500">No billing payment records available.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-[14px] bg-white p-6">
-      <h3 className="mb-4 text-[15px] font-semibold">Billing Payments</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] border-collapse text-[12px]">
-          <thead>
-            <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
-              {['Reference', 'Amount', 'Status', 'Date'].map((h) => (
-                <th key={h} className="pb-2 font-medium">{h}</th>
+    <div className="flex flex-col gap-6">
+      {/* Merchant Account */}
+      <div className="rounded-[14px] bg-white p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-[15px] font-semibold">Merchant Account</h3>
+          <Button size="sm" variant="outline" onClick={() => void handleStartOnboarding()} disabled={onboarding} className="gap-1.5">
+            {onboarding ? <Loader2 className="size-3.5 animate-spin" /> : null}
+            {merchantAccount ? 'Re-onboard' : 'Start Onboarding'}
+          </Button>
+        </div>
+        {merchantAccount ? (
+          <div className="grid gap-3 sm:grid-cols-2 text-[13px]">
+            {Object.entries(merchantAccount)
+              .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+              .slice(0, 8)
+              .map(([k, v]) => (
+                <div key={k} className="flex flex-col gap-0.5">
+                  <span className="text-[11px] text-brand-gray-500 capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                  <span className="font-medium">{String(v)}</span>
+                </div>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((p, i) => {
-              const ref = p.paymentReference ?? p.id ?? '—';
-              const currency = p.currency ?? '';
-              const amount = p.amount != null ? `${currency} ${p.amount}` : '—';
-              const status = p.status ?? '—';
-              const date = fmtDate(p.requestedAt ?? p.paidAt ?? '');
-              const statusColor = status.toLowerCase() === 'success' || status.toLowerCase() === 'paid'
-                ? 'text-[#34a853]' : status.toLowerCase().includes('fail') || status.toLowerCase() === 'failed'
-                ? 'text-[#eb0000]' : 'text-[#ff8d28]';
-              return (
-                <tr key={p.id ?? i} className="border-b border-[#f2f2f2]">
-                  <td className="py-3 font-mono">{ref}</td>
-                  <td className="py-3">{amount}</td>
-                  <td className={cn('py-3 font-medium', statusColor)}>{status}</td>
-                  <td className="py-3">{date}</td>
+          </div>
+        ) : (
+          <p className="text-[13px] text-brand-gray-500">No merchant account configured. Start onboarding to accept payments.</p>
+        )}
+      </div>
+
+      {/* Billing Payments */}
+      <div className="rounded-[14px] bg-white p-6">
+        <h3 className="mb-4 text-[15px] font-semibold">Billing Payments</h3>
+        {payments.length === 0 ? (
+          <p className="text-[14px] text-brand-gray-500">No billing payment records available.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] border-collapse text-[12px]">
+              <thead>
+                <tr className="border-b border-[#f2f2f2] text-left text-brand-gray-500">
+                  {['Reference', 'Amount', 'Status', 'Date'].map((h) => (
+                    <th key={h} className="pb-2 font-medium">{h}</th>
+                  ))}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {payments.map((p, i) => {
+                  const ref = p.paymentReference ?? p.id ?? '—';
+                  const currency = p.currency ?? '';
+                  const amount = p.amount != null ? `${currency} ${p.amount}` : '—';
+                  const status = p.status ?? '—';
+                  const date = fmtDate(p.requestedAt ?? p.paidAt ?? '');
+                  const statusColor = status.toLowerCase() === 'success' || status.toLowerCase() === 'paid'
+                    ? 'text-[#34a853]' : status.toLowerCase().includes('fail') || status.toLowerCase() === 'failed'
+                    ? 'text-[#eb0000]' : 'text-[#ff8d28]';
+                  return (
+                    <tr key={p.id ?? i} className="border-b border-[#f2f2f2]">
+                      <td className="py-3 font-mono">{ref}</td>
+                      <td className="py-3">{amount}</td>
+                      <td className={cn('py-3 font-medium', statusColor)}>{status}</td>
+                      <td className="py-3">{date}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -871,6 +1093,7 @@ function CustomDomainTab() {
   const [domain, setDomain] = useState('');
   const [preparing, setPreparing] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
 
   useEffect(() => {
     getTenantCustomDomainStatus()
@@ -907,6 +1130,20 @@ function CustomDomainTab() {
     }
   };
 
+  const handleReactivate = async () => {
+    setReactivating(true);
+    try {
+      await reactivateTenantCustomDomain();
+      toast.success('Domain reactivation requested.');
+      const updated = await getTenantCustomDomainStatus();
+      setStatus(updated);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not request reactivation.');
+    } finally {
+      setReactivating(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-brand-blue" /></div>;
   }
@@ -924,12 +1161,18 @@ function CustomDomainTab() {
       </div>
 
       {isVerified && (
-        <div className="flex items-center gap-3 rounded-[12px] bg-[#e7f7ee] px-5 py-4">
-          <CheckCircle2 className="size-5 shrink-0 text-[#34a853]" />
-          <div>
-            <p className="text-[14px] font-semibold text-[#22a45d]">Domain active</p>
-            <p className="text-[13px] text-[#555]">{status?.customDomain}</p>
+        <div className="flex items-start justify-between gap-4 rounded-[12px] bg-[#e7f7ee] px-5 py-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-[#34a853]" />
+            <div>
+              <p className="text-[14px] font-semibold text-[#22a45d]">Domain active</p>
+              <p className="text-[13px] text-[#555]">{status?.customDomain}</p>
+            </div>
           </div>
+          <Button size="sm" variant="outline" onClick={() => void handleReactivate()} disabled={reactivating} className="shrink-0 text-[12px]">
+            {reactivating ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : null}
+            Reactivate
+          </Button>
         </div>
       )}
 
@@ -997,23 +1240,14 @@ function CustomDomainTab() {
 }
 
 function TabContent({ tab }: { tab: string }) {
-  if (tab === 'Profile') {
-    return <ProfileTab />;
-  }
+  if (tab === 'Profile') return <ProfileTab />;
+  if (tab === 'Organization') return <OrganizationTab />;
   if (tab === 'Church branding') return <BrandingTab />;
   if (tab === 'Subscription') return <SubscriptionTab />;
-  if (tab === 'Security') {
-    return <SecurityTab />;
-  }
-  if (tab === 'Notifications') {
-    return <NotificationsTab />;
-  }
-  if (tab === 'Payment & Billing') {
-    return <PaymentBillingTab />;
-  }
-  if (tab === 'Custom Domain') {
-    return <CustomDomainTab />;
-  }
+  if (tab === 'Security') return <SecurityTab />;
+  if (tab === 'Notifications') return <NotificationsTab />;
+  if (tab === 'Payment & Billing') return <PaymentBillingTab />;
+  if (tab === 'Custom Domain') return <CustomDomainTab />;
   return <CampusesTab />;
 }
 

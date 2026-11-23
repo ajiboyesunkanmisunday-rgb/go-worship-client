@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   getSystemSupportTickets,
+  getSystemSupportTicketsOpen,
   getSystemSupportTicket,
   replySystemSupportTicket,
   type SupportTicket,
@@ -76,6 +77,7 @@ function fmtTicketDate(iso?: string): string {
 
 export default function SystemSupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [active, setActive] = useState('');
   const current = tickets.find((t) => t.id === active) ?? tickets[0];
   const [reply, setReply] = useState('');
@@ -96,14 +98,15 @@ export default function SystemSupportPage() {
   const visitorBrowser = (detail?.deviceInfo?.['browser'] ?? '') as string;
 
   useEffect(() => {
-    getSystemSupportTickets(0, 50)
+    const fn = showOpenOnly ? getSystemSupportTicketsOpen : getSystemSupportTickets;
+    fn(0, 50)
       .then((data) => {
         const parsed = parseTickets(data);
         setTickets(parsed);
         if (parsed.length > 0) setActive(parsed[0].id);
       })
       .catch(() => {});
-  }, []);
+  }, [showOpenOnly]);
 
   const loadDetail = useCallback((id: string) => {
     getSystemSupportTicket(id)
@@ -147,9 +150,23 @@ export default function SystemSupportPage() {
             />
           </div>
 
-          <p className="mt-4 text-[12px] font-medium text-brand-gray-500">
-            My open tickets ({tickets.length})
-          </p>
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowOpenOnly((v) => !v)}
+              className={cn(
+                'rounded-full px-3 py-1 text-[11px] font-medium transition-colors',
+                showOpenOnly
+                  ? 'bg-brand-blue text-white'
+                  : 'bg-[#f2f2f2] text-brand-gray-500 hover:bg-[#e6e6e6]'
+              )}
+            >
+              Open only
+            </button>
+            <span className="text-[12px] text-brand-gray-500">
+              {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
+            </span>
+          </div>
           <div className="mt-2 flex flex-col gap-2">
             {tickets.map((t) => (
               <button

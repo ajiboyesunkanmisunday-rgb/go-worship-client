@@ -6,8 +6,8 @@ import { useState, useEffect } from 'react';
 import { TableCard } from '@/components/shared/table-card';
 import { ActionCard, StatCard } from '@/components/ministry/shared';
 import { cn } from '@/lib/utils';
-import { FolderPlus } from 'lucide-react';
-import { getTenantSeries } from '@/lib/api/tenant';
+import { FolderPlus, Trash2 } from 'lucide-react';
+import { getTenantSeries, deleteTenantSeries } from '@/lib/api/tenant';
 import { toast } from 'sonner';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
@@ -38,6 +38,16 @@ const folderIcon = (
 
 export default function MinistryMediaPage() {
   const [series, setSeries] = useState<Series[]>([]);
+
+  async function handleDeleteSeries(id: string) {
+    try {
+      await deleteTenantSeries(id);
+      setSeries((prev) => prev.filter((s) => s.id !== id));
+      toast.success('Series deleted.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not delete series.');
+    }
+  }
 
   useEffect(() => {
     getTenantSeries()
@@ -129,17 +139,29 @@ export default function MinistryMediaPage() {
                   <td className={cn('py-4 font-medium', STATUS_COLORS[s.status])}>{s.status}</td>
                   <td className="py-4">{s.date}</td>
                   <td className="py-4">
-                    <Link
-                      href={s.status === 'Published'
-                        ? `/ministry/media/${s.id || i + 1}`
-                        : `/ministry/media/${s.id || i + 1}/edit`}
-                      className={cn(
-                        'flex h-8 w-[52px] items-center justify-center rounded-full text-[11px] text-white no-underline',
-                        s.status === 'Published' ? 'bg-brand-blue' : 'bg-brand-gray-300'
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={s.status === 'Published'
+                          ? `/ministry/media/${s.id || i + 1}`
+                          : `/ministry/media/${s.id || i + 1}/edit`}
+                        className={cn(
+                          'flex h-8 w-[52px] items-center justify-center rounded-full text-[11px] text-white no-underline',
+                          s.status === 'Published' ? 'bg-brand-blue' : 'bg-brand-gray-300'
+                        )}
+                      >
+                        {s.status === 'Published' ? 'View' : 'Edit'}
+                      </Link>
+                      {s.id && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteSeries(s.id)}
+                          className="text-brand-gray-400 transition-colors hover:text-[#eb0000]"
+                          title="Delete series"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
                       )}
-                    >
-                      {s.status === 'Published' ? 'View' : 'Edit'}
-                    </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

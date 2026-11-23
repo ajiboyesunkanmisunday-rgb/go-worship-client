@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ArrowLeft, Music } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getTenantSermonById, publishTenantSermon, unpublishTenantSermon } from '@/lib/api/tenant';
+import { getTenantSermonById, publishTenantSermon, unpublishTenantSermon, deleteTenantSermon } from '@/lib/api/tenant';
 import { toast } from 'sonner';
 
 function Meta({ label, value }: { label: string; value: string }) {
@@ -136,6 +136,24 @@ export function SermonOverview({ backTo, id }: { backTo?: string; id?: string } 
               {sermon.status.toUpperCase() === 'PUBLISHED' ? 'Unpublish Sermon' : 'Publish Sermon'}
             </button>
           </Button>
+          {id && (
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-[52px] w-full border-[#eb0000] text-[#eb0000] hover:bg-[#fff5f5]"
+              onClick={async () => {
+                try {
+                  await deleteTenantSermon(id);
+                  toast.success('Sermon deleted.');
+                  router.push(back);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not delete sermon.');
+                }
+              }}
+            >
+              Delete Sermon
+            </Button>
+          )}
         </div>
       </div>
     </SheetPage>

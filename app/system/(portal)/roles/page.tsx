@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SmartTable, type SmartRow } from '@/components/shared/smart-table';
 import { cn } from '@/lib/utils';
-import { Check, ChevronRight, ClipboardList, Loader2, ShieldCheck, X } from 'lucide-react';
+import { Check, ChevronRight, ClipboardList, Loader2, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
   getSystemRoles,
@@ -14,8 +14,13 @@ import {
   updateSystemRolePermissions,
   deleteSystemRole,
   getSystemPermissionById,
+  createSystemRole,
+  createSystemPermission,
+  updateSystemPermission,
+  deleteSystemPermission,
   type SystemRole,
   type SystemPermission,
+  type SystemRolePayload,
 } from '@/lib/api/system';
 import { toast } from 'sonner';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
@@ -364,6 +369,216 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function CreateRoleModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      const payload: SystemRolePayload = { name: name.trim(), description: description.trim() || undefined, type: type.trim() || undefined };
+      await createSystemRole(payload);
+      toast.success('Role created.');
+      setName(''); setDescription(''); setType('');
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Create failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+          <div className="flex items-center justify-between">
+            <Dialog.Title className="text-[18px] font-bold">Create Role</Dialog.Title>
+            <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+          </div>
+          <form onSubmit={(e) => void handleSubmit(e)} className="mt-5 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Role Name <span className="text-[#eb0000]">*</span></label>
+              <input value={name} onChange={(e) => setName(e.target.value)} required className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" placeholder="e.g. Content Manager" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Type</label>
+              <input value={type} onChange={(e) => setType(e.target.value)} className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" placeholder="e.g. System, Custom" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Description</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="rounded-[8px] border border-[#ddd] px-3 py-2 text-[13px] outline-none focus:border-brand-blue resize-none" placeholder="Short description of this role" />
+            </div>
+            <button type="submit" disabled={saving || !name.trim()} className="mt-1 flex h-[44px] items-center justify-center gap-2 rounded-[8px] bg-brand-blue text-[13px] font-medium text-white disabled:opacity-50">
+              {saving && <Loader2 className="size-4 animate-spin" />}
+              {saving ? 'Creating…' : 'Create Role'}
+            </button>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function EditPermModal({
+  perm,
+  open,
+  onClose,
+  onSaved,
+  onDeleted,
+}: {
+  perm: Permission | null;
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (perm) { setName(perm.name); setDescription(perm.description); }
+  }, [perm]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!perm?.id) return;
+    setSaving(true);
+    try {
+      await updateSystemPermission(perm.id, { name: name.trim(), description: description.trim() });
+      toast.success('Permission updated.');
+      onSaved();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!perm?.id) return;
+    setDeleting(true);
+    try {
+      await deleteSystemPermission(perm.id);
+      toast.success('Permission deleted.');
+      onDeleted(perm.id);
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed.');
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  return (
+    <>
+      <Dialog.Root open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+            <div className="flex items-center justify-between">
+              <Dialog.Title className="text-[18px] font-bold">Edit Permission</Dialog.Title>
+              <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+            </div>
+            <form onSubmit={(e) => void handleSave(e)} className="mt-5 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium">Name</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} required className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium">Description</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="rounded-[8px] border border-[#ddd] px-3 py-2 text-[13px] outline-none focus:border-brand-blue resize-none" />
+              </div>
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={deleting}
+                  className="text-[13px] font-medium text-[#eb0000] hover:opacity-70 disabled:opacity-50"
+                >
+                  Delete
+                </button>
+                <button type="submit" disabled={saving} className="flex h-[40px] items-center gap-2 rounded-[8px] bg-brand-blue px-5 text-[13px] font-medium text-white disabled:opacity-50">
+                  {saving && <Loader2 className="size-4 animate-spin" />}
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      <ConfirmModal open={confirmDelete} onOpenChange={setConfirmDelete} onConfirm={() => void handleDelete()} />
+    </>
+  );
+}
+
+function CreatePermModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await createSystemPermission({ name: name.trim(), description: description.trim() || undefined, type: category.trim() || undefined });
+      toast.success('Permission created.');
+      setName(''); setDescription(''); setCategory('');
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Create failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[92%] max-w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-[16px] bg-white p-7">
+          <div className="flex items-center justify-between">
+            <Dialog.Title className="text-[18px] font-bold">Create Permission</Dialog.Title>
+            <Dialog.Close className="flex size-8 items-center justify-center rounded-full border border-[#ddd]"><X className="size-4" /></Dialog.Close>
+          </div>
+          <form onSubmit={(e) => void handleSubmit(e)} className="mt-5 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Name <span className="text-[#eb0000]">*</span></label>
+              <input value={name} onChange={(e) => setName(e.target.value)} required className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" placeholder="e.g. manage.events" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Category / Type</label>
+              <input value={category} onChange={(e) => setCategory(e.target.value)} className="h-[42px] rounded-[8px] border border-[#ddd] px-3 text-[13px] outline-none focus:border-brand-blue" placeholder="e.g. Events, Members" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-medium">Description</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="rounded-[8px] border border-[#ddd] px-3 py-2 text-[13px] outline-none focus:border-brand-blue resize-none" />
+            </div>
+            <button type="submit" disabled={saving || !name.trim()} className="mt-1 flex h-[44px] items-center justify-center gap-2 rounded-[8px] bg-brand-blue text-[13px] font-medium text-white disabled:opacity-50">
+              {saving && <Loader2 className="size-4 animate-spin" />}
+              {saving ? 'Creating…' : 'Create Permission'}
+            </button>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 export default function SystemRolesPage() {
   const [activeTab, setActiveTab] = useState<'Roles' | 'Permissions'>('Roles');
   const [roles, setRoles] = useState<Role[]>([]);
@@ -372,6 +587,10 @@ export default function SystemRolesPage() {
   const [selectedPermId, setSelectedPermId] = useState<string | null>(null);
   const [roleDrawerOpen, setRoleDrawerOpen] = useState(false);
   const [permModalOpen, setPermModalOpen] = useState(false);
+  const [createRoleOpen, setCreateRoleOpen] = useState(false);
+  const [createPermOpen, setCreatePermOpen] = useState(false);
+  const [editPermOpen, setEditPermOpen] = useState(false);
+  const [editingPerm, setEditingPerm] = useState<Permission | null>(null);
 
   const loadAll = useCallback(() => {
     getSystemRoles()
@@ -417,6 +636,25 @@ export default function SystemRolesPage() {
 
   const handleRoleDeleted = (id: string) => {
     setRoles((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const openEditPerm = (p: Permission) => {
+    setEditingPerm(p);
+    setEditPermOpen(true);
+  };
+
+  const handlePermDeleted = (id: string) => {
+    setPermissions((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleDeletePermDirect = async (id: string) => {
+    try {
+      await deleteSystemPermission(id);
+      toast.success('Permission deleted.');
+      handlePermDeleted(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed.');
+    }
   };
 
   const roleRows: SmartRow[] = roles.map((r) => ({
@@ -471,14 +709,29 @@ export default function SystemRolesPage() {
       <span key="s" className="rounded-full bg-[#e7f7ee] px-2.5 py-1 text-[11px] font-medium text-[#34a853]">
         {p.status}
       </span>,
-      <button
-        key="a"
-        type="button"
-        onClick={() => openPermModal(p.id)}
-        className="text-[12px] font-medium text-brand-blue hover:opacity-70"
-      >
-        View
-      </button>,
+      <span key="a" className="flex items-center gap-3 text-[12px] font-medium">
+        <button
+          type="button"
+          onClick={() => openPermModal(p.id)}
+          className="text-brand-blue hover:opacity-70"
+        >
+          View
+        </button>
+        <button
+          type="button"
+          onClick={() => openEditPerm(p)}
+          className="text-brand-gray-500 hover:opacity-70"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleDeletePermDirect(p.id)}
+          className="text-[#eb0000] hover:opacity-70"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </span>,
     ],
   }));
 
@@ -496,22 +749,32 @@ export default function SystemRolesPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-[13px]">
-        {(['Roles', 'Permissions'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setActiveTab(t)}
-            className={cn(
-              'rounded-full px-4 py-1.5 font-medium transition-colors',
-              activeTab === t
-                ? 'bg-brand-blue text-white'
-                : 'bg-[#f2f2f2] text-brand-gray-500 hover:bg-[#e6e6e6]'
-            )}
-          >
-            {t} {t === 'Roles' ? roles.length : permissions.length}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[13px]">
+          {(['Roles', 'Permissions'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setActiveTab(t)}
+              className={cn(
+                'rounded-full px-4 py-1.5 font-medium transition-colors',
+                activeTab === t
+                  ? 'bg-brand-blue text-white'
+                  : 'bg-[#f2f2f2] text-brand-gray-500 hover:bg-[#e6e6e6]'
+              )}
+            >
+              {t} {t === 'Roles' ? roles.length : permissions.length}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => activeTab === 'Roles' ? setCreateRoleOpen(true) : setCreatePermOpen(true)}
+          className="flex items-center gap-1.5 rounded-[8px] bg-brand-blue px-4 py-2 text-[13px] font-medium text-white hover:opacity-90"
+        >
+          <Plus className="size-4" />
+          {activeTab === 'Roles' ? 'New Role' : 'New Permission'}
+        </button>
       </div>
 
       {activeTab === 'Roles' ? (
@@ -544,6 +807,26 @@ export default function SystemRolesPage() {
         permId={selectedPermId}
         open={permModalOpen}
         onClose={() => { setPermModalOpen(false); setSelectedPermId(null); }}
+      />
+
+      <CreateRoleModal
+        open={createRoleOpen}
+        onClose={() => setCreateRoleOpen(false)}
+        onCreated={loadAll}
+      />
+
+      <CreatePermModal
+        open={createPermOpen}
+        onClose={() => setCreatePermOpen(false)}
+        onCreated={loadAll}
+      />
+
+      <EditPermModal
+        perm={editingPerm}
+        open={editPermOpen}
+        onClose={() => { setEditPermOpen(false); setEditingPerm(null); }}
+        onSaved={loadAll}
+        onDeleted={handlePermDeleted}
       />
     </div>
   );
