@@ -28,8 +28,8 @@ import {
 import { Input } from '../ui/input';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 import { Button } from '../ui/button';
-import { getCheckoutConfig, chooseIntegration, type CheckoutConfig } from '@/lib/api/checkout';
-import { createCustomerDonation } from '@/lib/api/customer';
+import { getCheckoutConfig, chooseIntegration, startCollectJs, type CheckoutConfig } from '@/lib/api/checkout';
+import { createCustomerDonation, exchangeCustomerCollectJsToken } from '@/lib/api/customer';
 
 const schema = z.object({
   fullName: z.string().optional(),
@@ -102,11 +102,17 @@ export function DonateForm() {
         donorEmail: data.email,
       });
 
-      if (!session.redirectUrl) {
-        throw new Error('Checkout session did not return a redirect URL. Please try again.');
+      if (integrationType === 'COLLECT_JS') {
+        if (!session.paymentReference) throw new Error('Payment reference missing. Please try again.');
+        if (!config?.publicKey) throw new Error('Payment configuration missing. Please contact support.');
+        const paymentToken = await startCollectJs(config.publicKey);
+        const tokenSession = await exchangeCustomerCollectJsToken(session.paymentReference, paymentToken);
+        if (!tokenSession.redirectUrl) throw new Error('Checkout session did not return a redirect URL. Please try again.');
+        window.location.href = tokenSession.redirectUrl;
+      } else {
+        if (!session.redirectUrl) throw new Error('Checkout session did not return a redirect URL. Please try again.');
+        window.location.href = session.redirectUrl;
       }
-
-      window.location.href = session.redirectUrl;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Payment failed');
     } finally {

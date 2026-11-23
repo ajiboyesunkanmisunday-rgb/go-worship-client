@@ -1,10 +1,13 @@
 /**
  * Google reCAPTCHA **v3** (invisible, execute-on-submit).
  *
- * Site key is fetched from GET /bff/gw/auth/captcha/site-key at runtime,
- * with fallback to the hardcoded default (or NEXT_PUBLIC_RECAPTCHA_SITE_KEY).
+ * Site key is fetched from GET /bff/gw/auth/captcha/site-key at runtime
+ * via getAuthCaptchaSiteKey(), with fallback to the hardcoded default
+ * (or NEXT_PUBLIC_RECAPTCHA_SITE_KEY).
  * The script is only loaded once the key is resolved.
  */
+
+import { getAuthCaptchaSiteKey } from './api/auth';
 
 const FALLBACK_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ??
@@ -25,12 +28,8 @@ let keyPromise: Promise<string> | null = null;
 function getSiteKey(): Promise<string> {
   return (keyPromise ??= (async () => {
     try {
-      const res = await fetch('/bff/gw/auth/captcha/site-key', {
-        headers: { Accept: 'application/json' },
-        credentials: 'same-origin',
-      });
-      const data = await res.json().catch(() => null);
-      const key = String(data?.siteKey ?? data?.data?.siteKey ?? '').trim();
+      const data = await getAuthCaptchaSiteKey();
+      const key = String(data?.siteKey ?? '').trim();
       return key || FALLBACK_KEY;
     } catch {
       return FALLBACK_KEY;

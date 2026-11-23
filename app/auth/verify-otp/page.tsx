@@ -3,7 +3,7 @@
 import { AuthLayout } from '@/components/auth/layout';
 import { OtpForm } from '@/components/auth/otp-form';
 import { ResetProgress } from '@/components/auth/reset-progress';
-import { beginLoginMfa, forgotPassword, verifyLoginMfa } from '@/lib/api/auth';
+import { beginLoginMfa, forgotPassword, getMfaPushStatus, verifyLoginMfa } from '@/lib/api/auth';
 import { executeRecaptcha } from '@/lib/recaptcha';
 import { toast } from 'sonner';
 import { portalForRoles } from '@/lib/portal';
@@ -79,7 +79,8 @@ function LoginMfaPage({
 
   const [selectedMethod, setSelectedMethod] = useState(sorted[0] ?? 'TOTP');
   const [tokenId, setTokenId] = useState<string | null>(null);
-  const [phase, setPhase] = useState<'waiting' | 'enter_code'>('waiting');
+  const [phase, setPhase] = useState<'waiting' | 'enter_code' | 'push_polling'>('waiting');
+  const [pushChallengeId, setPushChallengeId] = useState<string | null>(null);
   const [beginError, setBeginError] = useState<string | null>(null);
 
   const loginHref =
@@ -98,11 +99,39 @@ function LoginMfaPage({
         const res = await beginLoginMfa({ mfaSessionId, method });
         const tid = res.tokenId ?? (res.payloadJson?.tokenId ?? null);
         setTokenId(tid ?? null);
-        setPhase('enter_code');
+        if (method === 'PUSH_FCM') {
+          const challengeId = tid ?? null;
+          setPushChallengeId(challengeId);
+          setPhase('push_polling');
+          if (challengeId) {
+            const poll = async () => {
+              try {
+                const status = await getMfaPushStatus(challengeId);
+                if (status.status === 'APPROVED') {
+                  const verifyRes = await verifyLoginMfa({ mfaSessionId, method, code: '', tokenId: challengeId, rememberMe });
+                  router.replace(nextPath ?? (verifyRes.roles?.length ? portalForRoles(verifyRes.roles) : '/dashboard'));
+                } else if (status.status === 'DENIED' || status.status === 'EXPIRED') {
+                  setBeginError('Push notification was denied. Try another method.');
+                  setPhase('waiting');
+                } else {
+                  setTimeout(poll, 3000);
+                }
+              } catch {
+                setBeginError('Push verification failed. Try another method.');
+                setPhase('waiting');
+              }
+            };
+            setTimeout(poll, 3000);
+          }
+        } else {
+          setPhase('enter_code');
+        }
         if (method === 'OTP_EMAIL') {
           toast.success('We sent a code via email code.', { position: 'bottom-right', duration: 4000 });
         } else if (method === 'OTP_SMS') {
           toast.success('We sent a code via SMS.', { position: 'bottom-right', duration: 4000 });
+        } else if (method === 'PUSH_FCM') {
+          toast.success('Push notification sent. Approve on your device.', { position: 'bottom-right', duration: 6000 });
         }
       } catch (e) {
         setBeginError(e instanceof Error ? e.message : 'Failed to start verification');
@@ -180,7 +209,15 @@ function LoginMfaPage({
       logoSrc={shellProps?.logoSrc}
       flat={shellProps?.flat}
     >
-      {phase === 'waiting' ? (
+      {phase === 'push_polling' ? (
+        <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
+          {methodTabsHeader}
+          <div className="flex items-center gap-3 rounded-[10px] border border-[#e0e0e0] px-4 py-4">
+            <span className="size-5 animate-spin rounded-full border-2 border-brand-blue border-t-transparent" />
+            <span className="text-[14px] text-[#555]">Waiting for push approval on your device…</span>
+          </div>
+        </div>
+      ) : phase === 'waiting' ? (
         <div className="mx-auto flex w-full max-w-[460px] flex-col gap-6">
           {methodTabsHeader}
           <p className="text-[15px] text-[#888]">Starting verification…</p>

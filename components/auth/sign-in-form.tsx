@@ -29,7 +29,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { FormAlert } from '@/components/ui/form-alert';
 import { portalForRoles, isRoleAllowedForPortal, type PortalKind } from '@/lib/portal';
 import { executeRecaptcha } from '@/lib/recaptcha';
-import { login, logout, googleLogin } from '@/lib/api/auth';
+import { login, logout, googleLogin, getAuthStatus, getAuthRoutes, getPublicAuthCentralContext, startPublicAuthCentral, getPublicAuthCentralWorkspaceContext, getPublicAuthCentralCustomDomainContext } from '@/lib/api/auth';
 import { signInWithGoogle } from '@/lib/google-identity';
 import { useSiteContext } from '@/lib/site-context';
 
@@ -129,6 +129,24 @@ function SignInFormInner({
       setSessionBanner('You were signed out due to inactivity. Please sign in again.');
     } else if (reason === 'unauthorized') {
       setSessionBanner('Your session has expired. Please sign in again.');
+    }
+    // Prime auth infrastructure on mount — none of these affect UI state.
+    getAuthStatus().catch(() => {});
+    getAuthRoutes().catch(() => {});
+    getPublicAuthCentralWorkspaceContext().catch(() => {});
+    getPublicAuthCentralCustomDomainContext().catch(() => {});
+    // Handle central-auth context redirect when ?ctx= is present.
+    const ctxRef = searchParams.get('ctx');
+    if (ctxRef) {
+      getPublicAuthCentralContext(ctxRef)
+        .then((ctx) => {
+          if (ctx.entryPoint) {
+            startPublicAuthCentral({ entryPoint: ctx.entryPoint, returnPath: ctx.returnPath })
+              .then((r) => { if (r.authenticationUrl) window.location.replace(r.authenticationUrl); })
+              .catch(() => {});
+          }
+        })
+        .catch(() => {});
     }
   }, [searchParams]);
 

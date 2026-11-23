@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from '../ui/form';
 import { PasswordInput } from '../ui/password-input';
-import { changePassword, getSelfPasswordStatus, getSelfSecuritySummary } from '@/lib/api/auth';
+import { changePassword, getPasswordPolicyMaxAge, getSelfPasswordStatus, getSelfSecuritySummary } from '@/lib/api/auth';
 import { toast } from 'sonner';
 
 export function SecurityLogin() {
@@ -70,10 +70,17 @@ export function SecurityLogin() {
 function SecurityInfo() {
   const [pwStatus, setPwStatus] = useState<Record<string, unknown>>({});
   const [summary, setSummary] = useState<Record<string, unknown>>({});
+  const [policyMaxAge, setPolicyMaxAge] = useState<number | null>(null);
 
   useEffect(() => {
     getSelfPasswordStatus().then(setPwStatus).catch(() => {});
     getSelfSecuritySummary().then(setSummary).catch(() => {});
+    getPasswordPolicyMaxAge()
+      .then((d) => {
+        const val = (d as Record<string, unknown>)?.['maxAgeDays'];
+        if (val != null) setPolicyMaxAge(Number(val));
+      })
+      .catch(() => {});
   }, []);
 
   const lastChanged = pwStatus['lastChangedAt']
@@ -91,6 +98,9 @@ function SecurityInfo() {
       <ProfileInfoItem label="Password strength" content={strength} />
       <ProfileInfoItem label="MFA" content={mfaEnabled} />
       <ProfileInfoItem label="Notification" content="Email" />
+      {policyMaxAge != null && (
+        <ProfileInfoItem label="Password expires" content={`Every ${policyMaxAge} days`} />
+      )}
     </div>
   );
 }

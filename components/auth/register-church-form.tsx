@@ -27,7 +27,7 @@ import { ApiError } from '@/lib/api/client';
 import { FormAlert } from '@/components/ui/form-alert';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { getPublicCountries, getPublicCurrencies, getPublicStates, type CountryOption, type CurrencyOption } from '@/lib/api/public';
+import { getPublicCountries, getPublicCurrencies, getPublicStates, getPublicCities, type CountryOption, type CurrencyOption } from '@/lib/api/public';
 
 type Step = 1 | 2;
 
@@ -95,10 +95,12 @@ export function RegisterChurchForm() {
 
   const [states, setStates] = useState<{ id?: number; name?: string }[]>([]);
   const [stateId, setStateId] = useState('');
+  const [cities, setCities] = useState<{ id?: number; name?: string }[]>([]);
 
   useEffect(() => {
     if (!countryCode) return;
     setStateId('');
+    setCities([]);
     getPublicStates(countryCode)
       .then((page) => {
         const items = Array.isArray((page as { items?: unknown[] })?.items)
@@ -108,6 +110,19 @@ export function RegisterChurchForm() {
       })
       .catch(() => setStates([]));
   }, [countryCode]);
+
+  useEffect(() => {
+    const id = stateId ? Number(stateId) : undefined;
+    if (!id) { setCities([]); return; }
+    getPublicCities(id)
+      .then((page) => {
+        const items = Array.isArray((page as { items?: unknown[] })?.items)
+          ? ((page as { items: { id?: number; name?: string }[] }).items)
+          : [];
+        setCities(items);
+      })
+      .catch(() => setCities([]));
+  }, [stateId]);
 
   // Step 2 fields
   const [displayName, setDisplayName] = useState('');
@@ -284,20 +299,34 @@ export function RegisterChurchForm() {
             </div>
 
             {states.length > 0 && (
-              <Field label="State / Province">
-                <NativeSelect
-                  value={stateId}
-                  onChange={(e) => setStateId(e.target.value)}
-                  className="h-[46px]"
-                >
-                  <NativeSelectOption value="">Select a state</NativeSelectOption>
-                  {states.map((s) => (
-                    <NativeSelectOption key={String(s.id ?? '')} value={String(s.id ?? '')}>
-                      {s.name ?? ''}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="State / Province">
+                  <NativeSelect
+                    value={stateId}
+                    onChange={(e) => setStateId(e.target.value)}
+                    className="h-[46px]"
+                  >
+                    <NativeSelectOption value="">Select a state</NativeSelectOption>
+                    {states.map((s) => (
+                      <NativeSelectOption key={String(s.id ?? '')} value={String(s.id ?? '')}>
+                        {s.name ?? ''}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </Field>
+                {cities.length > 0 && (
+                  <Field label="City">
+                    <NativeSelect className="h-[46px]" defaultValue="">
+                      <NativeSelectOption value="">Select a city</NativeSelectOption>
+                      {cities.map((c) => (
+                        <NativeSelectOption key={String(c.id ?? '')} value={String(c.id ?? '')}>
+                          {c.name ?? ''}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                )}
+              </div>
             )}
 
             {error && <FormAlert variant="error">{error}</FormAlert>}
