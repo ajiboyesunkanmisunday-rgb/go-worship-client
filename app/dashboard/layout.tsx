@@ -2,6 +2,8 @@ import { Header } from '@/components/shared/header';
 import { Sidebar } from '@/components/shared/sidebar';
 import { IdleTimeout } from '@/components/auth/idle-timeout';
 import { SiteContextProvider } from '@/lib/site-context';
+import { CommunicationProvider } from '@/components/shared/communications-provider';
+import { FloatingChatDock } from '@/components/shared/floating-chat-dock';
 import { fetchSiteContext } from '@/lib/api/bootstrap';
 import { resolveUpstreamFromHeaders } from '@/lib/api/server';
 import { headers } from 'next/headers';
@@ -36,19 +38,22 @@ export default async function DashboardLayout({
 
   return (
     <SiteContextProvider value={{ loaded: true, context }}>
-      <main
-        className={cn(
-          'w-full h-full min-h-screen overflow-y-auto',
-          'relative bg-[#F4F7FF]'
-        )}
-      >
-        <IdleTimeout />
-        <Header />
-        <Sidebar />
-        <div className="w-full px-6 pt-[110px] pb-10 lg:pl-[274px] lg:pt-[120px] max-w-[1440px] mx-auto">
-          {children}
-        </div>
-      </main>
+      <CommunicationProvider>
+        <main
+          className={cn(
+            'w-full h-full min-h-screen overflow-y-auto',
+            'relative bg-[#F4F7FF]'
+          )}
+        >
+          <IdleTimeout />
+          <Header />
+          <Sidebar />
+          <div className="w-full px-6 pt-[110px] pb-10 lg:pl-[274px] lg:pt-[120px] max-w-[1440px] mx-auto">
+            {children}
+          </div>
+          <FloatingChatDock />
+        </main>
+      </CommunicationProvider>
     </SiteContextProvider>
   );
 }

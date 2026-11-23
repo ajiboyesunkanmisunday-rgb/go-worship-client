@@ -421,13 +421,63 @@ export const upgradeGuestToCustomer = (_payload: {
 
 /* -------- In-App Communications (/in-app/communications) --------------- */
 
+export type InAppCommunicationType = 'MESSAGE' | 'NOTIFICATION' | 'CHAT';
+
+export type InAppDeliveryStatus =
+  | 'QUEUED'
+  | 'PUBLISHED'
+  | 'DELIVERED'
+  | 'PARTIALLY_DELIVERED'
+  | 'FAILED';
+
+export type InAppCommunication = {
+  id: string;
+  receiptId?: string;
+  batchId?: string;
+  conversationId?: string;
+  type: InAppCommunicationType;
+  senderTenantId?: string;
+  senderUserId?: string;
+  senderDisplayName: string;
+  subject?: string;
+  body: string;
+  actionUrl?: string;
+  deliveryStatus?: InAppDeliveryStatus;
+  createdAt: string;
+  deliveredAt?: string;
+  readAt?: string;
+  read: boolean;
+};
+
+export type InAppConversation = {
+  id: string;
+  type?: 'SYSTEM_TENANT' | 'TENANT_CUSTOMER' | 'TENANT_GUEST';
+  subject?: string;
+  closed: boolean;
+  lastMessageAt: string;
+  unreadCount: number;
+};
+
+export type InAppCommunicationSummary = {
+  unreadMessages: number;
+  unreadNotifications: number;
+  unreadChats: number;
+  totalUnread: number;
+};
+
 /** GET /in-app/communications/inbox */
-export const getInAppInbox = (page = 0, size = 20) =>
-  api.get<unknown>(`/in-app/communications/inbox?page=${page}&size=${size}`);
+export const getInAppInbox = (
+  page = 0,
+  size = 20,
+  type?: InAppCommunicationType,
+) =>
+  api.get<InAppCommunication[]>(
+    `/in-app/communications/inbox?page=${page}&size=${size}${type ? `&type=${type}` : ''}`,
+  );
 
 /** GET /in-app/communications/summary */
 export const getInAppSummary = () =>
-  api.get<{ unreadCount?: number; [key: string]: unknown }>('/in-app/communications/summary');
+  api.get<InAppCommunicationSummary>('/in-app/communications/summary');
 
 /** PATCH /in-app/communications/receipts/{receiptId}/read */
 export const markInAppReceiptRead = (receiptId: string) =>
@@ -443,19 +493,19 @@ export const archiveInAppReceipt = (receiptId: string) =>
 
 /** GET /in-app/communications/conversations */
 export const getInAppConversations = () =>
-  api.get<unknown[]>('/in-app/communications/conversations');
+  api.get<InAppConversation[]>('/in-app/communications/conversations');
 
 /** POST /in-app/communications/conversations/{conversationId}/messages */
 export const sendInAppMessage = (conversationId: string, payload: { body: string }) =>
-  api.post<unknown>(`/in-app/communications/conversations/${encodeURIComponent(conversationId)}/messages`, payload);
+  api.post<InAppCommunication>(`/in-app/communications/conversations/${encodeURIComponent(conversationId)}/messages`, payload);
 
 /** GET /in-app/communications/events/upcoming */
 export const getInAppUpcomingEvents = () =>
   api.get<unknown[]>('/in-app/communications/events/upcoming');
 
-/** GET /in-app/communications/conversations/{conversationId} */
+/** GET /in-app/communications/conversations/{conversationId} (returns messages) */
 export const getInAppConversation = (conversationId: string) =>
-  api.get<unknown>(`/in-app/communications/conversations/${encodeURIComponent(conversationId)}`);
+  api.get<InAppCommunication[]>(`/in-app/communications/conversations/${encodeURIComponent(conversationId)}`);
 
 export type EventNotificationPreference = {
   eventNotificationsEnabled?: boolean;

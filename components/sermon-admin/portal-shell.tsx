@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { NotificationsBell } from '@/components/shared/notifications-bell';
 import { AdminProfileMenu } from '@/components/shared/admin-profile-menu';
+import { CommunicationProvider } from '@/components/shared/communications-provider';
+import { FloatingChatDock } from '@/components/shared/floating-chat-dock';
 import { TopbarSearch } from '@/components/shared/topbar-search';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -105,12 +107,15 @@ function Topbar() {
 
 export function PortalShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen w-full bg-white">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar />
-        <main className="flex-1 bg-[#fbfcff] p-4 lg:p-6">{children}</main>
+    <CommunicationProvider>
+      <div className="flex min-h-screen w-full bg-white">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar />
+          <main className="flex-1 bg-[#fbfcff] p-4 lg:p-6">{children}</main>
+        </div>
+        <FloatingChatDock />
       </div>
-    </div>
+    </CommunicationProvider>
   );
 }

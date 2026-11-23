@@ -1,48 +1,34 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { getInAppInbox, type InAppCommunication } from '@/lib/api/auth';
+import { useCommunications } from '@/components/shared/communications-provider';
 import { Bell } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { getTenantNotificationMessages } from '@/lib/api/tenant';
-
-type Notification = {
-  title: string;
-  body: string;
-  unread?: boolean;
-};
 
 export function NotificationsBell({
   tone = 'light',
-  endpoint = '/tenant/notifications/messages',
+  viewAllHref = '/dashboard/notifications',
 }: {
   tone?: 'light' | 'dark';
-  /** Pass null to skip the live fetch (e.g. system portal where tenant endpoint is forbidden). */
-  endpoint?: string | null;
+  viewAllHref?: string;
 }) {
+  const { summary } = useCommunications();
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [items, setItems] = useState<InAppCommunication[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!endpoint) return;
-    getTenantNotificationMessages()
-      .then((arr) => {
-        const mapped: Notification[] = arr.slice(0, 8).map((n) => ({
-          title: String(n.subject ?? 'Notification'),
-          body: String(n.body ?? n.notes ?? ''),
-          unread: n.status === 'UNREAD',
-        })).filter((n) => n.title);
-        if (mapped.length > 0) setNotifications(mapped);
-      })
+    getInAppInbox(0, 8, 'NOTIFICATION')
+      .then((data) => setItems(data.filter((n) => !n.read).slice(0, 8)))
       .catch(() => {});
-  }, []);
+  }, [summary.unreadNotifications]);
 
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
@@ -55,23 +41,27 @@ export function NotificationsBell({
     };
   }, [open]);
 
+  const unread = summary.unreadNotifications;
+
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        aria-label="Notifications"
+        aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'relative transition-colors',
           tone === 'dark'
             ? 'text-white/70 hover:text-white'
-            : 'text-brand-gray-500 hover:text-black'
+            : 'text-brand-gray-500 hover:text-black',
         )}
       >
         <Bell className={tone === 'dark' ? 'size-5' : 'size-6'} />
-        {notifications.some((n) => n.unread) && (
-          <span className="absolute top-0 right-0 size-[7px] rounded-full bg-brand-red" />
+        {unread > 0 && (
+          <span className="absolute right-0 top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+            {unread > 99 ? '99+' : unread}
+          </span>
         )}
       </button>
 
@@ -80,28 +70,37 @@ export function NotificationsBell({
           role="menu"
           className={cn(
             'absolute right-0 top-[calc(100%+16px)] z-50 w-[380px] max-w-[calc(100vw-2rem)]',
-            'rounded-[16px] border border-[#EDEDED] bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
+            'rounded-[16px] border border-[#EDEDED] bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.12)]',
           )}
         >
-          <h2 className="text-[20px] font-bold text-brand-blue">
-            All Notification
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-[18px] font-bold text-brand-blue">Notifications</h2>
+            <Link
+              href={viewAllHref}
+              onClick={() => setOpen(false)}
+              className="text-[12px] text-brand-blue hover:underline"
+            >
+              View all
+            </Link>
+          </div>
 
           <ul className="mt-3 flex flex-col">
-            {notifications.map((n, i) => (
+            {items.length === 0 && (
+              <li className="py-6 text-center text-[13px] text-brand-gray-400">
+                No new notifications.
+              </li>
+            )}
+            {items.map((n) => (
               <li
-                key={i}
-                className={cn(
-                  'flex items-start gap-3 rounded-[10px] px-3 py-3',
-                  n.unread && 'bg-[#f6f6f6]'
-                )}
+                key={n.id}
+                className="flex items-start gap-3 rounded-[10px] bg-[#f6f6f6] px-3 py-3"
               >
                 <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e7f7ee]">
                   <Bell className="size-[18px] text-[#34a853]" />
                 </span>
                 <div className="flex flex-col gap-0.5">
                   <p className="text-[14px] font-bold text-[#1a1a1a]">
-                    {n.title}
+                    {n.subject || n.senderDisplayName}
                   </p>
                   <p className="text-[13px] leading-snug text-brand-gray-500">
                     {n.body}
