@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { SheetPage } from '@/components/ui/sheet-page';
 import { ResultModal } from '@/components/system/result-modal';
 import { ArrowLeft } from 'lucide-react';
@@ -35,7 +34,7 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
   const isEdit = mode === 'edit';
   const back = '/system/plans';
   const [result, setResult] = useState<'success' | 'error' | null>(null);
-  const [plan, setPlan] = useState({ name: '', price: '', users: '', features: '' });
+  const [plan, setPlan] = useState({ name: '', price: '', users: '' });
   const [formKey, setFormKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -43,15 +42,10 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
     if (!isEdit || !id) return;
     getSystemBillingPlan(id)
       .then((d) => {
-        const featureRaw = d.features;
-        const features = Array.isArray(featureRaw)
-          ? featureRaw.join('\n')
-          : typeof featureRaw === 'string' ? featureRaw : '';
         setPlan({
           name: String(d.name ?? ''),
           price: String(d.price ?? ''),
           users: String(d.maxUsers ?? ''),
-          features,
         });
         setFormKey((k) => k + 1);
       })
@@ -70,12 +64,10 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
       return;
     }
     setFieldErrors({});
-    const featuresRaw = String(fd.get('features') ?? '');
     const payload = {
       name: String(fd.get('name') ?? ''),
       price: Number(fd.get('price') ?? 0),
       maxUsers: Number(fd.get('users') ?? 0),
-      features: featuresRaw.split('\n').map((s) => s.trim()).filter(Boolean),
     };
     try {
       if (isEdit && id) {
@@ -147,15 +139,6 @@ export function PlanForm({ mode, id }: { mode: 'create' | 'edit'; id?: string })
               />
             </Field>
           </div>
-
-          <Field label={<>Features (one per line)&#42;</>}>
-            <Textarea
-              name="features"
-              className="min-h-[170px]"
-              placeholder={'Feature 1\nFeature 2\nFeature 3'}
-              defaultValue={isEdit ? plan.features : undefined}
-            />
-          </Field>
 
           <Button size="lg" type="submit" className="mt-1 h-[52px] w-full">
             {isEdit ? 'Update plan' : 'Create plan'}

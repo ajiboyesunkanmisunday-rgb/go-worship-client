@@ -1220,17 +1220,11 @@ export async function getTenantAuditEventsRecent(): Promise<TenantAuditEvent[]> 
   return Array.isArray(data) ? (data as TenantAuditEvent[]) : findTableRows(data).map((r) => r as TenantAuditEvent);
 }
 
-/** Security events are a filtered subset of /tenant/audit/events/recent.
- *  The backend has no separate security-events endpoint (TenantAuditController only
- *  exposes /events/recent). Filter client-side by security-related action types. */
-const SECURITY_ACTIONS = new Set(['login', 'logout', 'mfa', 'password', 'token', 'session', 'auth', 'lock', 'unlock']);
-export async function getTenantAuditSecurityEvents(): Promise<TenantAuditEvent[]> {
-  const all = await getTenantAuditEventsRecent();
-  return all.filter((e) => {
-    const action = String(e['action'] ?? e['eventType'] ?? '').toLowerCase();
-    return [...SECURITY_ACTIONS].some((kw) => action.includes(kw));
-  });
-}
+/** GET /tenant/audit/security-events */
+export const getTenantAuditSecurityEvents = () =>
+  api.get<TenantAuditEvent[]>('/tenant/audit/security-events').then((d) =>
+    Array.isArray(d) ? d : findTableRows(d).map((r) => r as TenantAuditEvent)
+  );
 
 /** GET /tenant/audit/events/{eventId} */
 export const getTenantAuditEventById = (eventId: string) =>
